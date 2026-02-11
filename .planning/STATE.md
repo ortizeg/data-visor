@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 3 in progress. Filter infrastructure delivered (03-01). Search/sort, saved views, and tagging next (03-02).
+**Current focus:** Phase 3 complete. All filtering, search, sort, saved views, and tagging delivered. Ready for Phase 4 (Predictions) or Phase 5 (Embeddings) -- these are independent and can execute in parallel.
 
 ## Current Position
 
 Phase: 3 of 7 (Filtering & Search)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-11 -- Completed 03-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-11 -- Completed 03-02-PLAN.md
 
-Progress: [████████████░░░░░░░░░] 8/21
+Progress: [█████████████░░░░░░░░] 9/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 4.3 min
-- Total execution time: 34 min
+- Total execution time: 39 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [████████████░░░░░░░░░] 8/21
 |-------|-------|-------|----------|
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
-| 3. Filtering & Search | 1/2 | 5 min | 5.0 min |
+| 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (4 min), 02-02 (5 min), 02-03 (6 min), 03-01 (5 min)
+- Last 5 plans: 02-02 (5 min), 02-03 (6 min), 03-01 (5 min), 03-02 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -76,6 +76,10 @@ Recent decisions affecting current work:
 - [03-01]: Filter facets queryKey uses only datasetId to avoid N+1 refetches
 - [03-01]: Sorted tags array in queryKey for structural stability
 - [03-01]: Flex-1 layout for grid container instead of fixed calc() height
+- [03-02]: Bulk tag/untag endpoints placed before /{sample_id}/annotations to avoid FastAPI path conflicts
+- [03-02]: Selection state excluded from TanStack Query key (UI-only state)
+- [03-02]: Exiting select mode auto-clears selection to prevent stale state
+- [03-02]: Tag badges limited to 3 visible with +N more indicator
 
 ### Pending Todos
 
@@ -89,5 +93,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 03-01-PLAN.md
+Stopped at: Completed 03-02-PLAN.md (Phase 3 complete)
 Resume file: None

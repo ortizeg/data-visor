@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - DuckDB-backed ingestion pipeline with streaming COCO parser, image serving, and plugin architecture
 - [x] **Phase 2: Visual Grid** - Virtualized image grid with annotation overlays and deterministic color hashing
-- [ ] **Phase 3: Filtering & Search** - Sidebar metadata filters, search/sort, saved views, and tagging
+- [x] **Phase 3: Filtering & Search** - Sidebar metadata filters, search/sort, saved views, and tagging
 - [ ] **Phase 4: Predictions & Comparison** - Import model predictions, GT vs Predictions toggle, dataset statistics
 - [ ] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
 - [ ] **Phase 6: Error Analysis & Similarity** - Error categorization pipeline and Qdrant-powered similarity search
@@ -68,8 +68,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Backend filter builder + schema migration + facets endpoint; frontend filter sidebar with category/split filtering and Zustand store
-- [ ] 03-02-PLAN.md -- Search/sort, saved views CRUD, bulk tagging endpoints and UI
+- [x] 03-01-PLAN.md -- Backend filter builder + schema migration + facets endpoint; frontend filter sidebar with category/split filtering and Zustand store
+- [x] 03-02-PLAN.md -- Search/sort, saved views CRUD, bulk tagging endpoints and UI
 
 ### Phase 4: Predictions & Comparison
 **Goal**: Users can import model predictions and visually compare them against ground truth annotations with dataset-level statistics
@@ -143,7 +143,7 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 4/4 | Complete | 2026-02-11 |
 | 2. Visual Grid | 3/3 | Complete | 2026-02-11 |
-| 3. Filtering & Search | 0/2 | Not started | - |
+| 3. Filtering & Search | 2/2 | Complete | 2026-02-11 |
 | 4. Predictions & Comparison | 0/3 | Not started | - |
 | 5. Embeddings & Visualization | 0/4 | Not started | - |
 | 6. Error Analysis & Similarity | 0/2 | Not started | - |
