@@ -1,0 +1,15 @@
+{
+  "info": {
+    "description": "Malformed COCO test dataset for edge cases"
+  },
+  "images": [
+    {"id": 1, "file_name": "good_image.jpg", "width": 640, "height": 480},
+    {"id": 2, "file_name": "no_width.jpg", "height": 480},
+    {"id": 3, "file_name": "complete.jpg", "width": 1024, "height": 768}
+  ],
+  "annotations": [
+    {"id": 1, "image_id": 1, "category_id": 999, "bbox": [10.0, 20.0, 30.0, 40.0], "area": 1200.0, "iscrowd": 0},
+    {"id": 2, "image_id": 2, "category_id": 1, "bbox": [50.0, 60.0, 70.0, 80.0], "area": 5600.0, "iscrowd": 0},
+    {"id": 3, "image_id": 3, "category_id": 2, "area": 0.0, "iscrowd": 0}
+  ]
+}
