@@ -19,6 +19,12 @@ interface AnnotationOverlayProps {
   imageWidth: number;
   /** Original image height (for SVG viewBox coordinate space). */
   imageHeight: number;
+  /**
+   * How the SVG should scale within its container.
+   * - "meet" (default): fit entirely, like object-contain — use for full-res images
+   * - "slice": crop to fill, like object-cover — use for thumbnail grid cells
+   */
+  aspectMode?: "meet" | "slice";
 }
 
 /**
@@ -33,6 +39,7 @@ export function AnnotationOverlay({
   annotations,
   imageWidth,
   imageHeight,
+  aspectMode = "meet",
 }: AnnotationOverlayProps) {
   if (annotations.length === 0) return null;
 
@@ -42,7 +49,7 @@ export function AnnotationOverlay({
   return (
     <svg
       viewBox={`0 0 ${imageWidth} ${imageHeight}`}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio={`xMidYMid ${aspectMode}`}
       className="absolute inset-0 h-full w-full pointer-events-none"
       aria-hidden="true"
     >

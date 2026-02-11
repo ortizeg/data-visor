@@ -41,6 +41,7 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
             annotations={annotations}
             imageWidth={sample.width}
             imageHeight={sample.height}
+            aspectMode="slice"
           />
         )}
       </div>
