@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Project scaffolding, DuckDB schema, config, Pydantic models, test infrastructure
+- [x] 01-01-PLAN.md -- Project scaffolding, DuckDB schema, config, Pydantic models, test infrastructure
 - [ ] 01-02-PLAN.md -- BasePlugin ABC, PluginRegistry, hook system, example plugin
 - [ ] 01-03-PLAN.md -- Storage abstraction (fsspec), streaming COCO parser (ijson), thumbnail service
 - [ ] 01-04-PLAN.md -- Ingestion pipeline, API routers (datasets, samples, images), SSE progress
@@ -141,7 +141,7 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/4 | Planned | - |
+| 1. Data Foundation | 1/4 | In progress | - |
 | 2. Visual Grid | 0/3 | Not started | - |
 | 3. Filtering & Search | 0/2 | Not started | - |
 | 4. Predictions & Comparison | 0/3 | Not started | - |

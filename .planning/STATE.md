@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 1 of 7 (Data Foundation)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-02-10 -- Roadmap created with 7 phases, 26 requirements mapped
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-10 -- Completed 01-01-PLAN.md (Project Scaffolding)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░░░░░░░░░░░░] 1/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: --
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 4 min
+- Total execution time: 4 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1. Data Foundation | 1/4 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: --
+- Last 5 plans: 01-01 (4 min)
 - Trend: --
 
 *Updated after each plan completion*
@@ -45,6 +45,10 @@ Recent decisions affecting current work:
 - [Roadmap]: Phases 4 (Predictions) and 5 (Embeddings) are independent and can execute in parallel
 - [Roadmap]: Phase 7 (Intelligence) flagged for deeper research during planning (Pydantic AI tool design, VLM calibration)
 - [Roadmap]: GRID-03 (GT vs Predictions toggle) assigned to Phase 4 rather than Phase 2 because it requires predictions to exist
+- [01-01]: No PK/FK constraints on DuckDB tables for 3.8x faster bulk inserts
+- [01-01]: Pydantic Settings with VISIONLENS_ env prefix and lru_cache singleton
+- [01-01]: Single DuckDB connection via lifespan, cursor-per-request via DI
+- [01-01]: pytest-asyncio with auto mode for async test support
 
 ### Pending Todos
 
@@ -57,6 +61,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10
-Stopped at: Roadmap creation complete. Ready to plan Phase 1.
+Last session: 2026-02-10T23:30:00-05:00
+Stopped at: Completed 01-01-PLAN.md. Ready for 01-02.
 Resume file: None
