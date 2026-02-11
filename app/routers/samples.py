@@ -222,6 +222,10 @@ def get_batch_annotations(
     sample_ids: str = Query(
         ..., description="Comma-separated sample IDs (max 200)"
     ),
+    source: str | None = Query(
+        None,
+        description="Filter by annotation source: ground_truth, prediction, or omit for all",
+    ),
     db: DuckDBRepo = Depends(get_db),
 ) -> BatchAnnotationsResponse:
     """Return annotations for multiple samples grouped by sample_id.
@@ -244,6 +248,12 @@ def get_batch_annotations(
     placeholders = ", ".join(["?"] * len(id_list))
     params: list = [dataset_id] + id_list
 
+    # Optional source filter (ground_truth, prediction, or all)
+    source_clause = ""
+    if source:
+        source_clause = " AND source = ?"
+        params.append(source)
+
     cursor = db.connection.cursor()
     try:
         rows = cursor.execute(
@@ -251,7 +261,8 @@ def get_batch_annotations(
             "bbox_x, bbox_y, bbox_w, bbox_h, area, is_crowd, "
             "source, confidence "
             "FROM annotations "
-            f"WHERE dataset_id = ? AND sample_id IN ({placeholders})",
+            f"WHERE dataset_id = ? AND sample_id IN ({placeholders})"
+            f"{source_clause}",
             params,
         ).fetchall()
     finally:
@@ -286,9 +297,19 @@ def get_batch_annotations(
 def get_sample_annotations(
     sample_id: str,
     dataset_id: str = Query(..., description="Dataset ID"),
+    source: str | None = Query(
+        None,
+        description="Filter by annotation source: ground_truth, prediction, or omit for all",
+    ),
     db: DuckDBRepo = Depends(get_db),
 ) -> list[AnnotationResponse]:
     """Return all annotations for a given sample."""
+    params: list = [sample_id, dataset_id]
+    source_clause = ""
+    if source:
+        source_clause = " AND source = ?"
+        params.append(source)
+
     cursor = db.connection.cursor()
     try:
         rows = cursor.execute(
@@ -296,8 +317,8 @@ def get_sample_annotations(
             "bbox_x, bbox_y, bbox_w, bbox_h, area, is_crowd, "
             "source, confidence "
             "FROM annotations "
-            "WHERE sample_id = ? AND dataset_id = ?",
-            [sample_id, dataset_id],
+            f"WHERE sample_id = ? AND dataset_id = ?{source_clause}",
+            params,
         ).fetchall()
     finally:
         cursor.close()

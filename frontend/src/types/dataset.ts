@@ -12,6 +12,7 @@ export interface Dataset {
   image_count: number;
   annotation_count: number;
   category_count: number;
+  prediction_count: number;
   created_at: string;
 }
 
