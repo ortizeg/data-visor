@@ -5,11 +5,13 @@ import pytest
 from app.repositories.duckdb_repo import DuckDBRepo
 
 
-def test_db_creates_four_tables(db: DuckDBRepo) -> None:
-    """DuckDB schema initialization creates all four tables."""
+def test_db_creates_all_tables(db: DuckDBRepo) -> None:
+    """DuckDB schema initialization creates all tables."""
     tables = db.connection.execute("SHOW TABLES").fetchall()
     table_names = sorted(t[0] for t in tables)
-    assert table_names == ["annotations", "categories", "datasets", "samples"]
+    assert table_names == [
+        "annotations", "categories", "datasets", "samples", "saved_views"
+    ]
 
 
 async def test_health_endpoint(app_client) -> None:

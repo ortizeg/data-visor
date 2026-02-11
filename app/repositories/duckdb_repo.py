@@ -79,6 +79,23 @@ class DuckDBRepo:
             )
         """)
 
+        # Phase 3: Add tags column to samples (idempotent)
+        self.connection.execute(
+            "ALTER TABLE samples ADD COLUMN IF NOT EXISTS tags VARCHAR[] DEFAULT []"
+        )
+
+        # Phase 3: Saved views table for persisted filter configurations
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS saved_views (
+                id              VARCHAR NOT NULL,
+                dataset_id      VARCHAR NOT NULL,
+                name            VARCHAR NOT NULL,
+                filters         JSON NOT NULL,
+                created_at      TIMESTAMP DEFAULT current_timestamp,
+                updated_at      TIMESTAMP DEFAULT current_timestamp
+            )
+        """)
+
     def close(self) -> None:
         """Close the underlying DuckDB connection."""
         self.connection.close()

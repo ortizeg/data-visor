@@ -2,6 +2,7 @@
 
 Endpoints:
 - GET /samples                        -- paginated samples with filtering
+- GET /samples/filter-facets          -- distinct filter values for dropdowns
 - GET /samples/batch-annotations      -- batch annotations for multiple samples
 - GET /samples/{sample_id}/annotations -- annotations for a sample
 """
@@ -9,6 +10,7 @@ Endpoints:
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -19,6 +21,7 @@ from app.models.annotation import (
 )
 from app.models.sample import PaginatedSamples, SampleResponse
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.services.filter_builder import SampleFilterBuilder
 
 router = APIRouter(prefix="/samples", tags=["samples"])
 
@@ -28,55 +31,54 @@ def list_samples(
     dataset_id: str = Query(..., description="Filter by dataset ID"),
     category: str | None = Query(None, description="Filter by category name"),
     split: str | None = Query(None, description="Filter by split"),
+    search: str | None = Query(None, description="Search by filename"),
+    tags: str | None = Query(None, description="Comma-separated tags"),
+    sort_by: str = Query("id", description="Sort column"),
+    sort_dir: Literal["asc", "desc"] = Query("asc", description="Sort direction"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(50, ge=1, le=200, description="Page size"),
     db: DuckDBRepo = Depends(get_db),
 ) -> PaginatedSamples:
-    """Return paginated samples filtered by dataset, category, and split."""
+    """Return paginated samples with dynamic filtering."""
+    # Parse comma-separated tags into list
+    tag_list = (
+        [t.strip() for t in tags.split(",") if t.strip()]
+        if tags
+        else None
+    )
+
+    # Build query using SampleFilterBuilder
+    builder = SampleFilterBuilder()
+    result = (
+        builder
+        .add_dataset(dataset_id)
+        .add_split(split)
+        .add_category(category)
+        .add_search(search)
+        .add_tags(tag_list)
+        .build(sort_by=sort_by, sort_dir=sort_dir)
+    )
+
+    distinct = "DISTINCT " if result.join_clause else ""
+
     cursor = db.connection.cursor()
     try:
-        # Build WHERE clause
-        conditions = ["s.dataset_id = ?"]
-        params: list = [dataset_id]
+        count_sql = (
+            f"SELECT COUNT({distinct}s.id) FROM samples s "
+            f"{result.join_clause} WHERE {result.where_clause}"
+        )
+        total = cursor.execute(count_sql, result.params).fetchone()[0]
 
-        if split is not None:
-            conditions.append("s.split = ?")
-            params.append(split)
-
-        where = " AND ".join(conditions)
-
-        if category is not None:
-            # JOIN with annotations for category filter
-            count_sql = (
-                "SELECT COUNT(DISTINCT s.id) FROM samples s "
-                "JOIN annotations a ON s.id = a.sample_id "
-                f"AND a.dataset_id = s.dataset_id WHERE {where} "
-                "AND a.category_name = ?"
-            )
-            data_sql = (
-                "SELECT DISTINCT s.id, s.dataset_id, s.file_name, "
-                "s.width, s.height, s.thumbnail_path, s.split "
-                "FROM samples s "
-                "JOIN annotations a ON s.id = a.sample_id "
-                f"AND a.dataset_id = s.dataset_id WHERE {where} "
-                "AND a.category_name = ? "
-                "ORDER BY s.id LIMIT ? OFFSET ?"
-            )
-            count_params = params + [category]
-            data_params = params + [category, limit, offset]
-        else:
-            count_sql = f"SELECT COUNT(*) FROM samples s WHERE {where}"
-            data_sql = (
-                "SELECT s.id, s.dataset_id, s.file_name, s.width, "
-                "s.height, s.thumbnail_path, s.split "
-                f"FROM samples s WHERE {where} "
-                "ORDER BY s.id LIMIT ? OFFSET ?"
-            )
-            count_params = params
-            data_params = params + [limit, offset]
-
-        total = cursor.execute(count_sql, count_params).fetchone()[0]
-        rows = cursor.execute(data_sql, data_params).fetchall()
+        data_sql = (
+            f"SELECT {distinct}s.id, s.dataset_id, s.file_name, "
+            f"s.width, s.height, s.thumbnail_path, s.split, s.tags "
+            f"FROM samples s {result.join_clause} "
+            f"WHERE {result.where_clause} "
+            f"{result.order_clause} LIMIT ? OFFSET ?"
+        )
+        rows = cursor.execute(
+            data_sql, result.params + [limit, offset]
+        ).fetchall()
     finally:
         cursor.close()
 
@@ -89,6 +91,7 @@ def list_samples(
             height=row[4],
             thumbnail_path=row[5],
             split=row[6],
+            tags=row[7] or [],
         )
         for row in rows
     ]
@@ -96,6 +99,53 @@ def list_samples(
     return PaginatedSamples(
         items=items, total=total, offset=offset, limit=limit
     )
+
+
+@router.get("/filter-facets")
+def get_filter_facets(
+    dataset_id: str = Query(..., description="Dataset ID"),
+    db: DuckDBRepo = Depends(get_db),
+) -> dict:
+    """Return distinct values for all filterable fields.
+
+    Used by the frontend to populate filter dropdown options.
+    Returns categories from annotations table, splits and tags from samples.
+    """
+    cursor = db.connection.cursor()
+    try:
+        # Categories (from annotations -- captures actual usage)
+        categories = [
+            row[0]
+            for row in cursor.execute(
+                "SELECT DISTINCT category_name FROM annotations "
+                "WHERE dataset_id = ? ORDER BY category_name",
+                [dataset_id],
+            ).fetchall()
+        ]
+
+        # Splits
+        splits = [
+            row[0]
+            for row in cursor.execute(
+                "SELECT DISTINCT split FROM samples "
+                "WHERE dataset_id = ? AND split IS NOT NULL ORDER BY split",
+                [dataset_id],
+            ).fetchall()
+        ]
+
+        # Tags (unnest the LIST column, then distinct)
+        tags = [
+            row[0]
+            for row in cursor.execute(
+                "SELECT DISTINCT UNNEST(tags) AS tag FROM samples "
+                "WHERE dataset_id = ? AND tags IS NOT NULL ORDER BY tag",
+                [dataset_id],
+            ).fetchall()
+        ]
+    finally:
+        cursor.close()
+
+    return {"categories": categories, "splits": splits, "tags": tags}
 
 
 @router.get(

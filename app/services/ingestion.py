@@ -112,7 +112,12 @@ class IngestionService:
             for batch_df in parser.build_image_batches(
                 Path(annotation_path), dataset_id
             ):
-                cursor.execute("INSERT INTO samples SELECT * FROM batch_df")
+                cursor.execute(
+                    "INSERT INTO samples "
+                    "(id, dataset_id, file_name, width, height, "
+                    "thumbnail_path, split, metadata) "
+                    "SELECT * FROM batch_df"
+                )
                 image_count += len(batch_df)
                 yield IngestionProgress(
                     stage="parsing_images",
