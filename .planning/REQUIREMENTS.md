@@ -85,38 +85,38 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGEST-01 | — | Pending |
-| INGEST-02 | — | Pending |
-| INGEST-03 | — | Pending |
-| INGEST-04 | — | Pending |
-| INGEST-05 | — | Pending |
-| GRID-01 | — | Pending |
-| GRID-02 | — | Pending |
-| GRID-03 | — | Pending |
-| GRID-04 | — | Pending |
-| GRID-05 | — | Pending |
-| FILT-01 | — | Pending |
-| FILT-02 | — | Pending |
-| FILT-03 | — | Pending |
-| FILT-04 | — | Pending |
-| EMBED-01 | — | Pending |
-| EMBED-02 | — | Pending |
-| EMBED-03 | — | Pending |
-| EMBED-04 | — | Pending |
-| EVAL-01 | — | Pending |
-| EVAL-02 | — | Pending |
-| EVAL-03 | — | Pending |
-| AGENT-01 | — | Pending |
-| AGENT-02 | — | Pending |
-| AGENT-03 | — | Pending |
-| AGENT-04 | — | Pending |
-| PLUGIN-01 | — | Pending |
+| INGEST-01 | Phase 1: Data Foundation | Pending |
+| INGEST-02 | Phase 1: Data Foundation | Pending |
+| INGEST-03 | Phase 1: Data Foundation | Pending |
+| INGEST-04 | Phase 1: Data Foundation | Pending |
+| INGEST-05 | Phase 1: Data Foundation | Pending |
+| GRID-01 | Phase 2: Visual Grid | Pending |
+| GRID-02 | Phase 2: Visual Grid | Pending |
+| GRID-03 | Phase 4: Predictions & Comparison | Pending |
+| GRID-04 | Phase 2: Visual Grid | Pending |
+| GRID-05 | Phase 2: Visual Grid | Pending |
+| FILT-01 | Phase 3: Filtering & Search | Pending |
+| FILT-02 | Phase 3: Filtering & Search | Pending |
+| FILT-03 | Phase 3: Filtering & Search | Pending |
+| FILT-04 | Phase 3: Filtering & Search | Pending |
+| EMBED-01 | Phase 5: Embeddings & Visualization | Pending |
+| EMBED-02 | Phase 5: Embeddings & Visualization | Pending |
+| EMBED-03 | Phase 5: Embeddings & Visualization | Pending |
+| EMBED-04 | Phase 5: Embeddings & Visualization | Pending |
+| EVAL-01 | Phase 4: Predictions & Comparison | Pending |
+| EVAL-02 | Phase 6: Error Analysis & Similarity | Pending |
+| EVAL-03 | Phase 4: Predictions & Comparison | Pending |
+| AGENT-01 | Phase 7: Intelligence & Agents | Pending |
+| AGENT-02 | Phase 7: Intelligence & Agents | Pending |
+| AGENT-03 | Phase 6: Error Analysis & Similarity | Pending |
+| AGENT-04 | Phase 7: Intelligence & Agents | Pending |
+| PLUGIN-01 | Phase 1: Data Foundation | Pending |
 
 **Coverage:**
 - v1 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26 (pending roadmap creation)
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after initial definition*
+*Last updated: 2026-02-10 after roadmap creation*
