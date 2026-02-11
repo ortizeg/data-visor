@@ -2,15 +2,21 @@
 
 Endpoints:
 - GET /samples                        -- paginated samples with filtering
+- GET /samples/batch-annotations      -- batch annotations for multiple samples
 - GET /samples/{sample_id}/annotations -- annotations for a sample
 """
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_db
-from app.models.annotation import AnnotationResponse
+from app.models.annotation import (
+    AnnotationResponse,
+    BatchAnnotationsResponse,
+)
 from app.models.sample import PaginatedSamples, SampleResponse
 from app.repositories.duckdb_repo import DuckDBRepo
 
@@ -90,6 +96,72 @@ def list_samples(
     return PaginatedSamples(
         items=items, total=total, offset=offset, limit=limit
     )
+
+
+@router.get(
+    "/batch-annotations",
+    response_model=BatchAnnotationsResponse,
+)
+def get_batch_annotations(
+    dataset_id: str = Query(..., description="Dataset ID"),
+    sample_ids: str = Query(
+        ..., description="Comma-separated sample IDs (max 200)"
+    ),
+    db: DuckDBRepo = Depends(get_db),
+) -> BatchAnnotationsResponse:
+    """Return annotations for multiple samples grouped by sample_id.
+
+    Accepts up to 200 sample IDs in a single request to avoid
+    per-cell annotation request waterfalls in the grid UI.
+    """
+    id_list = [sid.strip() for sid in sample_ids.split(",") if sid.strip()]
+
+    if len(id_list) > 200:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 200 sample_ids per batch request",
+        )
+
+    if not id_list:
+        return BatchAnnotationsResponse(annotations={})
+
+    # Build parameterized IN clause
+    placeholders = ", ".join(["?"] * len(id_list))
+    params: list = [dataset_id] + id_list
+
+    cursor = db.connection.cursor()
+    try:
+        rows = cursor.execute(
+            "SELECT id, dataset_id, sample_id, category_name, "
+            "bbox_x, bbox_y, bbox_w, bbox_h, area, is_crowd, "
+            "source, confidence "
+            "FROM annotations "
+            f"WHERE dataset_id = ? AND sample_id IN ({placeholders})",
+            params,
+        ).fetchall()
+    finally:
+        cursor.close()
+
+    # Group annotations by sample_id
+    grouped: dict[str, list[AnnotationResponse]] = defaultdict(list)
+    for row in rows:
+        ann = AnnotationResponse(
+            id=row[0],
+            dataset_id=row[1],
+            sample_id=row[2],
+            category_name=row[3],
+            bbox_x=row[4],
+            bbox_y=row[5],
+            bbox_w=row[6],
+            bbox_h=row[7],
+            area=row[8],
+            is_crowd=row[9],
+            source=row[10],
+            confidence=row[11],
+        )
+        grouped[ann.sample_id].append(ann)
+
+    return BatchAnnotationsResponse(annotations=dict(grouped))
 
 
 @router.get(

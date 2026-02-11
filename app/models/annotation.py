@@ -27,3 +27,9 @@ class AnnotationResponse(BaseModel):
     is_crowd: bool
     source: str
     confidence: float | None = None
+
+
+class BatchAnnotationsResponse(BaseModel):
+    """Batch annotation response grouping annotations by sample_id."""
+
+    annotations: dict[str, list[AnnotationResponse]]
