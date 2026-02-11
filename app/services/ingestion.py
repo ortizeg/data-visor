@@ -144,7 +144,7 @@ class IngestionService:
             # -- Step 4: Insert dataset record -------------------------------
             cursor.execute(
                 "INSERT INTO datasets VALUES "
-                "(?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, NULL)",
+                "(?, ?, ?, ?, ?, ?, ?, ?, 0, current_timestamp, NULL)",
                 [
                     dataset_id,
                     name,

@@ -34,6 +34,7 @@ class DuckDBRepo:
                 image_count     INTEGER DEFAULT 0,
                 annotation_count INTEGER DEFAULT 0,
                 category_count  INTEGER DEFAULT 0,
+                prediction_count INTEGER DEFAULT 0,
                 created_at      TIMESTAMP DEFAULT current_timestamp,
                 metadata        JSON
             )
@@ -78,6 +79,11 @@ class DuckDBRepo:
                 supercategory   VARCHAR
             )
         """)
+
+        # Phase 4: Add prediction_count column to datasets (idempotent)
+        self.connection.execute(
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS prediction_count INTEGER DEFAULT 0"
+        )
 
         # Phase 3: Add tags column to samples (idempotent)
         self.connection.execute(

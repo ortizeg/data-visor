@@ -25,6 +25,7 @@ class DatasetResponse(BaseModel):
     image_count: int
     annotation_count: int
     category_count: int
+    prediction_count: int = 0
     created_at: datetime
 
 
