@@ -1,0 +1,122 @@
+# Requirements: VisionLens
+
+**Defined:** 2026-02-10
+**Core Value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes — all in one workflow.
+
+## v1 Requirements
+
+### Data Ingestion
+
+- [ ] **INGEST-01**: Import COCO format annotations via streaming JSON parser (ijson) for 100K+ scale
+- [ ] **INGEST-02**: Load images from local filesystem paths
+- [ ] **INGEST-03**: Load images from Google Cloud Storage buckets
+- [ ] **INGEST-04**: Generate and cache image thumbnails during ingestion
+- [ ] **INGEST-05**: Store all sample metadata in DuckDB with analytical query support
+
+### Grid & Browsing
+
+- [ ] **GRID-01**: Virtualized infinite-scroll grid of image thumbnails
+- [ ] **GRID-02**: Bounding box annotation overlays with class labels on images
+- [ ] **GRID-03**: GT vs Predictions comparison toggle (solid vs dashed lines)
+- [ ] **GRID-04**: Deterministic class-to-color hashing (consistent across sessions)
+- [ ] **GRID-05**: Sample detail modal with full-resolution image and all metadata
+
+### Filtering & Search
+
+- [ ] **FILT-01**: Sidebar metadata filters (class, split, tags, any metadata field)
+- [ ] **FILT-02**: Search by filename and sort by any metadata field
+- [ ] **FILT-03**: Save and load filter configurations (saved views)
+- [ ] **FILT-04**: Add/remove tags on individual samples or bulk selections
+
+### Embeddings & Visualization
+
+- [ ] **EMBED-01**: Generate image embeddings (SigLIP 2 vs DINOv2 — benchmark during implementation)
+- [ ] **EMBED-02**: UMAP/t-SNE dimensionality reduction with background computation
+- [ ] **EMBED-03**: deck.gl 2D scatter plot with zoom, pan, and hover thumbnails
+- [ ] **EMBED-04**: Lasso selection on embedding map filters grid view to selected samples
+
+### Model Evaluation
+
+- [ ] **EVAL-01**: Import pre-computed model predictions (JSON format)
+- [ ] **EVAL-02**: Error categorization: Hard False Positives, Label Errors, False Negatives
+- [ ] **EVAL-03**: Dataset statistics dashboard (class distribution, annotation counts, split breakdown)
+
+### Intelligence & Agents
+
+- [ ] **AGENT-01**: Pydantic AI agent monitors error distribution and detects patterns
+- [ ] **AGENT-02**: Agent recommends actions based on detected patterns (augmentation, data collection)
+- [ ] **AGENT-03**: Qdrant-powered similarity search (find visually similar images)
+- [ ] **AGENT-04**: VLM auto-tagging (Moondream2) — tag images as dark, blurry, indoor, etc.
+
+### Extensibility
+
+- [ ] **PLUGIN-01**: BasePlugin Python class with defined extension points
+
+## v2 Requirements
+
+### Data Ingestion
+
+- **INGEST-06**: YOLO format parser (.txt annotation files)
+- **INGEST-07**: Pascal VOC format parser (XML annotation files)
+
+### Model Evaluation
+
+- **EVAL-04**: Run inference in-tool against loaded models
+
+### Extensibility
+
+- **PLUGIN-02**: Ingestion hooks (custom code during import)
+- **PLUGIN-03**: UI hooks (custom buttons/panels in the interface)
+- **PLUGIN-04**: Transformation hooks (image pre-processing in browser)
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Multi-user collaboration / auth | Personal tool, not a platform |
+| Video annotation support | Image-only for v1 |
+| Training pipeline integration | VisionLens inspects data, doesn't train models |
+| Mobile/tablet interface | Desktop browser only |
+| Real-time streaming inference | Batch-oriented analysis |
+| 3D scatter plot | 2D sufficient for v1; revisit if needed |
+| OAuth / magic link login | No auth needed for personal tool |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| INGEST-01 | — | Pending |
+| INGEST-02 | — | Pending |
+| INGEST-03 | — | Pending |
+| INGEST-04 | — | Pending |
+| INGEST-05 | — | Pending |
+| GRID-01 | — | Pending |
+| GRID-02 | — | Pending |
+| GRID-03 | — | Pending |
+| GRID-04 | — | Pending |
+| GRID-05 | — | Pending |
+| FILT-01 | — | Pending |
+| FILT-02 | — | Pending |
+| FILT-03 | — | Pending |
+| FILT-04 | — | Pending |
+| EMBED-01 | — | Pending |
+| EMBED-02 | — | Pending |
+| EMBED-03 | — | Pending |
+| EMBED-04 | — | Pending |
+| EVAL-01 | — | Pending |
+| EVAL-02 | — | Pending |
+| EVAL-03 | — | Pending |
+| AGENT-01 | — | Pending |
+| AGENT-02 | — | Pending |
+| AGENT-03 | — | Pending |
+| AGENT-04 | — | Pending |
+| PLUGIN-01 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 26 total
+- Mapped to phases: 0
+- Unmapped: 26 (pending roadmap creation)
+
+---
+*Requirements defined: 2026-02-10*
+*Last updated: 2026-02-10 after initial definition*
