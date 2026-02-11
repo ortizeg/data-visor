@@ -49,12 +49,12 @@ Plans:
   2. Bounding box annotations render on thumbnails with class labels visible
   3. Each class name always maps to the same color across sessions (deterministic hashing)
   4. User can click any thumbnail to open a detail modal showing full-resolution image and all metadata
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Next.js app scaffolding, TanStack Virtual grid, thumbnail loading with LRU blob management
-- [ ] 02-02: Canvas-based annotation overlay rendering (react-konva) with deterministic class-to-color hashing
-- [ ] 02-03: Sample detail modal with full-resolution image, metadata display, and annotation list
+- [ ] 02-01-PLAN.md -- Next.js scaffolding, TanStack Virtual grid, infinite scroll with paginated API fetching
+- [ ] 02-02-PLAN.md -- SVG annotation overlays with deterministic color hashing, batch annotation endpoint
+- [ ] 02-03-PLAN.md -- Sample detail modal with full-resolution image, metadata display, and annotation list
 
 ### Phase 3: Filtering & Search
 **Goal**: Users can slice the dataset by any metadata field, search by filename, tag samples, and save filter configurations for reuse
