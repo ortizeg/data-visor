@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 2 in progress. Visual Grid foundation built, annotation overlays and detail modal next.
+**Current focus:** Phase 2 in progress. Visual Grid foundation and annotation overlays built, detail modal next.
 
 ## Current Position
 
 Phase: 2 of 7 (Visual Grid)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-11 -- Completed 02-01-PLAN.md (Visual Grid Foundation)
+Last activity: 2026-02-11 -- Completed 02-02-PLAN.md (Annotation Overlays)
 
-Progress: [█████░░░░░░░░░░░░░░░░] 5/21
+Progress: [██████░░░░░░░░░░░░░░░] 6/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 3.6 min
-- Total execution time: 18 min
+- Total plans completed: 6
+- Average duration: 3.8 min
+- Total execution time: 23 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
-| 2. Visual Grid | 1/3 | 4 min | 4 min |
+| 2. Visual Grid | 2/3 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 01-03 (4 min), 01-04 (4 min), 02-01 (4 min)
+- Last 5 plans: 01-03 (4 min), 01-04 (4 min), 02-01 (4 min), 02-02 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -63,6 +63,11 @@ Recent decisions affecting current work:
 - [02-01]: Unoptimized Next.js images -- backend serves its own WebP thumbnails
 - [02-01]: Simple Zustand create() pattern (not per-request) for fully client-rendered grid
 - [02-01]: src/ directory structure for frontend (tsconfig @/* -> ./src/*)
+- [02-02]: Batch annotations fetched at grid level from visible virtual rows, not per-cell
+- [02-02]: SVG viewBox uses original image dimensions (not thumbnail) for correct coordinate mapping
+- [02-02]: color-hash with saturation [0.6-0.8] and lightness [0.45-0.65] for vibrant readable colors
+- [02-02]: Batch endpoint capped at 200 sample_ids per request
+- [02-02]: paintOrder stroke with dark stroke behind colored text fill for readability
 
 ### Pending Todos
 
@@ -75,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-11T05:22:38Z
-Stopped at: Completed 02-01-PLAN.md (Visual Grid Foundation). Phase 2 plan 1 of 3 done.
+Last session: 2026-02-11T05:30:34Z
+Stopped at: Completed 02-02-PLAN.md (Annotation Overlays). Phase 2 plan 2 of 3 done.
 Resume file: None
