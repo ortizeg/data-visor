@@ -32,13 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Thumbnails are generated and cached during ingestion so subsequent browsing is instant
   4. All sample metadata (filenames, dimensions, classes, splits) is stored in DuckDB and queryable via the API
   5. A BasePlugin Python class exists with defined extension points that a developer can subclass
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: FastAPI project scaffolding, DuckDB connection management (single-writer, cursor-per-request)
-- [ ] 01-02: Streaming COCO parser with ijson, DuckDB schema, and ingestion pipeline
-- [ ] 01-03: Image serving layer (local filesystem + GCS storage abstraction, thumbnail generation and caching)
-- [ ] 01-04: BasePlugin class, hook registry, and plugin loading mechanism
+- [ ] 01-01-PLAN.md -- Project scaffolding, DuckDB schema, config, Pydantic models, test infrastructure
+- [ ] 01-02-PLAN.md -- BasePlugin ABC, PluginRegistry, hook system, example plugin
+- [ ] 01-03-PLAN.md -- Storage abstraction (fsspec), streaming COCO parser (ijson), thumbnail service
+- [ ] 01-04-PLAN.md -- Ingestion pipeline, API routers (datasets, samples, images), SSE progress
 
 ### Phase 2: Visual Grid
 **Goal**: Users can visually browse 100K+ images in a performant grid with bounding box annotations overlaid on each thumbnail
@@ -141,7 +141,7 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/4 | Not started | - |
+| 1. Data Foundation | 0/4 | Planned | - |
 | 2. Visual Grid | 0/3 | Not started | - |
 | 3. Filtering & Search | 0/2 | Not started | - |
 | 4. Predictions & Comparison | 0/3 | Not started | - |
