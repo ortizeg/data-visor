@@ -5,32 +5,32 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 1 - Data Foundation
+**Current focus:** Phase 1 complete. Ready for Phase 2 - Visual Grid.
 
 ## Current Position
 
-Phase: 1 of 7 (Data Foundation)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-11 -- Completed 01-03-PLAN.md (Core Services)
+Phase: 1 of 7 (Data Foundation) -- COMPLETE
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-11 -- Completed 01-04-PLAN.md (Integration Pipeline)
 
-Progress: [███░░░░░░░░░░░░░░░░░░] 3/21
+Progress: [████░░░░░░░░░░░░░░░░░] 4/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 3 min
-- Total execution time: 10 min
+- Total plans completed: 4
+- Average duration: 3.5 min
+- Total execution time: 14 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Data Foundation | 3/4 | 10 min | 3 min |
+| 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4 min), 01-02 (2 min), 01-03 (4 min)
+- Last 5 plans: 01-01 (4 min), 01-02 (2 min), 01-03 (4 min), 01-04 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -55,6 +55,9 @@ Recent decisions affecting current work:
 - [01-03]: Two-pass COCO parsing (categories, then images, then annotations) for clarity
 - [01-03]: DataFrame column order explicitly matches DuckDB table order for bulk insert
 - [01-03]: WebP method=4 for thumbnail generation (best speed/quality tradeoff)
+- [01-04]: Sync generator for SSE (not async) -- FastAPI wraps in StreamingResponse
+- [01-04]: Thumbnail generation capped at 500 during ingestion; rest on-demand
+- [01-04]: Service composition via FastAPI DI (get_ingestion_service)
 
 ### Pending Todos
 
@@ -67,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-11T04:39:43Z
-Stopped at: Completed 01-03-PLAN.md (Core Services). Ready for 01-04.
+Last session: 2026-02-11T04:48:03Z
+Stopped at: Completed 01-04-PLAN.md (Integration Pipeline). Phase 1 complete.
 Resume file: None
