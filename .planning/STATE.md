@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 3 complete. All filtering, search, sort, saved views, and tagging delivered. Ready for Phase 4 (Predictions) or Phase 5 (Embeddings) -- these are independent and can execute in parallel.
+**Current focus:** Phase 4 in progress. Prediction import pipeline delivered (04-01). Comparison toggle and statistics dashboard remain (04-02, 04-03).
 
 ## Current Position
 
-Phase: 3 of 7 (Filtering & Search)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-11 -- Completed 03-02-PLAN.md
+Phase: 4 of 7 (Predictions & Comparison)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-11 -- Completed 04-01-PLAN.md
 
-Progress: [█████████████░░░░░░░░] 9/21
+Progress: [██████████████░░░░░░░] 10/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 4.3 min
-- Total execution time: 39 min
+- Total plans completed: 10
+- Average duration: 4.2 min
+- Total execution time: 42 min
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [█████████████░░░░░░░░] 9/21
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
+| 4. Predictions & Comparison | 1/3 | 3 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (5 min), 02-03 (6 min), 03-01 (5 min), 03-02 (5 min)
+- Last 5 plans: 02-03 (6 min), 03-01 (5 min), 03-02 (5 min), 04-01 (3 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [03-02]: Selection state excluded from TanStack Query key (UI-only state)
 - [03-02]: Exiting select mode auto-clears selection to prevent stale state
 - [03-02]: Tag badges limited to 3 visible with +N more indicator
+- [04-01]: Predictions stored in annotations table with source='prediction' discriminator (not separate table)
+- [04-01]: Re-import deletes only source='prediction' rows, preserving ground truth
+- [04-01]: PredictionParser follows same ijson streaming + DataFrame batching pattern as COCOParser
 
 ### Pending Todos
 
@@ -93,5 +97,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 03-02-PLAN.md (Phase 3 complete)
+Stopped at: Completed 04-01-PLAN.md (Phase 4 plan 1 of 3)
 Resume file: None
