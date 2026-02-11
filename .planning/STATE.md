@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 4 in progress. Prediction import (04-01) and comparison toggle (04-02) delivered. Statistics dashboard remains (04-03).
+**Current focus:** Phase 4 complete. All three plans delivered (prediction import, comparison toggle, statistics dashboard). Ready for Phase 5 (Embeddings & Similarity).
 
 ## Current Position
 
 Phase: 4 of 7 (Predictions & Comparison)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-11 -- Completed 04-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-11 -- Completed 04-03-PLAN.md
 
-Progress: [███████████████░░░░░░] 11/21
+Progress: [████████████████░░░░░] 12/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 4.1 min
-- Total execution time: 45 min
+- Total plans completed: 12
+- Average duration: 4.0 min
+- Total execution time: 48 min
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [███████████████░░░░░░] 11/2
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
-| 4. Predictions & Comparison | 2/3 | 6 min | 3.0 min |
+| 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (5 min), 03-02 (5 min), 04-01 (3 min), 04-02 (3 min)
-- Trend: stable
+- Last 5 plans: 03-02 (5 min), 04-01 (3 min), 04-02 (3 min), 04-03 (3 min)
+- Trend: stable, accelerating
 
 *Updated after each plan completion*
 
@@ -87,6 +87,10 @@ Recent decisions affecting current work:
 - [04-02]: Default overlayMode is "ground_truth" since predictions may not exist
 - [04-02]: Annotation staleTime reduced from Infinity to 5 min (predictions can change after import)
 - [04-02]: "Both" mode omits source param (returns all annotations in one request)
+- [04-03]: Recharts for charting (lightweight, React-native, composable API, works with React 19)
+- [04-03]: Server-side aggregation via DuckDB GROUP BY (not client-side)
+- [04-03]: activeTab state in Zustand (ephemeral session state, not URL params)
+- [04-03]: OverlayToggle hidden when Statistics tab active (only relevant to grid view)
 
 ### Pending Todos
 
@@ -100,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-02-PLAN.md (Phase 4 plan 2 of 3)
+Stopped at: Completed 04-03-PLAN.md (Phase 4 complete, 3/3 plans)
 Resume file: None
