@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 4 in progress. Prediction import pipeline delivered (04-01). Comparison toggle and statistics dashboard remain (04-02, 04-03).
+**Current focus:** Phase 4 in progress. Prediction import (04-01) and comparison toggle (04-02) delivered. Statistics dashboard remains (04-03).
 
 ## Current Position
 
 Phase: 4 of 7 (Predictions & Comparison)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-11 -- Completed 04-01-PLAN.md
+Last activity: 2026-02-11 -- Completed 04-02-PLAN.md
 
-Progress: [██████████████░░░░░░░] 10/21
+Progress: [███████████████░░░░░░] 11/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 4.2 min
-- Total execution time: 42 min
+- Total plans completed: 11
+- Average duration: 4.1 min
+- Total execution time: 45 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [██████████████░░░░░░░] 10/2
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
-| 4. Predictions & Comparison | 1/3 | 3 min | 3.0 min |
+| 4. Predictions & Comparison | 2/3 | 6 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (6 min), 03-01 (5 min), 03-02 (5 min), 04-01 (3 min)
+- Last 5 plans: 03-01 (5 min), 03-02 (5 min), 04-01 (3 min), 04-02 (3 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -84,6 +84,9 @@ Recent decisions affecting current work:
 - [04-01]: Predictions stored in annotations table with source='prediction' discriminator (not separate table)
 - [04-01]: Re-import deletes only source='prediction' rows, preserving ground truth
 - [04-01]: PredictionParser follows same ijson streaming + DataFrame batching pattern as COCOParser
+- [04-02]: Default overlayMode is "ground_truth" since predictions may not exist
+- [04-02]: Annotation staleTime reduced from Infinity to 5 min (predictions can change after import)
+- [04-02]: "Both" mode omits source param (returns all annotations in one request)
 
 ### Pending Todos
 
@@ -97,5 +100,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-01-PLAN.md (Phase 4 plan 1 of 3)
+Stopped at: Completed 04-02-PLAN.md (Phase 4 plan 2 of 3)
 Resume file: None
