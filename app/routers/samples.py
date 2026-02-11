@@ -3,6 +3,8 @@
 Endpoints:
 - GET /samples                        -- paginated samples with filtering
 - GET /samples/filter-facets          -- distinct filter values for dropdowns
+- PATCH /samples/bulk-tag             -- add a tag to multiple samples
+- PATCH /samples/bulk-untag           -- remove a tag from multiple samples
 - GET /samples/batch-annotations      -- batch annotations for multiple samples
 - GET /samples/{sample_id}/annotations -- annotations for a sample
 """
@@ -19,7 +21,7 @@ from app.models.annotation import (
     AnnotationResponse,
     BatchAnnotationsResponse,
 )
-from app.models.sample import PaginatedSamples, SampleResponse
+from app.models.sample import BulkTagRequest, PaginatedSamples, SampleResponse
 from app.repositories.duckdb_repo import DuckDBRepo
 from app.services.filter_builder import SampleFilterBuilder
 
@@ -146,6 +148,66 @@ def get_filter_facets(
         cursor.close()
 
     return {"categories": categories, "splits": splits, "tags": tags}
+
+
+@router.patch("/bulk-tag")
+def bulk_add_tag(
+    request: BulkTagRequest,
+    db: DuckDBRepo = Depends(get_db),
+) -> dict:
+    """Add a tag to multiple samples.
+
+    Uses DuckDB list_append + list_distinct to add the tag only if not
+    already present. COALESCE handles samples with NULL tags.
+    """
+    if len(request.sample_ids) > 500:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 500 sample_ids per bulk tag request",
+        )
+
+    placeholders = ", ".join(["?"] * len(request.sample_ids))
+    cursor = db.connection.cursor()
+    try:
+        cursor.execute(
+            f"UPDATE samples SET tags = list_distinct(list_append(COALESCE(tags, []), ?)) "
+            f"WHERE dataset_id = ? AND id IN ({placeholders})",
+            [request.tag, request.dataset_id] + request.sample_ids,
+        )
+    finally:
+        cursor.close()
+
+    return {"tagged": len(request.sample_ids)}
+
+
+@router.patch("/bulk-untag")
+def bulk_remove_tag(
+    request: BulkTagRequest,
+    db: DuckDBRepo = Depends(get_db),
+) -> dict:
+    """Remove a tag from multiple samples.
+
+    Uses DuckDB list_filter to remove matching tag values.
+    COALESCE handles samples with NULL tags.
+    """
+    if len(request.sample_ids) > 500:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 500 sample_ids per bulk untag request",
+        )
+
+    placeholders = ", ".join(["?"] * len(request.sample_ids))
+    cursor = db.connection.cursor()
+    try:
+        cursor.execute(
+            f"UPDATE samples SET tags = list_filter(COALESCE(tags, []), x -> x != ?) "
+            f"WHERE dataset_id = ? AND id IN ({placeholders})",
+            [request.tag, request.dataset_id] + request.sample_ids,
+        )
+    finally:
+        cursor.close()
+
+    return {"untagged": len(request.sample_ids)}
 
 
 @router.get(

@@ -42,6 +42,14 @@ class SampleFilterParams(BaseModel):
     limit: int = Field(50, ge=1, le=200)
 
 
+class BulkTagRequest(BaseModel):
+    """Request body for bulk tag add/remove operations."""
+
+    dataset_id: str
+    sample_ids: list[str]
+    tag: str
+
+
 class PaginatedSamples(BaseModel):
     """Paginated response for sample listings."""
 

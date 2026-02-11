@@ -80,11 +80,12 @@ app.add_middleware(
 )
 
 # Router includes
-from app.routers import datasets, images, samples  # noqa: E402
+from app.routers import datasets, images, samples, views  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
 app.include_router(images.router)
+app.include_router(views.router)
 
 
 @app.get("/health")
