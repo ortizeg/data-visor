@@ -65,11 +65,11 @@ Plans:
   2. User can search by filename and sort the grid by any metadata column
   3. User can save a filter configuration as a named view and reload it later
   4. User can add or remove tags on individual samples or bulk selections
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Sidebar filter UI, DuckDB dynamic filter query builder, filter state management (Zustand)
-- [ ] 03-02: Search and sort functionality, saved views (persist to DuckDB), bulk tagging operations
+- [ ] 03-01-PLAN.md -- Backend filter builder + schema migration + facets endpoint; frontend filter sidebar with category/split filtering and Zustand store
+- [ ] 03-02-PLAN.md -- Search/sort, saved views CRUD, bulk tagging endpoints and UI
 
 ### Phase 4: Predictions & Comparison
 **Goal**: Users can import model predictions and visually compare them against ground truth annotations with dataset-level statistics
