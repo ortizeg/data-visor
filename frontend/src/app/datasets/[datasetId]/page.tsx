@@ -10,7 +10,14 @@ import { ImageGrid } from "@/components/grid/image-grid";
 import { SampleModal } from "@/components/detail/sample-modal";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { OverlayToggle } from "@/components/toolbar/overlay-toggle";
+import { StatsDashboard } from "@/components/stats/stats-dashboard";
+import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
+
+const TAB_OPTIONS: { value: DatasetTab; label: string }[] = [
+  { value: "grid", label: "Grid" },
+  { value: "statistics", label: "Statistics" },
+];
 
 export default function DatasetPage({
   params,
@@ -18,6 +25,9 @@ export default function DatasetPage({
   params: Promise<{ datasetId: string }>;
 }) {
   const { datasetId } = use(params);
+
+  const activeTab = useUIStore((s) => s.activeTab);
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
 
   const { data: dataset } = useQuery({
     queryKey: ["dataset", datasetId],
@@ -51,19 +61,47 @@ export default function DatasetPage({
             <span className="text-sm text-zinc-500 dark:text-zinc-400">
               {dataset.image_count.toLocaleString()} images
             </span>
-            <OverlayToggle
-              hasPredictions={(dataset.prediction_count ?? 0) > 0}
-            />
+
+            {/* Tab switcher: Grid / Statistics */}
+            <div className="inline-flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
+              {TAB_OPTIONS.map((opt) => {
+                const isActive = activeTab === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setActiveTab(opt.value)}
+                    className={`px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeTab === "grid" && (
+              <OverlayToggle
+                hasPredictions={(dataset.prediction_count ?? 0) > 0}
+              />
+            )}
           </div>
         )}
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <FilterSidebar datasetId={datasetId} />
-        <div className="flex-1 overflow-hidden">
-          <ImageGrid datasetId={datasetId} />
+      {activeTab === "grid" ? (
+        <div className="flex flex-1 overflow-hidden">
+          <FilterSidebar datasetId={datasetId} />
+          <div className="flex-1 overflow-hidden">
+            <ImageGrid datasetId={datasetId} />
+          </div>
         </div>
-      </div>
+      ) : (
+        <StatsDashboard datasetId={datasetId} />
+      )}
       <SampleModal datasetId={datasetId} samples={allSamples} />
     </div>
   );

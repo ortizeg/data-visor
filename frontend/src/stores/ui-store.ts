@@ -13,6 +13,9 @@ import { DEFAULT_COLUMNS } from "@/lib/constants";
 /** Which annotation sources to display on the grid overlay. */
 export type OverlayMode = "ground_truth" | "prediction" | "both";
 
+/** Which tab is active on the dataset page. */
+export type DatasetTab = "grid" | "statistics";
+
 interface UIState {
   /** Currently selected sample ID for the detail modal. */
   selectedSampleId: string | null;
@@ -22,6 +25,8 @@ interface UIState {
   columnsPerRow: number;
   /** Which annotation sources to show (GT, predictions, or both). */
   overlayMode: OverlayMode;
+  /** Which tab is active on the dataset page (grid or statistics). */
+  activeTab: DatasetTab;
 
   /** Open the detail modal for a given sample. */
   openDetailModal: (sampleId: string) => void;
@@ -31,6 +36,8 @@ interface UIState {
   setColumnsPerRow: (cols: number) => void;
   /** Set the overlay mode for annotation rendering. */
   setOverlayMode: (mode: OverlayMode) => void;
+  /** Set the active tab on the dataset page. */
+  setActiveTab: (tab: DatasetTab) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -38,6 +45,7 @@ export const useUIStore = create<UIState>((set) => ({
   isDetailModalOpen: false,
   columnsPerRow: DEFAULT_COLUMNS,
   overlayMode: "ground_truth",
+  activeTab: "grid",
 
   openDetailModal: (sampleId) =>
     set({ selectedSampleId: sampleId, isDetailModalOpen: true }),
@@ -45,4 +53,5 @@ export const useUIStore = create<UIState>((set) => ({
     set({ selectedSampleId: null, isDetailModalOpen: false }),
   setColumnsPerRow: (cols) => set({ columnsPerRow: cols }),
   setOverlayMode: (mode) => set({ overlayMode: mode }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
 }));
