@@ -13,7 +13,7 @@ VisionLens replaces scattered CV scripts with a unified dataset introspection to
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - DuckDB-backed ingestion pipeline with streaming COCO parser, image serving, and plugin architecture
-- [ ] **Phase 2: Visual Grid** - Virtualized image grid with annotation overlays and deterministic color hashing
+- [x] **Phase 2: Visual Grid** - Virtualized image grid with annotation overlays and deterministic color hashing
 - [ ] **Phase 3: Filtering & Search** - Sidebar metadata filters, search/sort, saved views, and tagging
 - [ ] **Phase 4: Predictions & Comparison** - Import model predictions, GT vs Predictions toggle, dataset statistics
 - [ ] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
@@ -52,9 +52,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Next.js scaffolding, TanStack Virtual grid, infinite scroll with paginated API fetching
-- [ ] 02-02-PLAN.md -- SVG annotation overlays with deterministic color hashing, batch annotation endpoint
-- [ ] 02-03-PLAN.md -- Sample detail modal with full-resolution image, metadata display, and annotation list
+- [x] 02-01-PLAN.md -- Next.js scaffolding, TanStack Virtual grid, infinite scroll with paginated API fetching
+- [x] 02-02-PLAN.md -- SVG annotation overlays with deterministic color hashing, batch annotation endpoint
+- [x] 02-03-PLAN.md -- Sample detail modal with full-resolution image, metadata display, and annotation list
 
 ### Phase 3: Filtering & Search
 **Goal**: Users can slice the dataset by any metadata field, search by filename, tag samples, and save filter configurations for reuse
@@ -142,7 +142,7 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 4/4 | Complete | 2026-02-11 |
-| 2. Visual Grid | 0/3 | Not started | - |
+| 2. Visual Grid | 3/3 | Complete | 2026-02-11 |
 | 3. Filtering & Search | 0/2 | Not started | - |
 | 4. Predictions & Comparison | 0/3 | Not started | - |
 | 5. Embeddings & Visualization | 0/4 | Not started | - |

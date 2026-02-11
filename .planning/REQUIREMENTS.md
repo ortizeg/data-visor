@@ -15,11 +15,11 @@
 
 ### Grid & Browsing
 
-- [ ] **GRID-01**: Virtualized infinite-scroll grid of image thumbnails
-- [ ] **GRID-02**: Bounding box annotation overlays with class labels on images
+- [x] **GRID-01**: Virtualized infinite-scroll grid of image thumbnails
+- [x] **GRID-02**: Bounding box annotation overlays with class labels on images
 - [ ] **GRID-03**: GT vs Predictions comparison toggle (solid vs dashed lines)
-- [ ] **GRID-04**: Deterministic class-to-color hashing (consistent across sessions)
-- [ ] **GRID-05**: Sample detail modal with full-resolution image and all metadata
+- [x] **GRID-04**: Deterministic class-to-color hashing (consistent across sessions)
+- [x] **GRID-05**: Sample detail modal with full-resolution image and all metadata
 
 ### Filtering & Search
 
@@ -90,11 +90,11 @@
 | INGEST-03 | Phase 1: Data Foundation | Complete |
 | INGEST-04 | Phase 1: Data Foundation | Complete |
 | INGEST-05 | Phase 1: Data Foundation | Complete |
-| GRID-01 | Phase 2: Visual Grid | Pending |
-| GRID-02 | Phase 2: Visual Grid | Pending |
+| GRID-01 | Phase 2: Visual Grid | Complete |
+| GRID-02 | Phase 2: Visual Grid | Complete |
 | GRID-03 | Phase 4: Predictions & Comparison | Pending |
-| GRID-04 | Phase 2: Visual Grid | Pending |
-| GRID-05 | Phase 2: Visual Grid | Pending |
+| GRID-04 | Phase 2: Visual Grid | Complete |
+| GRID-05 | Phase 2: Visual Grid | Complete |
 | FILT-01 | Phase 3: Filtering & Search | Pending |
 | FILT-02 | Phase 3: Filtering & Search | Pending |
 | FILT-03 | Phase 3: Filtering & Search | Pending |
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 1 completion*
+*Last updated: 2026-02-11 after Phase 2 completion*

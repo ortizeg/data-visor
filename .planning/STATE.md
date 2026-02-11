@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 2 in progress. Visual Grid foundation and annotation overlays built, detail modal next.
+**Current focus:** Phase 2 complete. Visual Grid with annotation overlays, detail modal, and deterministic colors delivered. Phase 3 (Filtering & Search) next.
 
 ## Current Position
 
-Phase: 2 of 7 (Visual Grid)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-11 -- Completed 02-02-PLAN.md (Annotation Overlays)
+Phase: 2 of 7 (Visual Grid) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-02-11 -- Phase 2 verified and completed
 
-Progress: [██████░░░░░░░░░░░░░░░] 6/21
+Progress: [███████████░░░░░░░░░░] 7/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 3.8 min
-- Total execution time: 23 min
+- Total plans completed: 7
+- Average duration: 4.0 min
+- Total execution time: 29 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
-| 2. Visual Grid | 2/3 | 9 min | 4.5 min |
+| 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (4 min), 01-04 (4 min), 02-01 (4 min), 02-02 (5 min)
+- Last 5 plans: 01-04 (4 min), 02-01 (4 min), 02-02 (5 min), 02-03 (6 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -68,6 +68,9 @@ Recent decisions affecting current work:
 - [02-02]: color-hash with saturation [0.6-0.8] and lightness [0.45-0.65] for vibrant readable colors
 - [02-02]: Batch endpoint capped at 200 sample_ids per request
 - [02-02]: paintOrder stroke with dark stroke behind colored text fill for readability
+- [02-03]: Native <dialog> element for modal (focus trap, Escape, backdrop for free)
+- [02-03]: SVG aspectMode prop: "slice" for object-cover thumbnails, "meet" for full-res modal
+- [02-03]: Per-sample annotation endpoint for modal (batch not needed for single detail view)
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-11T05:30:34Z
-Stopped at: Completed 02-02-PLAN.md (Annotation Overlays). Phase 2 plan 2 of 3 done.
+Last session: 2026-02-11
+Stopped at: Phase 2 complete. All 3 plans executed, verified, and approved.
 Resume file: None
