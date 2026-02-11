@@ -4,6 +4,9 @@
  * Drives TanStack Query's queryKey for automatic refetch-on-filter-change.
  * Each filter change triggers a new cache entry in useInfiniteQuery,
  * providing instant results for previously-visited filter combinations.
+ *
+ * Selection state (selectedSampleIds, isSelecting) is UI-only and NOT
+ * included in the TanStack Query key to avoid unnecessary refetches.
  */
 
 import { create } from "zustand";
@@ -17,6 +20,10 @@ interface FilterState {
   sortBy: string;
   sortDir: "asc" | "desc";
 
+  /** Selection state for bulk tagging (UI-only, not in query key) */
+  selectedSampleIds: Set<string>;
+  isSelecting: boolean;
+
   /** Actions */
   setSearch: (search: string) => void;
   setCategory: (category: string | null) => void;
@@ -26,6 +33,12 @@ interface FilterState {
   setSortDir: (sortDir: "asc" | "desc") => void;
   clearFilters: () => void;
   applyView: (filters: Partial<FilterState>) => void;
+
+  /** Selection actions */
+  toggleSampleSelection: (id: string) => void;
+  selectAllVisible: (ids: string[]) => void;
+  clearSelection: () => void;
+  setIsSelecting: (v: boolean) => void;
 }
 
 const DEFAULT_FILTERS = {
@@ -35,6 +48,8 @@ const DEFAULT_FILTERS = {
   tags: [] as string[],
   sortBy: "id",
   sortDir: "asc" as const,
+  selectedSampleIds: new Set<string>(),
+  isSelecting: false,
 };
 
 export const useFilterStore = create<FilterState>((set) => ({
@@ -46,8 +61,32 @@ export const useFilterStore = create<FilterState>((set) => ({
   setTags: (tags) => set({ tags }),
   setSortBy: (sortBy) => set({ sortBy }),
   setSortDir: (sortDir) => set({ sortDir }),
-  clearFilters: () => set(DEFAULT_FILTERS),
+  clearFilters: () =>
+    set({
+      ...DEFAULT_FILTERS,
+      selectedSampleIds: new Set<string>(),
+    }),
   applyView: (filters) => set((state) => ({ ...state, ...filters })),
+
+  toggleSampleSelection: (id) =>
+    set((state) => {
+      const next = new Set(state.selectedSampleIds);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return { selectedSampleIds: next };
+    }),
+  selectAllVisible: (ids) =>
+    set({ selectedSampleIds: new Set(ids) }),
+  clearSelection: () =>
+    set({ selectedSampleIds: new Set<string>() }),
+  setIsSelecting: (v) =>
+    set({
+      isSelecting: v,
+      ...(v ? {} : { selectedSampleIds: new Set<string>() }),
+    }),
 }));
 
 // Atomic selectors (per TkDodo's Zustand best practices)
@@ -57,6 +96,10 @@ export const useSplit = () => useFilterStore((s) => s.split);
 export const useTags = () => useFilterStore((s) => s.tags);
 export const useSortBy = () => useFilterStore((s) => s.sortBy);
 export const useSortDir = () => useFilterStore((s) => s.sortDir);
+export const useSelectedSampleIds = () =>
+  useFilterStore((s) => s.selectedSampleIds);
+export const useIsSelecting = () =>
+  useFilterStore((s) => s.isSelecting);
 export const useFilterActions = () =>
   useFilterStore((s) => ({
     setSearch: s.setSearch,

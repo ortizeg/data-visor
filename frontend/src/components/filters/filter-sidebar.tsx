@@ -1,5 +1,6 @@
 /**
- * Filter sidebar with category and split filter dropdowns.
+ * Filter sidebar with search, category/split/tags filters, sort controls,
+ * saved views, and bulk tagging actions.
  *
  * Reads filter facets from the backend and current filter state from
  * the Zustand store. Changes to filters automatically trigger a
@@ -8,8 +9,13 @@
 
 "use client";
 
+import { useState } from "react";
 import { FilterSelect } from "./filter-select";
+import { SearchInput } from "./search-input";
+import { SortControls } from "./sort-controls";
+import { SavedViewPicker } from "./saved-view-picker";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
+import { useBulkTag, useBulkUntag } from "@/hooks/use-tags";
 import { useFilterStore } from "@/stores/filter-store";
 
 interface FilterSidebarProps {
@@ -24,6 +30,50 @@ export function FilterSidebar({ datasetId }: FilterSidebarProps) {
   const setCategory = useFilterStore((s) => s.setCategory);
   const setSplit = useFilterStore((s) => s.setSplit);
   const clearFilters = useFilterStore((s) => s.clearFilters);
+  const isSelecting = useFilterStore((s) => s.isSelecting);
+  const setIsSelecting = useFilterStore((s) => s.setIsSelecting);
+  const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
+  const clearSelection = useFilterStore((s) => s.clearSelection);
+
+  const bulkTag = useBulkTag();
+  const bulkUntag = useBulkUntag();
+  const [tagInput, setTagInput] = useState("");
+
+  function handleAddTag() {
+    const tag = tagInput.trim();
+    if (!tag || selectedSampleIds.size === 0) return;
+    bulkTag.mutate(
+      {
+        dataset_id: datasetId,
+        sample_ids: Array.from(selectedSampleIds),
+        tag,
+      },
+      {
+        onSuccess: () => {
+          setTagInput("");
+          clearSelection();
+        },
+      },
+    );
+  }
+
+  function handleRemoveTag() {
+    const tag = tagInput.trim();
+    if (!tag || selectedSampleIds.size === 0) return;
+    bulkUntag.mutate(
+      {
+        dataset_id: datasetId,
+        sample_ids: Array.from(selectedSampleIds),
+        tag,
+      },
+      {
+        onSuccess: () => {
+          setTagInput("");
+          clearSelection();
+        },
+      },
+    );
+  }
 
   return (
     <aside className="flex w-64 shrink-0 flex-col gap-4 border-r border-zinc-200 p-4 dark:border-zinc-800">
@@ -39,6 +89,20 @@ export function FilterSidebar({ datasetId }: FilterSidebarProps) {
         </button>
       </div>
 
+      {/* Select mode toggle */}
+      <button
+        onClick={() => setIsSelecting(!isSelecting)}
+        className={`rounded-md border px-3 py-1.5 text-sm ${
+          isSelecting
+            ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300"
+            : "border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        }`}
+      >
+        {isSelecting ? "Exit select mode" : "Select mode"}
+      </button>
+
+      <SearchInput />
+
       <FilterSelect
         label="Category"
         options={facets?.categories ?? []}
@@ -52,6 +116,51 @@ export function FilterSidebar({ datasetId }: FilterSidebarProps) {
         value={split}
         onChange={setSplit}
       />
+
+      <SortControls />
+
+      {/* Bulk tag section (visible when selecting) */}
+      {isSelecting && (
+        <div className="rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+          <p className="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            {selectedSampleIds.size} sample
+            {selectedSampleIds.size !== 1 ? "s" : ""} selected
+          </p>
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            placeholder="Tag name..."
+            className="mb-2 w-full rounded-md border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddTag}
+              disabled={
+                !tagInput.trim() ||
+                selectedSampleIds.size === 0 ||
+                bulkTag.isPending
+              }
+              className="flex-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Add Tag
+            </button>
+            <button
+              onClick={handleRemoveTag}
+              disabled={
+                !tagInput.trim() ||
+                selectedSampleIds.size === 0 ||
+                bulkUntag.isPending
+              }
+              className="flex-1 rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              Remove Tag
+            </button>
+          </div>
+        </div>
+      )}
+
+      <SavedViewPicker datasetId={datasetId} />
     </aside>
   );
 }

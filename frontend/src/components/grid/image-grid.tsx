@@ -1,3 +1,15 @@
+/**
+ * Virtualized image grid with infinite scroll.
+ *
+ * Only visible rows are rendered in the DOM (via @tanstack/react-virtual).
+ * Columns are handled by CSS grid -- only rows are virtualized.
+ * Scrolling near the bottom triggers fetchNextPage via useInfiniteQuery.
+ * Column count is responsive via ResizeObserver on the scroll container.
+ *
+ * When selection mode is active, a floating action bar at the bottom
+ * provides "Select All Visible" and "Clear Selection" controls.
+ */
+
 "use client";
 
 import { useEffect, useRef, useCallback, useMemo } from "react";
@@ -6,6 +18,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAnnotationsBatch } from "@/hooks/use-annotations";
 import { useSamples } from "@/hooks/use-samples";
 import { useUIStore } from "@/stores/ui-store";
+import { useFilterStore } from "@/stores/filter-store";
 import { MIN_CELL_WIDTH, MIN_COLUMNS, MAX_COLUMNS } from "@/lib/constants";
 import { GridCell } from "./grid-cell";
 
@@ -13,20 +26,17 @@ interface ImageGridProps {
   datasetId: string;
 }
 
-/**
- * Virtualized image grid with infinite scroll.
- *
- * Only visible rows are rendered in the DOM (via @tanstack/react-virtual).
- * Columns are handled by CSS grid -- only rows are virtualized.
- * Scrolling near the bottom triggers fetchNextPage via useInfiniteQuery.
- * Column count is responsive via ResizeObserver on the scroll container.
- */
 export function ImageGrid({ datasetId }: ImageGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const columnsPerRow = useUIStore((s) => s.columnsPerRow);
   const setColumnsPerRow = useUIStore((s) => s.setColumnsPerRow);
+
+  const isSelecting = useFilterStore((s) => s.isSelecting);
+  const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
+  const selectAllVisible = useFilterStore((s) => s.selectAllVisible);
+  const clearSelection = useFilterStore((s) => s.clearSelection);
 
   const {
     data,
@@ -150,7 +160,7 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="relative flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 text-sm text-zinc-500 dark:text-zinc-400">
         <span>
           Showing {allSamples.length.toLocaleString()} of{" "}
@@ -210,6 +220,29 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
           </div>
         )}
       </div>
+
+      {/* Floating selection action bar */}
+      {isSelecting && (
+        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">
+            {selectedSampleIds.size} selected
+          </span>
+          <button
+            onClick={() =>
+              selectAllVisible(allSamples.map((s) => s.id))
+            }
+            className="rounded bg-zinc-100 px-3 py-1 text-xs text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+          >
+            Select All Visible
+          </button>
+          <button
+            onClick={clearSelection}
+            className="rounded bg-zinc-100 px-3 py-1 text-xs text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
     </div>
   );
 }
