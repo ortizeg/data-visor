@@ -23,10 +23,10 @@
 
 ### Filtering & Search
 
-- [ ] **FILT-01**: Sidebar metadata filters (class, split, tags, any metadata field)
-- [ ] **FILT-02**: Search by filename and sort by any metadata field
-- [ ] **FILT-03**: Save and load filter configurations (saved views)
-- [ ] **FILT-04**: Add/remove tags on individual samples or bulk selections
+- [x] **FILT-01**: Sidebar metadata filters (class, split, tags, any metadata field)
+- [x] **FILT-02**: Search by filename and sort by any metadata field
+- [x] **FILT-03**: Save and load filter configurations (saved views)
+- [x] **FILT-04**: Add/remove tags on individual samples or bulk selections
 
 ### Embeddings & Visualization
 
@@ -95,10 +95,10 @@
 | GRID-03 | Phase 4: Predictions & Comparison | Pending |
 | GRID-04 | Phase 2: Visual Grid | Complete |
 | GRID-05 | Phase 2: Visual Grid | Complete |
-| FILT-01 | Phase 3: Filtering & Search | Pending |
-| FILT-02 | Phase 3: Filtering & Search | Pending |
-| FILT-03 | Phase 3: Filtering & Search | Pending |
-| FILT-04 | Phase 3: Filtering & Search | Pending |
+| FILT-01 | Phase 3: Filtering & Search | Complete |
+| FILT-02 | Phase 3: Filtering & Search | Complete |
+| FILT-03 | Phase 3: Filtering & Search | Complete |
+| FILT-04 | Phase 3: Filtering & Search | Complete |
 | EMBED-01 | Phase 5: Embeddings & Visualization | Pending |
 | EMBED-02 | Phase 5: Embeddings & Visualization | Pending |
 | EMBED-03 | Phase 5: Embeddings & Visualization | Pending |
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 2 completion*
+*Last updated: 2026-02-11 after Phase 3 completion*
