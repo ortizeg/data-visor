@@ -1,15 +1,14 @@
 /**
- * Hook for batch-fetching annotations for multiple samples at once.
+ * Hooks for fetching annotations.
  *
- * Fetches annotations for the visible batch of samples in a single
- * request to avoid per-cell annotation request waterfalls.
- * Returns a Record<sampleId, Annotation[]>.
+ * - useAnnotationsBatch: Batch-fetch for the grid (multiple samples, one request)
+ * - useAnnotations: Single-sample fetch for the detail modal
  */
 
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
-import type { BatchAnnotationsResponse } from "@/types/annotation";
+import type { Annotation, BatchAnnotationsResponse } from "@/types/annotation";
 
 /**
  * Fetch annotations for multiple samples in a single batch request.
@@ -31,5 +30,29 @@ export function useAnnotationsBatch(datasetId: string, sampleIds: string[]) {
     staleTime: Infinity, // annotations don't change during session
     enabled: sampleIds.length > 0,
     select: (data) => data.annotations,
+  });
+}
+
+/**
+ * Fetch annotations for a single sample.
+ *
+ * Used by the detail modal to load annotation data for the selected sample.
+ * Uses the per-sample endpoint (fine for a single detail view).
+ *
+ * @param datasetId - The dataset the sample belongs to
+ * @param sampleId - The sample to fetch annotations for (null disables the query)
+ */
+export function useAnnotations(
+  datasetId: string,
+  sampleId: string | null,
+) {
+  return useQuery({
+    queryKey: ["annotations", sampleId, datasetId],
+    queryFn: () =>
+      apiFetch<Annotation[]>(
+        `/samples/${sampleId}/annotations?dataset_id=${datasetId}`,
+      ),
+    staleTime: Infinity, // annotations don't change during session
+    enabled: !!sampleId,
   });
 }

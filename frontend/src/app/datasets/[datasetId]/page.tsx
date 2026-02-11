@@ -1,11 +1,13 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
+import { useSamples } from "@/hooks/use-samples";
 import { ImageGrid } from "@/components/grid/image-grid";
+import { SampleModal } from "@/components/detail/sample-modal";
 import type { Dataset } from "@/types/dataset";
 
 export default function DatasetPage({
@@ -19,6 +21,13 @@ export default function DatasetPage({
     queryKey: ["dataset", datasetId],
     queryFn: () => apiFetch<Dataset>(`/datasets/${datasetId}`),
   });
+
+  // Access the same samples query cache that ImageGrid uses
+  const { data: samplesData } = useSamples(datasetId);
+  const allSamples = useMemo(
+    () => samplesData?.pages.flatMap((p) => p.items) ?? [],
+    [samplesData],
+  );
 
   return (
     <div className="flex h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
@@ -45,6 +54,7 @@ export default function DatasetPage({
       </header>
 
       <ImageGrid datasetId={datasetId} />
+      <SampleModal datasetId={datasetId} samples={allSamples} />
     </div>
   );
 }
