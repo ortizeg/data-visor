@@ -9,6 +9,7 @@ import { useSamples } from "@/hooks/use-samples";
 import { ImageGrid } from "@/components/grid/image-grid";
 import { SampleModal } from "@/components/detail/sample-modal";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
+import { OverlayToggle } from "@/components/toolbar/overlay-toggle";
 import type { Dataset } from "@/types/dataset";
 
 export default function DatasetPage({
@@ -50,6 +51,9 @@ export default function DatasetPage({
             <span className="text-sm text-zinc-500 dark:text-zinc-400">
               {dataset.image_count.toLocaleString()} images
             </span>
+            <OverlayToggle
+              hasPredictions={(dataset.prediction_count ?? 0) > 0}
+            />
           </div>
         )}
       </header>

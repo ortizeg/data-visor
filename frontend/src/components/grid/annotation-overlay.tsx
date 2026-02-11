@@ -55,6 +55,9 @@ export function AnnotationOverlay({
     >
       {annotations.map((ann) => {
         const color = getClassColor(ann.category_name);
+        const isPrediction = ann.source === "prediction";
+        const dashLen = strokeWidth * 4;
+        const gapLen = strokeWidth * 2;
         return (
           <g key={ann.id}>
             <rect
@@ -65,6 +68,7 @@ export function AnnotationOverlay({
               fill="none"
               stroke={color}
               strokeWidth={strokeWidth}
+              strokeDasharray={isPrediction ? `${dashLen},${gapLen}` : "none"}
             />
             <text
               x={ann.bbox_x}
@@ -77,6 +81,9 @@ export function AnnotationOverlay({
               strokeWidth={fontSize * 0.15}
             >
               {ann.category_name}
+              {isPrediction && ann.confidence !== null
+                ? ` ${(ann.confidence * 100).toFixed(0)}%`
+                : ""}
             </text>
           </g>
         );
