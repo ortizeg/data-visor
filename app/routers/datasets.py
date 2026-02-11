@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_db, get_ingestion_service
+from app.ingestion.detection_annotation_parser import DetectionAnnotationParser
 from app.ingestion.prediction_parser import PredictionParser
 from app.models.dataset import (
     DatasetListResponse,
@@ -146,7 +147,13 @@ def import_predictions(
     request: PredictionImportRequest,
     db: DuckDBRepo = Depends(get_db),
 ) -> PredictionImportResponse:
-    """Import model predictions from a COCO detection results JSON file.
+    """Import model predictions into a dataset.
+
+    Supports two formats (set via ``request.format``):
+
+    - ``coco``: Single COCO detection results JSON file.
+    - ``detection_annotation``: Directory of per-image JSON files with
+      normalised bounding boxes.
 
     Replaces any existing predictions for this dataset (ground truth is
     never touched).  Updates the dataset's ``prediction_count``.
@@ -160,51 +167,90 @@ def import_predictions(
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
 
-        # 2. Load category mapping from categories table
-        cat_rows = cursor.execute(
-            "SELECT category_id, name FROM categories WHERE dataset_id = ?",
-            [dataset_id],
-        ).fetchall()
-        category_map: dict[int, str] = {r[0]: r[1] for r in cat_rows}
-
-        # 3. Delete existing predictions (preserve ground truth)
+        # 2. Delete existing predictions (preserve ground truth)
         cursor.execute(
             "DELETE FROM annotations "
             "WHERE dataset_id = ? AND source = 'prediction'",
             [dataset_id],
         )
 
-        # 4. Stream-parse and insert predictions
         prediction_path = Path(request.prediction_path)
-        if not prediction_path.exists():
-            raise HTTPException(
-                status_code=400,
-                detail=f"Prediction file not found: {request.prediction_path}",
-            )
-
-        parser = PredictionParser()
         total_inserted = 0
         total_skipped = 0
 
-        for batch_df in parser.parse_streaming(
-            file_path=prediction_path,
-            category_map=category_map,
-            dataset_id=dataset_id,
-        ):
-            cursor.execute(
-                "INSERT INTO annotations SELECT * FROM batch_df"
+        if request.format == "detection_annotation":
+            # --- DetectionAnnotation format (directory of per-image JSONs) ---
+            if not prediction_path.is_dir():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Expected a directory for detection_annotation format: {request.prediction_path}",
+                )
+
+            # Build sample lookup: filename -> (sample_id, width, height)
+            sample_rows = cursor.execute(
+                "SELECT id, file_name, width, height FROM samples WHERE dataset_id = ?",
+                [dataset_id],
+            ).fetchall()
+            sample_lookup: dict[str, tuple[str, int, int]] = {
+                r[1]: (r[0], r[2], r[3]) for r in sample_rows
+            }
+
+            parser = DetectionAnnotationParser()
+            for batch_df in parser.parse_directory(
+                dir_path=prediction_path,
+                sample_lookup=sample_lookup,
+                dataset_id=dataset_id,
+            ):
+                cursor.execute(
+                    "INSERT INTO annotations SELECT * FROM batch_df"
+                )
+                total_inserted += len(batch_df)
+
+            # Skipped count: files that didn't match any sample
+            json_count = len(list(prediction_path.glob("*.json")))
+            matched_files = len(
+                {r[1] for r in sample_rows} & {
+                    json.loads(p.read_bytes()).get("filename", "")
+                    for p in prediction_path.glob("*.json")
+                    if p.stat().st_size < 10_000_000  # skip unreasonably large files
+                }
             )
-            total_inserted += len(batch_df)
+            total_skipped = json_count - matched_files
 
-        # Count skipped by comparing: file has N items, inserted M
-        # Recount from file to determine total predictions in file
-        import ijson
+        else:
+            # --- COCO detection results format (single JSON file) ---
+            if not prediction_path.exists():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Prediction file not found: {request.prediction_path}",
+                )
 
-        with open(prediction_path, "rb") as f:
-            file_total = sum(1 for _ in ijson.items(f, "item"))
-        total_skipped = file_total - total_inserted
+            # Load category mapping from categories table
+            cat_rows = cursor.execute(
+                "SELECT category_id, name FROM categories WHERE dataset_id = ?",
+                [dataset_id],
+            ).fetchall()
+            category_map: dict[int, str] = {r[0]: r[1] for r in cat_rows}
 
-        # 5. Update dataset prediction_count
+            parser_coco = PredictionParser()
+            for batch_df in parser_coco.parse_streaming(
+                file_path=prediction_path,
+                category_map=category_map,
+                dataset_id=dataset_id,
+            ):
+                cursor.execute(
+                    "INSERT INTO annotations SELECT * FROM batch_df"
+                )
+                total_inserted += len(batch_df)
+
+            # Count skipped by comparing file total vs inserted
+            import ijson
+
+            with open(prediction_path, "rb") as f:
+                file_total = sum(1 for _ in ijson.items(f, "item"))
+            total_skipped = file_total - total_inserted
+
+        # 3. Update dataset prediction_count
         cursor.execute(
             "UPDATE datasets SET prediction_count = ? WHERE id = ?",
             [total_inserted, dataset_id],
@@ -215,11 +261,9 @@ def import_predictions(
 
     message = f"Imported {total_inserted} predictions"
     if total_skipped > 0:
-        message += f" ({total_skipped} skipped due to unmapped categories)"
+        message += f" ({total_skipped} skipped — unmatched files or categories)"
 
-    logger.info(
-        "Dataset %s: %s", dataset_id, message
-    )
+    logger.info("Dataset %s: %s", dataset_id, message)
 
     return PredictionImportResponse(
         dataset_id=dataset_id,
