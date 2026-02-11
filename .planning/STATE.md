@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 2 complete. Visual Grid with annotation overlays, detail modal, and deterministic colors delivered. Phase 3 (Filtering & Search) next.
+**Current focus:** Phase 3 in progress. Filter infrastructure delivered (03-01). Search/sort, saved views, and tagging next (03-02).
 
 ## Current Position
 
-Phase: 2 of 7 (Visual Grid) -- COMPLETE
-Plan: 3 of 3 in current phase
-Status: Complete
-Last activity: 2026-02-11 -- Phase 2 verified and completed
+Phase: 3 of 7 (Filtering & Search)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-11 -- Completed 03-01-PLAN.md
 
-Progress: [███████████░░░░░░░░░░] 7/21
+Progress: [████████████░░░░░░░░░] 8/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.0 min
-- Total execution time: 29 min
+- Total plans completed: 8
+- Average duration: 4.3 min
+- Total execution time: 34 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [███████████░░░░░░░░░░] 7/21
 |-------|-------|-------|----------|
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
+| 3. Filtering & Search | 1/2 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (4 min), 02-01 (4 min), 02-02 (5 min), 02-03 (6 min)
+- Last 5 plans: 02-01 (4 min), 02-02 (5 min), 02-03 (6 min), 03-01 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -71,6 +72,10 @@ Recent decisions affecting current work:
 - [02-03]: Native <dialog> element for modal (focus trap, Escape, backdrop for free)
 - [02-03]: SVG aspectMode prop: "slice" for object-cover thumbnails, "meet" for full-res modal
 - [02-03]: Per-sample annotation endpoint for modal (batch not needed for single detail view)
+- [03-01]: Individual Query() params (not Pydantic Query model) for filter endpoint
+- [03-01]: Filter facets queryKey uses only datasetId to avoid N+1 refetches
+- [03-01]: Sorted tags array in queryKey for structural stability
+- [03-01]: Flex-1 layout for grid container instead of fixed calc() height
 
 ### Pending Todos
 
@@ -84,5 +89,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Phase 2 complete. All 3 plans executed, verified, and approved.
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
