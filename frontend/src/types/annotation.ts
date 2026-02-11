@@ -1,6 +1,6 @@
 /**
  * TypeScript types matching backend AnnotationResponse
- * model from app/models/annotation.py.
+ * and BatchAnnotationsResponse models from app/models/annotation.py.
  */
 
 export interface Annotation {
@@ -16,4 +16,12 @@ export interface Annotation {
   is_crowd: boolean;
   source: string;
   confidence: number | null;
+}
+
+/**
+ * Response from the batch annotations endpoint.
+ * Maps sample_id to its list of annotations.
+ */
+export interface BatchAnnotationsResponse {
+  annotations: Record<string, Annotation[]>;
 }

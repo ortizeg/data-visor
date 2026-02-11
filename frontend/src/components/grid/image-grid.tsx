@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
+import { useAnnotationsBatch } from "@/hooks/use-annotations";
 import { useSamples } from "@/hooks/use-samples";
 import { useUIStore } from "@/stores/ui-store";
 import { MIN_CELL_WIDTH, MIN_COLUMNS, MAX_COLUMNS } from "@/lib/constants";
@@ -84,6 +85,26 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
     fetchNextPage,
     rowCount,
   ]);
+
+  // Collect sample IDs from visible virtual rows for batch annotation fetch
+  const visibleSampleIds = useMemo(() => {
+    const virtualItems = rowVirtualizer.getVirtualItems();
+    const ids: string[] = [];
+    for (const vRow of virtualItems) {
+      for (let col = 0; col < columnsPerRow; col++) {
+        const idx = vRow.index * columnsPerRow + col;
+        const sample = allSamples[idx];
+        if (sample) ids.push(sample.id);
+      }
+    }
+    return ids;
+  }, [rowVirtualizer.getVirtualItems(), allSamples, columnsPerRow]);
+
+  // Batch-fetch annotations for all visible samples in a single request
+  const { data: annotationMap } = useAnnotationsBatch(
+    datasetId,
+    visibleSampleIds,
+  );
 
   // Responsive column count via ResizeObserver with 200ms debounce
   useEffect(() => {
@@ -174,6 +195,7 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
                     key={sample.id}
                     sample={sample}
                     datasetId={datasetId}
+                    annotations={annotationMap?.[sample.id] ?? []}
                   />
                 );
               })}
