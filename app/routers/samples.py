@@ -115,32 +115,35 @@ def get_filter_facets(
     """
     cursor = db.connection.cursor()
     try:
-        # Categories (from annotations -- captures actual usage)
+        # Categories with annotation counts
         categories = [
-            row[0]
+            {"name": row[0], "count": row[1]}
             for row in cursor.execute(
-                "SELECT DISTINCT category_name FROM annotations "
-                "WHERE dataset_id = ? ORDER BY category_name",
+                "SELECT category_name, COUNT(*) as cnt FROM annotations "
+                "WHERE dataset_id = ? GROUP BY category_name ORDER BY category_name",
                 [dataset_id],
             ).fetchall()
         ]
 
-        # Splits
+        # Splits with sample counts
         splits = [
-            row[0]
+            {"name": row[0], "count": row[1]}
             for row in cursor.execute(
-                "SELECT DISTINCT split FROM samples "
-                "WHERE dataset_id = ? AND split IS NOT NULL ORDER BY split",
+                "SELECT split, COUNT(*) as cnt FROM samples "
+                "WHERE dataset_id = ? AND split IS NOT NULL "
+                "GROUP BY split ORDER BY split",
                 [dataset_id],
             ).fetchall()
         ]
 
-        # Tags (unnest the LIST column, then distinct)
+        # Tags with sample counts (unnest then count)
         tags = [
-            row[0]
+            {"name": row[0], "count": row[1]}
             for row in cursor.execute(
-                "SELECT DISTINCT UNNEST(tags) AS tag FROM samples "
-                "WHERE dataset_id = ? AND tags IS NOT NULL ORDER BY tag",
+                "SELECT tag, COUNT(*) as cnt FROM ("
+                "  SELECT UNNEST(tags) AS tag FROM samples "
+                "  WHERE dataset_id = ? AND tags IS NOT NULL"
+                ") GROUP BY tag ORDER BY tag",
                 [dataset_id],
             ).fetchall()
         ]
