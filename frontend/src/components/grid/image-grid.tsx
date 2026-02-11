@@ -162,7 +162,6 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
       <div
         ref={parentRef}
         className="flex-1 overflow-auto"
-        style={{ height: "calc(100vh - 120px)" }}
       >
         <div
           style={{

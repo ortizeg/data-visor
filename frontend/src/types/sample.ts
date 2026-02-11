@@ -11,6 +11,7 @@ export interface Sample {
   height: number;
   thumbnail_path: string | null;
   split: string | null;
+  tags: string[];
 }
 
 export interface PaginatedSamples {

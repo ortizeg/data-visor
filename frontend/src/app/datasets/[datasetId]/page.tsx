@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { useSamples } from "@/hooks/use-samples";
 import { ImageGrid } from "@/components/grid/image-grid";
 import { SampleModal } from "@/components/detail/sample-modal";
+import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import type { Dataset } from "@/types/dataset";
 
 export default function DatasetPage({
@@ -53,7 +54,12 @@ export default function DatasetPage({
         )}
       </header>
 
-      <ImageGrid datasetId={datasetId} />
+      <div className="flex flex-1 overflow-hidden">
+        <FilterSidebar datasetId={datasetId} />
+        <div className="flex-1 overflow-hidden">
+          <ImageGrid datasetId={datasetId} />
+        </div>
+      </div>
       <SampleModal datasetId={datasetId} samples={allSamples} />
     </div>
   );
