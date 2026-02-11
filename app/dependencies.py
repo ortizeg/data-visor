@@ -1,12 +1,15 @@
-"""FastAPI dependency injection for DuckDB and future services."""
+"""FastAPI dependency injection for DuckDB and application services."""
 
 from collections.abc import Generator
-from typing import Any
 
 import duckdb
 from fastapi import Depends, Request
 
+from app.plugins.registry import PluginRegistry
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.repositories.storage import StorageBackend
+from app.services.image_service import ImageService
+from app.services.ingestion import IngestionService
 
 
 def get_db(request: Request) -> DuckDBRepo:
@@ -25,11 +28,31 @@ def get_cursor(
         cursor.close()
 
 
-def get_storage() -> Any:
-    """Placeholder for storage service (Plan 01-03)."""
-    raise NotImplementedError("Storage service not yet implemented")
+def get_storage(request: Request) -> StorageBackend:
+    """Return the application-wide StorageBackend stored on app.state."""
+    return request.app.state.storage
 
 
-def get_image_service() -> Any:
-    """Placeholder for image/thumbnail service (Plan 01-03)."""
-    raise NotImplementedError("Image service not yet implemented")
+def get_image_service(request: Request) -> ImageService:
+    """Return the application-wide ImageService stored on app.state."""
+    return request.app.state.image_service
+
+
+def get_plugin_registry(request: Request) -> PluginRegistry:
+    """Return the application-wide PluginRegistry stored on app.state."""
+    return request.app.state.plugin_registry
+
+
+def get_ingestion_service(
+    db: DuckDBRepo = Depends(get_db),
+    storage: StorageBackend = Depends(get_storage),
+    image_service: ImageService = Depends(get_image_service),
+    plugin_registry: PluginRegistry = Depends(get_plugin_registry),
+) -> IngestionService:
+    """Compose an IngestionService from its collaborators."""
+    return IngestionService(
+        db=db,
+        storage=storage,
+        image_service=image_service,
+        plugin_registry=plugin_registry,
+    )
