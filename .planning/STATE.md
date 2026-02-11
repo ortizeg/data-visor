@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 1 complete. Ready for Phase 2 - Visual Grid.
+**Current focus:** Phase 2 in progress. Visual Grid foundation built, annotation overlays and detail modal next.
 
 ## Current Position
 
-Phase: 1 of 7 (Data Foundation) -- COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-11 -- Completed 01-04-PLAN.md (Integration Pipeline)
+Phase: 2 of 7 (Visual Grid)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-11 -- Completed 02-01-PLAN.md (Visual Grid Foundation)
 
-Progress: [████░░░░░░░░░░░░░░░░░] 4/21
+Progress: [█████░░░░░░░░░░░░░░░░] 5/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 3.5 min
-- Total execution time: 14 min
+- Total plans completed: 5
+- Average duration: 3.6 min
+- Total execution time: 18 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Data Foundation | 4/4 | 14 min | 3.5 min |
+| 2. Visual Grid | 1/3 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4 min), 01-02 (2 min), 01-03 (4 min), 01-04 (4 min)
+- Last 5 plans: 01-02 (2 min), 01-03 (4 min), 01-04 (4 min), 02-01 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -58,6 +59,10 @@ Recent decisions affecting current work:
 - [01-04]: Sync generator for SSE (not async) -- FastAPI wraps in StreamingResponse
 - [01-04]: Thumbnail generation capped at 500 during ingestion; rest on-demand
 - [01-04]: Service composition via FastAPI DI (get_ingestion_service)
+- [02-01]: Row-only virtualization with CSS grid columns (not dual virtualizer)
+- [02-01]: Unoptimized Next.js images -- backend serves its own WebP thumbnails
+- [02-01]: Simple Zustand create() pattern (not per-request) for fully client-rendered grid
+- [02-01]: src/ directory structure for frontend (tsconfig @/* -> ./src/*)
 
 ### Pending Todos
 
@@ -70,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-11T04:48:03Z
-Stopped at: Completed 01-04-PLAN.md (Integration Pipeline). Phase 1 complete.
+Last session: 2026-02-11T05:22:38Z
+Stopped at: Completed 02-01-PLAN.md (Visual Grid Foundation). Phase 2 plan 1 of 3 done.
 Resume file: None
