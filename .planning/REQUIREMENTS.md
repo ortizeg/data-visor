@@ -17,7 +17,7 @@
 
 - [x] **GRID-01**: Virtualized infinite-scroll grid of image thumbnails
 - [x] **GRID-02**: Bounding box annotation overlays with class labels on images
-- [ ] **GRID-03**: GT vs Predictions comparison toggle (solid vs dashed lines)
+- [x] **GRID-03**: GT vs Predictions comparison toggle (solid vs dashed lines)
 - [x] **GRID-04**: Deterministic class-to-color hashing (consistent across sessions)
 - [x] **GRID-05**: Sample detail modal with full-resolution image and all metadata
 
@@ -37,9 +37,9 @@
 
 ### Model Evaluation
 
-- [ ] **EVAL-01**: Import pre-computed model predictions (JSON format)
+- [x] **EVAL-01**: Import pre-computed model predictions (JSON format)
 - [ ] **EVAL-02**: Error categorization: Hard False Positives, Label Errors, False Negatives
-- [ ] **EVAL-03**: Dataset statistics dashboard (class distribution, annotation counts, split breakdown)
+- [x] **EVAL-03**: Dataset statistics dashboard (class distribution, annotation counts, split breakdown)
 
 ### Intelligence & Agents
 
@@ -92,7 +92,7 @@
 | INGEST-05 | Phase 1: Data Foundation | Complete |
 | GRID-01 | Phase 2: Visual Grid | Complete |
 | GRID-02 | Phase 2: Visual Grid | Complete |
-| GRID-03 | Phase 4: Predictions & Comparison | Pending |
+| GRID-03 | Phase 4: Predictions & Comparison | Complete |
 | GRID-04 | Phase 2: Visual Grid | Complete |
 | GRID-05 | Phase 2: Visual Grid | Complete |
 | FILT-01 | Phase 3: Filtering & Search | Complete |
@@ -103,9 +103,9 @@
 | EMBED-02 | Phase 5: Embeddings & Visualization | Pending |
 | EMBED-03 | Phase 5: Embeddings & Visualization | Pending |
 | EMBED-04 | Phase 5: Embeddings & Visualization | Pending |
-| EVAL-01 | Phase 4: Predictions & Comparison | Pending |
+| EVAL-01 | Phase 4: Predictions & Comparison | Complete |
 | EVAL-02 | Phase 6: Error Analysis & Similarity | Pending |
-| EVAL-03 | Phase 4: Predictions & Comparison | Pending |
+| EVAL-03 | Phase 4: Predictions & Comparison | Complete |
 | AGENT-01 | Phase 7: Intelligence & Agents | Pending |
 | AGENT-02 | Phase 7: Intelligence & Agents | Pending |
 | AGENT-03 | Phase 6: Error Analysis & Similarity | Pending |
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 3 completion*
+*Last updated: 2026-02-11 after Phase 4 completion*
