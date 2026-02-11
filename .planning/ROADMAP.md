@@ -80,12 +80,12 @@ Plans:
   1. User can import a JSON file of pre-computed model predictions and see them stored alongside ground truth
   2. User can toggle between GT-only, Predictions-only, and both overlaid (solid lines for GT, dashed for predictions)
   3. User can view a dataset statistics dashboard showing class distribution, annotation counts, and split breakdown
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Prediction import pipeline (JSON format), DuckDB storage schema for predictions
-- [ ] 04-02: GT vs Predictions comparison toggle (dual-layer rendering: solid vs dashed), UI controls
-- [ ] 04-03: Dataset statistics dashboard (class distribution, annotation counts, split breakdown charts)
+- [ ] 04-01-PLAN.md -- Streaming prediction parser (COCO results format), import endpoint, prediction_count column
+- [ ] 04-02-PLAN.md -- GT vs Predictions overlay toggle (solid vs dashed SVG), source filter on batch annotations
+- [ ] 04-03-PLAN.md -- Dataset statistics dashboard (Recharts bar charts, summary cards, Grid/Statistics tab system)
 
 ### Phase 5: Embeddings & Visualization
 **Goal**: Users can generate image embeddings and explore their dataset as a 2D scatter plot with interactive lasso selection that filters the grid
