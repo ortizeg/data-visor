@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * Statistics dashboard layout with sub-tabs for Overview and Evaluation.
+ * Statistics dashboard layout with sub-tabs for Overview, Evaluation,
+ * and Error Analysis.
  *
  * Fetches dataset statistics and renders the selected sub-tab:
  * - Overview: annotation summary, class distribution, split breakdown
  * - Evaluation: PR curves, mAP, confusion matrix (only when predictions exist)
+ * - Error Analysis: error categorization, per-class breakdown, error samples
  */
 
 import { useState } from "react";
@@ -15,12 +17,13 @@ import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
 import { EvaluationPanel } from "@/components/stats/evaluation-panel";
+import { ErrorAnalysisPanel } from "@/components/stats/error-analysis-panel";
 
 interface StatsDashboardProps {
   datasetId: string;
 }
 
-type SubTab = "overview" | "evaluation";
+type SubTab = "overview" | "evaluation" | "error_analysis";
 
 function SkeletonCard() {
   return (
@@ -79,6 +82,17 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
           >
             Evaluation
           </button>
+          <button
+            onClick={() => setActiveTab("error_analysis")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "error_analysis"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Error Analysis
+          </button>
         </div>
       )}
 
@@ -129,6 +143,10 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
       {activeTab === "evaluation" && hasPredictions && (
         <EvaluationPanel datasetId={datasetId} />
+      )}
+
+      {activeTab === "error_analysis" && hasPredictions && (
+        <ErrorAnalysisPanel datasetId={datasetId} />
       )}
     </div>
   );
