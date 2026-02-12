@@ -69,12 +69,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can run a deployment script that provisions a GCP VM with persistent disk and starts DataVisor accessible at a public IP with HTTPS
   4. User can follow deployment documentation to configure environment variables, deploy to GCP, and set up a custom domain
   5. DuckDB data, Qdrant vectors, and thumbnail cache persist across container restarts without data loss
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
-- [ ] 08-03: TBD
+- [ ] 08-01-PLAN.md -- Backend Dockerfile + config fixes (CORS, DuckDB CHECKPOINT)
+- [ ] 08-02-PLAN.md -- Frontend Dockerfile + Caddyfile reverse proxy with auth
+- [ ] 08-03-PLAN.md -- Docker Compose orchestration + .dockerignore + env config
+- [ ] 08-04-PLAN.md -- Local run script + GCP deployment scripts
+- [ ] 08-05-PLAN.md -- Deployment documentation + full stack verification
 
 ### Phase 9: Smart Ingestion
 **Goal**: Users can import datasets from the UI by pointing at a folder, reviewing auto-detected structure, and confirming import -- no CLI or config files needed
@@ -169,7 +171,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 5. Embeddings & Visualization | v1.0 | 4/4 | Complete | 2026-02-11 |
 | 6. Error Analysis & Similarity | v1.0 | 2/2 | Complete | 2026-02-12 |
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
-| 8. Docker Deployment & Auth | v1.1 | 0/TBD | Not started | - |
+| 8. Docker Deployment & Auth | v1.1 | 0/5 | Planned | - |
 | 9. Smart Ingestion | v1.1 | 0/TBD | Not started | - |
 | 10. Annotation Editing | v1.1 | 0/TBD | Not started | - |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |
