@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 4 complete. All three plans delivered (prediction import, comparison toggle, statistics dashboard). Ready for Phase 5 (Embeddings & Similarity).
+**Current focus:** Phase 5 in progress. Plan 01 (embedding pipeline) complete. Proceeding with UMAP reduction and scatter plot visualization.
 
 ## Current Position
 
-Phase: 4 of 7 (Predictions & Comparison)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-11 -- Completed 04-03-PLAN.md
+Phase: 5 of 7 (Embeddings & Visualization)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-11 -- Completed 05-01-PLAN.md
 
-Progress: [████████████████░░░░░] 12/21
+Progress: [█████████████████░░░░] 13/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 4.0 min
-- Total execution time: 48 min
+- Total plans completed: 13
+- Average duration: 4.1 min
+- Total execution time: 53 min
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [████████████████░░░░░] 12/2
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
+| 5. Embeddings & Visualization | 1/4 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (5 min), 04-01 (3 min), 04-02 (3 min), 04-03 (3 min)
-- Trend: stable, accelerating
+- Last 5 plans: 04-01 (3 min), 04-02 (3 min), 04-03 (3 min), 05-01 (5 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -91,6 +92,11 @@ Recent decisions affecting current work:
 - [04-03]: Server-side aggregation via DuckDB GROUP BY (not client-side)
 - [04-03]: activeTab state in Zustand (ephemeral session state, not URL params)
 - [04-03]: OverlayToggle hidden when Statistics tab active (only relevant to grid view)
+- [05-01]: umap-learn skipped due to numba/llvmlite Python 3.14 incompatibility; scikit-learn installed as fallback
+- [05-01]: EmbeddingService uses StorageBackend directly (not ImageService) for raw image access
+- [05-01]: In-memory dict for progress tracking (ephemeral, per-process)
+- [05-01]: MPS/CUDA/CPU auto-detection for model device placement
+- [05-01]: EventSourceResponse async generator pattern for proper SSE (replaces sync StreamingResponse used in ingestion)
 
 ### Pending Todos
 
@@ -98,11 +104,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 5: SigLIP 2 vs DINOv2 decision requires benchmark spike during embedding implementation
+- Phase 5 Plan 02: umap-learn cannot install on Python 3.14 (numba/llvmlite incompatibility). Need alternative: scikit-learn TSNE, pure-Python UMAP, or wait for compatible numba release.
 - Phase 7: Pydantic AI tool design and VLM prompt engineering are less documented -- use research-phase before planning
 
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 04-03-PLAN.md (Phase 4 complete, 3/3 plans)
+Stopped at: Completed 05-01-PLAN.md (Phase 5, 1/4 plans)
 Resume file: None
