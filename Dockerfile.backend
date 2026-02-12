@@ -1,0 +1,33 @@
+# Stage 1: Build dependencies
+FROM python:3.14-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /app
+COPY pyproject.toml uv.lock ./
+
+# Install all production deps from lockfile
+RUN uv sync --frozen --no-dev --no-editable
+
+# Replace PyTorch with CPU-only build to avoid CUDA wheels (~2.5GB) on x86_64
+RUN uv pip install --python /app/.venv/bin/python \
+    torch --index-url https://download.pytorch.org/whl/cpu
+
+# Stage 2: Runtime
+FROM python:3.14-slim AS runner
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /app/.venv /app/.venv
+COPY app/ ./app/
+COPY plugins/ ./plugins/
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV DATAVISOR_HOST=0.0.0.0
+ENV DATAVISOR_PORT=8000
+
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
