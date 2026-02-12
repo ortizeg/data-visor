@@ -112,11 +112,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can view each prediction error categorized as Hard False Positive, Label Error, or False Negative
   2. User can select any image and find visually similar images ranked by embedding distance via Qdrant similarity search
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: IoU-based evaluation pipeline (TP/FP/FN matching), error categorization logic and UI
-- [ ] 06-02: Query Coordinator for hybrid DuckDB + Qdrant queries, similarity search "find similar" action
+- [ ] 06-01-PLAN.md -- Error categorization service (TP/FP/FN/LE matching) + Error Analysis sub-tab in statistics dashboard
+- [ ] 06-02-PLAN.md -- Qdrant similarity service (local mode) + "Find Similar" button in SampleModal
 
 ### Phase 7: Intelligence & Agents
 **Goal**: An AI agent automatically detects patterns in prediction errors and recommends corrective actions, while VLM auto-tagging enriches sample metadata
