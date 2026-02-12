@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { FilterSection } from "./filter-section";
+import { LabelsSection } from "./labels-section";
 import { SearchInput } from "./search-input";
 import { SortControls } from "./sort-controls";
 import { SavedViewPicker } from "./saved-view-picker";
@@ -110,6 +111,8 @@ export function FilterSidebar({ datasetId }: FilterSidebarProps) {
 
       {/* Collapsible filter sections */}
       <div className="flex-1 overflow-y-auto px-3">
+        <LabelsSection items={facets?.sources ?? []} />
+
         <FilterSection
           title="Category"
           items={facets?.categories ?? []}

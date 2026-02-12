@@ -167,11 +167,11 @@ def import_predictions(
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
 
-        # 2. Delete existing predictions (preserve ground truth)
+        # 2. Delete existing annotations for this run (preserve ground truth & other runs)
         cursor.execute(
             "DELETE FROM annotations "
-            "WHERE dataset_id = ? AND source = 'prediction'",
-            [dataset_id],
+            "WHERE dataset_id = ? AND source = ?",
+            [dataset_id, request.run_name],
         )
 
         prediction_path = Path(request.prediction_path)
@@ -200,6 +200,7 @@ def import_predictions(
                 dir_path=prediction_path,
                 sample_lookup=sample_lookup,
                 dataset_id=dataset_id,
+                source=request.run_name,
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"
@@ -237,6 +238,7 @@ def import_predictions(
                 file_path=prediction_path,
                 category_map=category_map,
                 dataset_id=dataset_id,
+                source=request.run_name,
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"
@@ -250,10 +252,15 @@ def import_predictions(
                 file_total = sum(1 for _ in ijson.items(f, "item"))
             total_skipped = file_total - total_inserted
 
-        # 3. Update dataset prediction_count
+        # 3. Update dataset prediction_count (all non-GT annotations)
+        pred_count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations "
+            "WHERE dataset_id = ? AND source != 'ground_truth'",
+            [dataset_id],
+        ).fetchone()[0]
         cursor.execute(
             "UPDATE datasets SET prediction_count = ? WHERE id = ?",
-            [total_inserted, dataset_id],
+            [pred_count, dataset_id],
         )
 
     finally:

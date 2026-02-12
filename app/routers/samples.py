@@ -147,10 +147,20 @@ def get_filter_facets(
                 [dataset_id],
             ).fetchall()
         ]
+
+        # Annotation sources with counts
+        sources = [
+            {"name": row[0], "count": row[1]}
+            for row in cursor.execute(
+                "SELECT source, COUNT(*) as cnt FROM annotations "
+                "WHERE dataset_id = ? GROUP BY source ORDER BY source",
+                [dataset_id],
+            ).fetchall()
+        ]
     finally:
         cursor.close()
 
-    return {"categories": categories, "splits": splits, "tags": tags}
+    return {"categories": categories, "splits": splits, "tags": tags, "sources": sources}
 
 
 @router.patch("/bulk-tag")
@@ -222,9 +232,9 @@ def get_batch_annotations(
     sample_ids: str = Query(
         ..., description="Comma-separated sample IDs (max 200)"
     ),
-    source: str | None = Query(
+    sources: str | None = Query(
         None,
-        description="Filter by annotation source: ground_truth, prediction, or omit for all",
+        description="Comma-separated annotation sources to include, or omit for all",
     ),
     db: DuckDBRepo = Depends(get_db),
 ) -> BatchAnnotationsResponse:
@@ -248,11 +258,14 @@ def get_batch_annotations(
     placeholders = ", ".join(["?"] * len(id_list))
     params: list = [dataset_id] + id_list
 
-    # Optional source filter (ground_truth, prediction, or all)
+    # Optional multi-value source filter
     source_clause = ""
-    if source:
-        source_clause = " AND source = ?"
-        params.append(source)
+    if sources:
+        source_list = [s.strip() for s in sources.split(",") if s.strip()]
+        if source_list:
+            src_placeholders = ", ".join(["?"] * len(source_list))
+            source_clause = f" AND source IN ({src_placeholders})"
+            params.extend(source_list)
 
     cursor = db.connection.cursor()
     try:
@@ -297,18 +310,21 @@ def get_batch_annotations(
 def get_sample_annotations(
     sample_id: str,
     dataset_id: str = Query(..., description="Dataset ID"),
-    source: str | None = Query(
+    sources: str | None = Query(
         None,
-        description="Filter by annotation source: ground_truth, prediction, or omit for all",
+        description="Comma-separated annotation sources to include, or omit for all",
     ),
     db: DuckDBRepo = Depends(get_db),
 ) -> list[AnnotationResponse]:
     """Return all annotations for a given sample."""
     params: list = [sample_id, dataset_id]
     source_clause = ""
-    if source:
-        source_clause = " AND source = ?"
-        params.append(source)
+    if sources:
+        source_list = [s.strip() for s in sources.split(",") if s.strip()]
+        if source_list:
+            src_placeholders = ", ".join(["?"] * len(source_list))
+            source_clause = f" AND source IN ({src_placeholders})"
+            params.extend(source_list)
 
     cursor = db.connection.cursor()
     try:

@@ -1,20 +1,26 @@
 "use client";
 
 /**
- * Statistics dashboard layout with charts and summary cards.
+ * Statistics dashboard layout with sub-tabs for Overview and Evaluation.
  *
- * Fetches dataset statistics and renders annotation summary,
- * class distribution, and split breakdown sections.
+ * Fetches dataset statistics and renders the selected sub-tab:
+ * - Overview: annotation summary, class distribution, split breakdown
+ * - Evaluation: PR curves, mAP, confusion matrix (only when predictions exist)
  */
+
+import { useState } from "react";
 
 import { useStatistics } from "@/hooks/use-statistics";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
+import { EvaluationPanel } from "@/components/stats/evaluation-panel";
 
 interface StatsDashboardProps {
   datasetId: string;
 }
+
+type SubTab = "overview" | "evaluation";
 
 function SkeletonCard() {
   return (
@@ -35,6 +41,9 @@ function SkeletonChart({ height }: { height: string }) {
 
 export function StatsDashboard({ datasetId }: StatsDashboardProps) {
   const { data: stats, isLoading, error } = useStatistics(datasetId);
+  const [activeTab, setActiveTab] = useState<SubTab>("overview");
+
+  const hasPredictions = stats && stats.summary.pred_annotations > 0;
 
   if (error) {
     return (
@@ -46,46 +55,81 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
   return (
     <div className="p-6 overflow-y-auto h-full space-y-6">
-      {/* Summary Stats */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-          Summary
-        </h2>
-        {isLoading || !stats ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : (
-          <AnnotationSummary summary={stats.summary} />
-        )}
-      </section>
+      {/* Sub-tab navigation */}
+      {(hasPredictions || isLoading) && (
+        <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "overview"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("evaluation")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "evaluation"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Evaluation
+          </button>
+        </div>
+      )}
 
-      {/* Class Distribution */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-          Class Distribution
-        </h2>
-        {isLoading || !stats ? (
-          <SkeletonChart height="h-[300px]" />
-        ) : (
-          <ClassDistribution data={stats.class_distribution} />
-        )}
-      </section>
+      {activeTab === "overview" && (
+        <>
+          {/* Summary Stats */}
+          <section>
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+              Summary
+            </h2>
+            {isLoading || !stats ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            ) : (
+              <AnnotationSummary summary={stats.summary} />
+            )}
+          </section>
 
-      {/* Split Breakdown */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-          Split Breakdown
-        </h2>
-        {isLoading || !stats ? (
-          <SkeletonChart height="h-[250px]" />
-        ) : (
-          <SplitBreakdown data={stats.split_breakdown} />
-        )}
-      </section>
+          {/* Class Distribution */}
+          <section>
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+              Class Distribution
+            </h2>
+            {isLoading || !stats ? (
+              <SkeletonChart height="h-[300px]" />
+            ) : (
+              <ClassDistribution data={stats.class_distribution} />
+            )}
+          </section>
+
+          {/* Split Breakdown */}
+          <section>
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+              Split Breakdown
+            </h2>
+            {isLoading || !stats ? (
+              <SkeletonChart height="h-[250px]" />
+            ) : (
+              <SplitBreakdown data={stats.split_breakdown} />
+            )}
+          </section>
+        </>
+      )}
+
+      {activeTab === "evaluation" && hasPredictions && (
+        <EvaluationPanel datasetId={datasetId} />
+      )}
     </div>
   );
 }

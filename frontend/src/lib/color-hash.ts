@@ -23,3 +23,14 @@ const colorHash = new ColorHash({
 export function getClassColor(className: string): string {
   return colorHash.hex(className);
 }
+
+/**
+ * Get a deterministic hex color for an annotation source name.
+ *
+ * @example
+ * getSourceColor("ground_truth")  // always returns the same hex
+ * getSourceColor("yolov8-v1")     // always returns the same hex
+ */
+export function getSourceColor(source: string): string {
+  return colorHash.hex(source);
+}

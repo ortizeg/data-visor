@@ -17,6 +17,7 @@ class PredictionImportRequest(BaseModel):
 
     prediction_path: str
     format: Literal["coco", "detection_annotation"] = "coco"
+    run_name: str = "prediction"
 
 
 class PredictionImportResponse(BaseModel):

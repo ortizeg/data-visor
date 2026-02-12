@@ -9,7 +9,6 @@ import { useSamples } from "@/hooks/use-samples";
 import { ImageGrid } from "@/components/grid/image-grid";
 import { SampleModal } from "@/components/detail/sample-modal";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
-import { OverlayToggle } from "@/components/toolbar/overlay-toggle";
 import { StatsDashboard } from "@/components/stats/stats-dashboard";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
@@ -83,11 +82,6 @@ export default function DatasetPage({
               })}
             </div>
 
-            {activeTab === "grid" && (
-              <OverlayToggle
-                hasPredictions={(dataset.prediction_count ?? 0) > 0}
-              />
-            )}
           </div>
         )}
       </header>

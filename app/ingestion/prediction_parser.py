@@ -35,6 +35,7 @@ class PredictionParser:
         category_map: dict[int, str],
         dataset_id: str,
         batch_size: int | None = None,
+        source: str = "prediction",
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of prediction rows matching the annotations schema.
 
@@ -102,7 +103,7 @@ class PredictionParser:
                         "bbox_h": bbox_h,
                         "area": bbox_w * bbox_h,
                         "is_crowd": False,
-                        "source": "prediction",
+                        "source": source,
                         "confidence": float(pred["score"]),
                         "metadata": None,
                     }

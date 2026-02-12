@@ -9,7 +9,7 @@
  * via CSS while preserveAspectRatio handles coordinate mapping.
  */
 
-import { getClassColor } from "@/lib/color-hash";
+import { getSourceColor } from "@/lib/color-hash";
 import type { Annotation } from "@/types/annotation";
 
 interface AnnotationOverlayProps {
@@ -54,8 +54,8 @@ export function AnnotationOverlay({
       aria-hidden="true"
     >
       {annotations.map((ann) => {
-        const color = getClassColor(ann.category_name);
-        const isPrediction = ann.source === "prediction";
+        const color = getSourceColor(ann.source);
+        const isPrediction = ann.source !== "ground_truth";
         const dashLen = strokeWidth * 4;
         const gapLen = strokeWidth * 2;
         return (

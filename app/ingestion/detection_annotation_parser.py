@@ -49,6 +49,7 @@ class DetectionAnnotationParser:
         dir_path: Path,
         sample_lookup: dict[str, tuple[str, int, int]],
         dataset_id: str,
+        source: str = "prediction",
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of prediction rows matching the annotations schema.
 
@@ -134,7 +135,7 @@ class DetectionAnnotationParser:
                         "bbox_h": abs_h,
                         "area": abs_w * abs_h,
                         "is_crowd": False,
-                        "source": "prediction",
+                        "source": source,
                         "confidence": float(ann.get("confidence", 0.0)),
                         "metadata": None,
                     }

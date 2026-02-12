@@ -11,4 +11,5 @@ export interface FilterFacets {
   categories: FacetItem[];
   splits: FacetItem[];
   tags: FacetItem[];
+  sources: FacetItem[];
 }

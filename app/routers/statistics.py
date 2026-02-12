@@ -2,13 +2,15 @@
 
 Endpoints:
 - GET /datasets/{dataset_id}/statistics -- aggregated dataset statistics
+- GET /datasets/{dataset_id}/evaluation -- model evaluation metrics
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_db
+from app.models.evaluation import EvaluationResponse
 from app.models.statistics import (
     ClassDistribution,
     DatasetStatistics,
@@ -16,6 +18,7 @@ from app.models.statistics import (
     SummaryStats,
 )
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.services.evaluation import compute_evaluation
 
 router = APIRouter(prefix="/datasets", tags=["statistics"])
 
@@ -44,7 +47,7 @@ def get_dataset_statistics(
         class_rows = cursor.execute(
             "SELECT category_name, "
             "COUNT(*) FILTER (WHERE source = 'ground_truth') as gt_count, "
-            "COUNT(*) FILTER (WHERE source = 'prediction') as pred_count "
+            "COUNT(*) FILTER (WHERE source != 'ground_truth') as pred_count "
             "FROM annotations WHERE dataset_id = ? "
             "GROUP BY category_name ORDER BY gt_count DESC",
             [dataset_id],
@@ -75,7 +78,7 @@ def get_dataset_statistics(
             "SELECT "
             "(SELECT COUNT(*) FROM samples WHERE dataset_id = ?) as total_images, "
             "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = 'ground_truth') as gt_annotations, "
-            "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = 'prediction') as pred_annotations, "
+            "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth') as pred_annotations, "
             "(SELECT COUNT(DISTINCT category_name) FROM annotations WHERE dataset_id = ?) as total_categories",
             [dataset_id, dataset_id, dataset_id, dataset_id],
         ).fetchone()
@@ -95,3 +98,42 @@ def get_dataset_statistics(
         split_breakdown=split_breakdown,
         summary=summary,
     )
+
+
+@router.get("/{dataset_id}/evaluation", response_model=EvaluationResponse)
+def get_evaluation(
+    dataset_id: str,
+    source: str = Query("prediction"),
+    iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
+    conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
+    db: DuckDBRepo = Depends(get_db),
+) -> EvaluationResponse:
+    """Return evaluation metrics comparing predictions to ground truth.
+
+    Computes PR curves, mAP@50/75/50:95, confusion matrix, and per-class
+    precision/recall at the given IoU and confidence thresholds.
+    """
+    cursor = db.connection.cursor()
+    try:
+        row = cursor.execute(
+            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+
+        # Verify that the requested source has annotations
+        source_count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, source],
+        ).fetchone()[0]
+        if source_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No annotations found for source '{source}'",
+            )
+
+        return compute_evaluation(
+            cursor, dataset_id, source, iou_threshold, conf_threshold
+        )
+    finally:
+        cursor.close()
