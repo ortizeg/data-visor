@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 8 of 13 (Docker Deployment & Auth)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-02-12 — Completed 08-04-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Checkpoint pending (08-05 awaiting user verification of Docker stack)
+Last activity: 2026-02-12 — Completed 08-05-PLAN.md Task 1 (checkpoint pending)
 
-Progress: [████████████████░░░░] 32% (v1.1: 4/5 plans in phase 8)
+Progress: [████████████████████] 40% (v1.1: 5/5 plans in phase 8, checkpoint pending)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [████████████████░░░░] 32% (v1
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | 4/5 | 8 min | 2.0 min |
+| 8. Docker Deployment & Auth | 5/5 | 10 min | 2.0 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -66,6 +66,7 @@ Recent decisions affecting current work:
 - [08-03]: Only Caddy exposes ports 80/443 -- backend and frontend are Docker-internal only
 - [08-04]: VM startup script does NOT auto-start docker compose -- requires manual .env setup first
 - [08-04]: GCP config via env vars with defaults (only GCP_PROJECT_ID required)
+- [08-05]: 10-section deployment docs covering local Docker, GCP, custom domain HTTPS, data persistence, troubleshooting
 
 ### Pending Todos
 
@@ -79,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-04-PLAN.md (Deployment scripts for local Docker and GCP)
+Stopped at: 08-05-PLAN.md checkpoint -- awaiting user verification of full Docker stack
 Resume file: None
