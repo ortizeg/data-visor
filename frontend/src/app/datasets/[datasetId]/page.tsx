@@ -11,6 +11,7 @@ import { SampleModal } from "@/components/detail/sample-modal";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { StatsDashboard } from "@/components/stats/stats-dashboard";
 import { EmbeddingPanel } from "@/components/embedding/embedding-panel";
+import { AutoTagButton } from "@/components/toolbar/auto-tag-button";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
 
@@ -84,6 +85,7 @@ export default function DatasetPage({
               })}
             </div>
 
+            <AutoTagButton datasetId={datasetId} />
           </div>
         )}
       </header>
