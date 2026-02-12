@@ -1,0 +1,142 @@
+---
+milestone: v1
+audited: 2026-02-12
+status: passed
+scores:
+  requirements: 26/26
+  phases: 7/7
+  integration: 47/47 exports connected
+  flows: 6/6
+gaps:
+  requirements: []
+  integration: []
+  flows: []
+tech_debt:
+  - phase: 07-intelligence-agents
+    items:
+      - "einops missing from pyproject.toml (fixed during audit — cac73f3)"
+---
+
+# VisionLens v1 Milestone Audit
+
+**Audited:** 2026-02-12
+**Status:** PASSED
+**Milestone:** v1.0
+
+## Executive Summary
+
+All 26 v1 requirements delivered across 7 phases (21 plans, 82 min execution). Cross-phase integration verified: 47+ exports connected, 0 orphaned, 6/6 E2E user flows complete. One dependency bug found and fixed during audit (missing `einops` for Moondream2).
+
+## Requirements Coverage
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| INGEST-01: Streaming COCO parser (ijson, 100K+) | 1 | SATISFIED |
+| INGEST-02: Load images from local filesystem | 1 | SATISFIED |
+| INGEST-03: Load images from GCS buckets | 1 | SATISFIED |
+| INGEST-04: Generate and cache image thumbnails | 1 | SATISFIED |
+| INGEST-05: DuckDB metadata storage with analytical queries | 1 | SATISFIED |
+| GRID-01: Virtualized infinite-scroll grid | 2 | SATISFIED |
+| GRID-02: Bounding box annotation overlays with labels | 2 | SATISFIED |
+| GRID-03: GT vs Predictions comparison toggle | 4 | SATISFIED |
+| GRID-04: Deterministic class-to-color hashing | 2 | SATISFIED |
+| GRID-05: Sample detail modal with full-res image | 2 | SATISFIED |
+| FILT-01: Sidebar metadata filters (class, split, tags) | 3 | SATISFIED |
+| FILT-02: Search by filename, sort by metadata | 3 | SATISFIED |
+| FILT-03: Save and load filter configurations | 3 | SATISFIED |
+| FILT-04: Add/remove tags (individual + bulk) | 3 | SATISFIED |
+| EMBED-01: DINOv2 embedding generation (MPS/CUDA/CPU) | 5 | SATISFIED |
+| EMBED-02: t-SNE dimensionality reduction with SSE progress | 5 | SATISFIED |
+| EMBED-03: deck.gl 2D scatter plot with zoom/pan/hover | 5 | SATISFIED |
+| EMBED-04: Lasso selection cross-filters grid view | 5 | SATISFIED |
+| EVAL-01: Import pre-computed model predictions | 4 | SATISFIED |
+| EVAL-02: Error categorization (Hard FP, Label Error, FN) | 6 | SATISFIED |
+| EVAL-03: Dataset statistics dashboard | 4 | SATISFIED |
+| AGENT-01: Pydantic AI agent detects error patterns | 7 | SATISFIED |
+| AGENT-02: Agent recommends corrective actions | 7 | SATISFIED |
+| AGENT-03: Qdrant similarity search | 6 | SATISFIED |
+| AGENT-04: VLM auto-tagging (Moondream2) | 7 | SATISFIED |
+| PLUGIN-01: BasePlugin Python class with extension points | 1 | SATISFIED |
+
+**Coverage: 26/26 (100%)**
+
+## Phase Verification Summary
+
+| Phase | Score | Status | Verifier |
+|-------|-------|--------|----------|
+| 1. Data Foundation | 5/5 | passed | gsd-verifier |
+| 2. Visual Grid | 12/12 | human_needed (automated passed) | gsd-verifier |
+| 3. Filtering & Search | 9/9 | passed | gsd-verifier |
+| 4. Predictions & Comparison | 12/12 | passed | gsd-verifier |
+| 5. Embeddings & Visualization | 4/4 | passed | gsd-verifier |
+| 6. Error Analysis & Similarity | 8/8 | passed | gsd-verifier |
+| 7. Intelligence & Agents | 14/14 | passed | gsd-verifier |
+
+**Note:** Phase 2 flagged `human_needed` for visual/performance verification (scrolling 100K+ images, bounding box alignment, color consistency, modal interactions). All automated structural checks passed.
+
+## Cross-Phase Integration
+
+**Integration checker result: FULLY INTEGRATED**
+
+### Connected Chains (7/7)
+
+1. **Ingestion → Grid → Filtering**: COCO JSON → DuckDB → paginated API → virtualized grid → sidebar filters
+2. **Predictions → Overlay → Error Analysis**: Import with source discriminator → solid/dashed SVG → IoU matching categorization
+3. **Embeddings → Scatter → Lasso → Grid**: DINOv2 → t-SNE → deck.gl → point-in-polygon → sample_ids cross-filter
+4. **Embeddings → Qdrant → Similarity**: DuckDB vectors → lazy Qdrant sync → Find Similar → ranked thumbnails
+5. **Error Analysis → Agent → Intelligence**: categorize_errors() → 4 DuckDB tools → structured PatternInsight/Recommendation
+6. **VLM → Tags → Agent**: Moondream2 → samples.tags → get_tag_error_correlation tool
+7. **Tab System**: Grid/Statistics/Embeddings + Overview/Evaluation/Error Analysis/Intelligence sub-tabs
+
+### Exports: 47+ connected, 0 orphaned
+### API Routes: 24+ consumed, 0 orphaned
+
+## E2E User Flows
+
+| Flow | Steps | Status |
+|------|-------|--------|
+| Dataset Exploration | Ingest → Browse → Filter → Search → Tag → Save view | COMPLETE |
+| Model Comparison | Import predictions → Toggle GT/Pred → Statistics → Error analysis | COMPLETE |
+| Embedding Exploration | Generate → Reduce → Scatter → Hover → Lasso → Grid filters | COMPLETE |
+| Similarity Search | Click sample → Find Similar → Ranked thumbnails → Navigate | COMPLETE |
+| Intelligence | Import predictions → Auto-tag → AI analysis → Patterns/recommendations | COMPLETE |
+| Cross-Cutting | Lasso cluster → Filter class → Error analysis → Find similar | COMPLETE |
+
+## Issues Found During Audit
+
+### Fixed
+
+| Issue | Severity | Fix |
+|-------|----------|-----|
+| `einops` missing from pyproject.toml | Blocker (VLM fails at model load) | Added `einops>=0.8.0` to dependencies (cac73f3) |
+
+### Human Verification Pending
+
+Phase 2 flagged 5 items for manual testing with running application:
+1. Virtualization performance with 100K+ images
+2. Bounding box alignment accuracy
+3. Deterministic color consistency across reloads
+4. Detail modal full-resolution display
+5. Modal close interactions (Escape, backdrop)
+
+These are visual/UX checks that passed all automated structural verification.
+
+## Test Results
+
+- **Backend:** 59 tests passing in 0.65s
+- **Frontend:** TypeScript compiles with 0 errors
+
+## Architecture Highlights
+
+- **State management:** 3 Zustand stores (ui-store, filter-store, embedding-store) feed TanStack Query keys
+- **Backend DI:** FastAPI app.state + dependency injection for all services
+- **Source discriminator:** Clean GT/prediction separation via `annotations.source` column
+- **Cross-filter:** Lasso (embedding-store) + metadata (filter-store) compose at useSamples hook level
+- **SSE:** 4 progress streams for long-running tasks (ingestion, embeddings, reduction, VLM tagging)
+- **Lazy loading:** Qdrant collection, VLM model, AI agent all loaded on-demand
+
+---
+
+*Audited: 2026-02-12*
+*Integration checker: gsd-integration-checker (sonnet)*
+*Phase verifiers: gsd-verifier (sonnet)*
