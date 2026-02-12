@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 5 in progress. Plan 01 (embedding pipeline) complete. Proceeding with UMAP reduction and scatter plot visualization.
+**Current focus:** Phase 5 in progress. Plan 02 (dimensionality reduction) complete. Proceeding with scatter plot visualization.
 
 ## Current Position
 
 Phase: 5 of 7 (Embeddings & Visualization)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-11 -- Completed 05-01-PLAN.md
+Last activity: 2026-02-11 -- Completed 05-02-PLAN.md
 
-Progress: [█████████████████░░░░] 13/21
+Progress: [██████████████████░░░] 14/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 4.1 min
-- Total execution time: 53 min
+- Total plans completed: 14
+- Average duration: 4.0 min
+- Total execution time: 56 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [█████████████████░░░░] 13/2
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
-| 5. Embeddings & Visualization | 1/4 | 5 min | 5.0 min |
+| 5. Embeddings & Visualization | 2/4 | 8 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (3 min), 04-02 (3 min), 04-03 (3 min), 05-01 (5 min)
+- Last 5 plans: 04-02 (3 min), 04-03 (3 min), 05-01 (5 min), 05-02 (3 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -97,6 +97,10 @@ Recent decisions affecting current work:
 - [05-01]: In-memory dict for progress tracking (ephemeral, per-process)
 - [05-01]: MPS/CUDA/CPU auto-detection for model device placement
 - [05-01]: EventSourceResponse async generator pattern for proper SSE (replaces sync StreamingResponse used in ingestion)
+- [05-02]: scikit-learn t-SNE used for dimensionality reduction (umap-learn blocked by Python 3.14)
+- [05-02]: t-SNE perplexity clamped to min(30, n_samples-1) for small dataset safety
+- [05-02]: PCA initialization for t-SNE (more stable than random init)
+- [05-02]: Cosine metric for t-SNE matching DINOv2 embedding space semantics
 
 ### Pending Todos
 
@@ -104,11 +108,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 5 Plan 02: umap-learn cannot install on Python 3.14 (numba/llvmlite incompatibility). Need alternative: scikit-learn TSNE, pure-Python UMAP, or wait for compatible numba release.
 - Phase 7: Pydantic AI tool design and VLM prompt engineering are less documented -- use research-phase before planning
 
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 05-01-PLAN.md (Phase 5, 1/4 plans)
+Stopped at: Completed 05-02-PLAN.md (Phase 5, 2/4 plans)
 Resume file: None
