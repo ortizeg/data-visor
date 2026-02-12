@@ -12,6 +12,7 @@ class IngestRequest(BaseModel):
     image_dir: str
     dataset_name: str | None = None
     format: str = "coco"
+    split: str | None = None
 
 
 class DatasetResponse(BaseModel):

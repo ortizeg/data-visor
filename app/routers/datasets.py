@@ -51,6 +51,7 @@ def ingest_dataset(
             image_dir=request.image_dir,
             dataset_name=request.dataset_name,
             format=request.format,
+            split=request.split,
         ):
             event_data = json.dumps(
                 {

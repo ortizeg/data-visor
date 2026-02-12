@@ -66,7 +66,7 @@ class COCOParser(BaseParser):
     # ------------------------------------------------------------------
 
     def build_image_batches(
-        self, file_path: Path, dataset_id: str
+        self, file_path: Path, dataset_id: str, split: str | None = None
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of image/sample records.
 
@@ -90,7 +90,7 @@ class COCOParser(BaseParser):
                     "width": int(width),
                     "height": int(height),
                     "thumbnail_path": None,
-                    "split": None,
+                    "split": split,
                     "metadata": None,
                 }
             )

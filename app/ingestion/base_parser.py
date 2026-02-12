@@ -35,13 +35,19 @@ class BaseParser(ABC):
 
     @abstractmethod
     def build_image_batches(
-        self, file_path: Path, dataset_id: str
+        self, file_path: Path, dataset_id: str, split: str | None = None
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of image/sample records in batches.
 
         Column order **must** match the ``samples`` DuckDB table:
         ``id, dataset_id, file_name, width, height, thumbnail_path,
         split, metadata``.
+
+        Parameters
+        ----------
+        split:
+            Optional split name (``"train"``, ``"val"``, ``"test"``) to
+            populate the ``split`` column.  Defaults to ``None``.
         """
         ...
 
