@@ -122,17 +122,17 @@ Plans:
 **Goal**: An AI agent automatically detects patterns in prediction errors and recommends corrective actions, while VLM auto-tagging enriches sample metadata
 **Depends on**: Phase 6 (error categories, similarity search)
 **Requirements**: AGENT-01, AGENT-02, AGENT-04
-**Research flag**: NEEDS RESEARCH -- Pydantic AI tool design, VLM prompt engineering, calibration methodology
+**Research flag**: Researched (07-RESEARCH.md)
 **Success Criteria** (what must be TRUE):
   1. Agent monitors error distribution and surfaces detected patterns (e.g., "90% of False Negatives occur in low-light images")
   2. Agent recommends specific actions based on patterns (e.g., "collect more nighttime training data" or "apply brightness augmentation")
   3. User can run VLM auto-tagging (Moondream2) on samples to add descriptive tags (dark, blurry, indoor, crowded, etc.)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: Pydantic AI agent with DuckDB/Qdrant tools for error distribution analysis
-- [ ] 07-02: Pattern detection engine and action recommendation system
-- [ ] 07-03: VLM auto-tagging pipeline (Moondream2), calibration framework, confidence scoring
+- [ ] 07-01-PLAN.md -- Pydantic AI agent service with DuckDB query tools, agent models, /analyze endpoint, config + infrastructure
+- [ ] 07-02-PLAN.md -- VLM auto-tagging pipeline (Moondream2 via transformers), background task with SSE progress, Auto-Tag button
+- [ ] 07-03-PLAN.md -- Agent analysis frontend: Intelligence sub-tab in Statistics dashboard, pattern + recommendation display
 
 ## Progress
 
