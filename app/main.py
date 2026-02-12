@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.plugins.registry import PluginRegistry
 from app.repositories.duckdb_repo import DuckDBRepo
 from app.repositories.storage import StorageBackend
+from app.services.embedding_service import EmbeddingService
 from app.services.image_service import ImageService
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     app.state.image_service = image_service
 
+    # Embedding service (model loaded at startup to avoid per-request latency)
+    embedding_service = EmbeddingService(db=db, storage=storage)
+    embedding_service.load_model()
+    app.state.embedding_service = embedding_service
+
     # Plugin registry
     plugin_registry = PluginRegistry()
     plugin_dir = Path(settings.plugin_dir)
@@ -80,13 +86,14 @@ app.add_middleware(
 )
 
 # Router includes
-from app.routers import datasets, images, samples, statistics, views  # noqa: E402
+from app.routers import datasets, embeddings, images, samples, statistics, views  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
 app.include_router(images.router)
 app.include_router(views.router)
 app.include_router(statistics.router)
+app.include_router(embeddings.router)
 
 
 @app.get("/health")

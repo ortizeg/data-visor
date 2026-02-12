@@ -9,6 +9,7 @@ from app.plugins.registry import PluginRegistry
 from app.repositories.duckdb_repo import DuckDBRepo
 from app.repositories.storage import StorageBackend
 from app.services.image_service import ImageService
+from app.services.embedding_service import EmbeddingService
 from app.services.ingestion import IngestionService
 
 
@@ -41,6 +42,11 @@ def get_image_service(request: Request) -> ImageService:
 def get_plugin_registry(request: Request) -> PluginRegistry:
     """Return the application-wide PluginRegistry stored on app.state."""
     return request.app.state.plugin_registry
+
+
+def get_embedding_service(request: Request) -> EmbeddingService:
+    """Return the application-wide EmbeddingService stored on app.state."""
+    return request.app.state.embedding_service
 
 
 def get_ingestion_service(

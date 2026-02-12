@@ -10,7 +10,8 @@ def test_db_creates_all_tables(db: DuckDBRepo) -> None:
     tables = db.connection.execute("SHOW TABLES").fetchall()
     table_names = sorted(t[0] for t in tables)
     assert table_names == [
-        "annotations", "categories", "datasets", "samples", "saved_views"
+        "annotations", "categories", "datasets", "embeddings",
+        "samples", "saved_views",
     ]
 
 
