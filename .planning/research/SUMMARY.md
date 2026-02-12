@@ -1,325 +1,624 @@
-# Project Research Summary
+# Project Research Summary: DataVisor v1.1
 
-**Project:** DataVisor (CV Dataset Introspection Tool)
-**Domain:** Computer Vision Dataset Exploration and Model Debugging
-**Researched:** 2026-02-10
-**Confidence:** HIGH
+**Project:** DataVisor v1.1 — Deployment, Workflow & Competitive Parity
+**Milestone Focus:** Docker deployment, single-user auth, smart dataset ingestion, annotation editing, error triage workflow, keyboard shortcuts
+**Researched:** 2026-02-12
+**Overall Confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-DataVisor is a FiftyOne alternative focused on dataset introspection and model debugging for CV engineers. Research across 100+ sources reveals a clear architecture: **dual-database system (DuckDB for analytical metadata + Qdrant for vector similarity) with a FastAPI backend serving a Next.js frontend**. This architecture delivers 10-100x performance over FiftyOne's MongoDB for analytical queries while enabling embedding visualization at 1M+ points (vs FiftyOne's ~50K Plotly limit).
+DataVisor v1.1 builds on a proven v1.0 foundation (12,720 LOC, 59 tests) to add production deployment and competitive features. Research across stack, features, architecture, and pitfalls reveals a clear path: **prioritize Docker deployment with Caddy reverse proxy, then layer on smart ingestion and error triage workflows**.
 
-The recommended approach prioritizes the **browse-filter-compare feedback loop** as the core value proposition. Phase 1 establishes the data foundation and basic browsing; Phase 2 adds embedding visualization with deck.gl; Phase 3 layers on AI agents for pattern detection. The stack is validated as production-ready: FastAPI 0.128.7, DuckDB 1.4.4, Qdrant 1.16.0, Next.js 16, deck.gl 9.2.6, Pydantic AI 1.58.0. Every choice is verified against official documentation and actively maintained.
+The recommended approach uses **three-service Docker Compose** (backend, frontend, caddy) with Qdrant remaining in local embedded mode. This simplifies deployment while maintaining single-user focus. Auth is handled at two layers: Caddy's basic_auth for edge protection plus FastAPI dependency injection for API-level defense in depth. The smart ingestion UI uses a folder scanner service that detects COCO/YOLO structures and presents suggestions for user confirmation. Annotation editing adds react-konva ONLY in the detail modal (keeping SVG for grid read-only overlays). The error triage workflow extends the existing error analysis system with DuckDB persistence and a focused keyboard-driven review mode.
 
-The critical risks are **DuckDB concurrent access deadlocks** (requires single connection with cursor-per-request), **dual-database consistency drift** (requires service layer with DuckDB as source of truth), and **WebGL context loss** (requires recovery handler). These must be addressed in Phase 1 foundation — retrofitting is painful. With proper architecture patterns, the project can handle 100K+ image datasets at production quality.
+**Critical architectural decisions validated:**
+1. **Keep Qdrant in local mode for Docker** — single-user workload does not justify server mode complexity. Conditional client initialization supports both modes.
+2. **Caddy over nginx for reverse proxy** — automatic HTTPS via Let's Encrypt, built-in basic_auth, simpler config for single-VM deployment.
+3. **react-konva for annotation editing** — v19.2.0 explicitly supports React 19. Konva Transformer provides resize handles out of the box.
+4. **FastAPI HTTPBasic dependency injection** — more testable and composable than middleware for single-user auth.
+
+**Key risks addressed upfront:**
+- **DuckDB WAL files lost on container restart** (P1) — mount entire data/ directory, add CHECKPOINT on shutdown
+- **NEXT_PUBLIC_API_URL baked at build time** (P3) — use Caddy reverse proxy to serve frontend and API from same origin
+- **Basic auth over HTTP exposes credentials** (P4) — Caddy handles HTTPS automatically
+- **SVG-to-Canvas coordinate mismatch** (P5) — keep SVG for read-only, use Konva ONLY for edit mode with explicit coordinate conversion
+
+With these patterns, v1.1 delivers GCP-deployable production quality while adding FiftyOne/Encord competitive features (smart ingestion, error triage, annotation editing) that the existing v1.0 architecture supports naturally.
+
+---
 
 ## Key Findings
 
-### Recommended Stack
+### From STACK.md: Technologies for v1.1
 
-The user's proposed stack (FastAPI + DuckDB + Qdrant + Next.js + Tailwind + deck.gl + Pydantic AI) is **validated as excellent**. Stack research confirmed each choice against alternatives and identified critical gaps.
+The v1.1 stack extends v1.0 with deployment and UX libraries. All choices are validated against official documentation and production usage.
 
-**Core technologies:**
-- **FastAPI 0.128.7**: Python API framework with async-native Pydantic v2 integration, automatic OpenAPI docs. The standard for data-intensive Python APIs.
-- **DuckDB 1.4.4**: In-process columnar analytical database, 10-100x faster than SQLite on GROUP BY/aggregations, Parquet/Arrow native. Perfect for 100K+ sample metadata.
-- **Qdrant 1.16.0**: Rust-based vector DB with payload filtering during HNSW search. Handles 100K+ embeddings locally via Docker with GPU-accelerated indexing.
-- **Next.js 16**: React framework with Turbopack (5x faster builds), App Router stable, React 19 support. De facto standard for modern data UIs.
-- **deck.gl 9.2.6**: WebGL2 scatterplot visualization rendering 1M+ points at 60 FPS with lasso selection. Vastly superior to FiftyOne's Plotly at scale.
-- **Pydantic AI 1.58.0**: V1-stable agent framework with type-safe structured output, tool registration, model-agnostic. Lean alternative to LangChain.
+**Docker deployment stack:**
+- **Docker Compose** — three services: backend (FastAPI + DuckDB + Qdrant local), frontend (Next.js standalone), caddy (reverse proxy + HTTPS + auth)
+- **Caddy 2-alpine** — automatic HTTPS, built-in basic_auth, 10-line Caddyfile vs nginx's verbose config
+- **Qdrant local mode** — existing `QdrantClient(path=...)` works in Docker via volume mount. No server container needed for <1M vectors single-user.
+- **Python 3.14-slim base** — avoids musl compilation issues (alpine would break torch/numpy wheels)
+- **Node 22-alpine** — Next.js 16 standalone output reduces image from ~1GB to ~150MB
 
-**Critical gaps filled:**
-- **supervision 0.27.0**: Annotation format parsing (COCO/YOLO/VOC). Saves weeks of custom parser development.
-- **umap-learn 0.5.11** + **scikit-learn**: Dimensionality reduction for embedding visualization. UMAP handles 100K samples; t-SNE is fallback.
-- **@tanstack/react-virtual**: Virtualized grid scrolling for 100K+ images. Critical for grid performance.
-- **react-konva**: Canvas-based bounding box overlay rendering. Neither deck.gl nor vanilla HTML handles annotation overlays.
-- **zustand**: Lightweight state management for cross-filtering between grid and map. Single source of truth for selection state.
+**Authentication stack:**
+- **FastAPI HTTPBasic** (built-in) — zero new dependencies, works with Caddy's basic_auth for defense in depth
+- **Caddy basic_auth directive** — edge protection with bcrypt password hashing via `caddy hash-password`
 
-### Expected Features
+**Frontend interaction stack:**
+- **react-konva 19.2.0 + konva 10.2.0** — Canvas-based bbox editing with Transformer (resize/rotate handles). v19 explicitly for React 19.
+- **react-hotkeys-hook 5.2.4** — declarative keyboard shortcuts with scoping. 3KB, actively maintained (published 9 days ago).
 
-Feature research validated DataVisor positioning via competitive analysis of FiftyOne, CVAT, Label Studio, Roboflow, Supervisely, Encord Active.
+**What NOT to add:**
+- Qdrant server container — local mode sufficient, eliminates complexity
+- Gunicorn — single-user tool, one uvicorn worker is enough
+- JWT/OAuth2 — HTTP Basic Auth sufficient for personal deployment
+- Nginx — Caddy's auto-HTTPS wins decisively for single-VM
+- Fabric.js — no official React wrapper, imperative API fights React model
+- cmdk — command palette is nice-to-have, not needed for v1.1 shortcuts
 
-**Must have (table stakes):**
-- Multi-format ingestion (COCO/YOLO/VOC) — every serious CV tool supports these
-- Virtualized image grid with infinite scroll — FiftyOne, Roboflow, CVAT all have this
-- Annotation overlay rendering (bounding boxes) — core visual verification workflow
-- GT vs Predictions comparison toggle — central model debugging use case
-- Sidebar metadata filtering (dynamic on any field) — users expect to slice datasets arbitrarily
-- Dataset statistics (class distribution, counts) — basic dataset understanding
+**New frontend dependencies (total ~76KB gzipped):**
+```
+npm install konva@^10.2.0 react-konva@^19.2.0 react-hotkeys-hook@^5.2.4
+```
 
-**Should have (competitive differentiators):**
-- **deck.gl embedding visualization** — handles 1M+ points vs FiftyOne's ~50K Plotly limit
-- **Lasso selection -> grid filtering** — FiftyOne has this, but DataVisor will be faster at scale
-- **Error categorization (Hard FP, Label Error, FN)** — more opinionated than FiftyOne's generic scores
-- **AI agent pattern detection** — NO competitor does this. Novel value proposition.
-- **Free GCS support** — FiftyOne gates cloud storage behind Enterprise pricing
-- **Plugin/hook system** — FiftyOne has this; essential for extensibility
+**Backend: ZERO new Python dependencies** — auth uses FastAPI built-ins, smart ingestion uses pathlib + existing fsspec
 
-**Defer (v2+):**
-- Full annotation editor — anti-feature. Export to CVAT/Label Studio instead.
-- Video annotation — multiplies complexity enormously, defer until image workflow is proven
-- AI-driven quality metrics (25+ like Encord) — diminishing returns, start with core error metrics
-- Similarity search — requires Qdrant integration working first
+**Confidence:** HIGH — every dependency verified via official docs and npm/PyPI version checks
 
-### Architecture Approach
+### From FEATURES.md: Competitive Gap Analysis
 
-DataVisor follows a **layered monolith** pattern: FastAPI backend coordinates two specialized databases (DuckDB for metadata, Qdrant for vectors), serving a rich Next.js SPA frontend.
+Competitive analysis of DataVisor vs FiftyOne (Voxel51) and Encord reveals 16 features across 6 categories. v1.1 closes table stakes gaps while adding differentiators.
 
-**Major components:**
-1. **Query Coordinator Service** — Routes queries to DuckDB (metadata/analytical) or Qdrant (vector similarity), joins results via sample_id. Handles hybrid queries like "find images similar to X with confidence < 0.5".
-2. **Dual-Database Foundation** — DuckDB is source of truth for "what exists"; Qdrant is a derived index. Every mutation writes to DuckDB first, then Qdrant. Reconciliation job cleans orphans.
-3. **Zustand Cross-Filtering** — Shared client state enables lasso selection on embedding map to filter grid view (and vice versa) without tight coupling between components.
-4. **Pluggable Ingestion Parsers** — BaseParser abstract class with COCO/YOLO/VOC implementations. Format auto-detection. Plugin system can register custom parsers.
-5. **Thumbnail Cache & Proxy** — FastAPI endpoint generates and caches resized images. Critical for 100K+ grids (50-100x bandwidth reduction vs full images).
+**MUST build for v1.1 (16 features):**
 
-**Critical patterns validated:**
-- **Single DuckDB connection, cursor-per-request** — DuckDB is single-writer; per-request connections cause deadlocks
-- **Streaming COCO JSON ingestion** — json.load() OOMs on 500MB+ COCO files; use ijson for 99.4% memory reduction
-- **Async UMAP with progress** — UMAP takes 5-15 min on 100K samples; must be background task with WebSocket progress
-- **WebGL context loss recovery** — deck.gl contexts can be lost; must detect and allow re-initialization
+| Feature | Priority | Complexity | Competitor Reference |
+|---------|----------|------------|---------------------|
+| YOLO + VOC format import | Table Stakes | Medium | FiftyOne supports 15+ formats; missing YOLO is critical gap |
+| Train/val/test split handling | Table Stakes | Medium | FiftyOne tags samples with split; every real dataset has splits |
+| Smart folder detection UI | Differentiator | Medium | Neither FiftyOne nor Encord auto-detects — opportunity to leapfrog |
+| Dataset export (COCO, YOLO) | Table Stakes | Medium | FiftyOne exports to all import formats; completes curation loop |
+| Bbox editing (move/resize/delete) | Table Stakes | High | Encord has full editor; FiftyOne delegates to CVAT. DataVisor targets "quick corrections only" |
+| Interactive confusion matrix | Table Stakes | High | FiftyOne's killer feature — click cell to filter to GT/pred pairs |
+| Near-duplicate detection | Table Stakes | Low | FiftyOne Brain + Encord Active both provide this |
+| Image quality metrics | Table Stakes | Low | Brightness, sharpness, contrast for AI agent |
+| Error triage mode | Differentiator | Medium | FiftyOne is programmatic; Encord is multi-stage. Keyboard-driven review is faster |
+| Worst images composite ranking | Differentiator | Medium | Neither competitor has single composite "badness" score |
+| Docker deployment | Table Stakes | Medium | FiftyOne Enterprise has Helm chart; OSS has Dockerfile |
+| Basic auth | Table Stakes | Low | FiftyOne OSS has none; Enterprise has full RBAC |
+| Deployment scripts (local + GCP) | Table Stakes | Low-Medium | FiftyOne provides SSH tunnel; DataVisor targets cloud VM |
+| Keyboard shortcuts (Tier 1) | Table Stakes | Medium | FiftyOne has partial support; Encord has comprehensive shortcuts |
+| "Find Similar" UI button | Table Stakes | Low | Existing Qdrant infrastructure, just needs UI exposure |
+| Interactive histograms | Differentiator | Medium | FiftyOne has this; click bar to filter grid |
 
-### Critical Pitfalls
+**DEFER to v1.2+ (9 features):**
+- Create new annotations — edit/delete sufficient for v1.1
+- CVAT/Label Studio integration — export achieves same goal
+- PR curves + per-class AP — confusion matrix is priority
+- Mistakenness/hardness scoring — requires model logits import
+- Custom workspaces — current layout works
+- Customizable hotkeys — fixed defaults sufficient
+- Model zoo / in-app inference — import predictions workflow is pragmatic
+- View expression Python API — UI filtering covers 90%
+- Demo/quickstart dataset — nice for onboarding but not core
 
-Research identified 13 pitfalls; top 5 are critical:
+**OUT OF SCOPE:**
+- 3D point cloud viz — different rendering pipeline (per PROJECT.md)
+- Video support — image-only for now (per PROJECT.md)
+- Map/geolocation — no current geo dataset need
+- Multi-user auth — personal tool (per PROJECT.md)
 
-1. **DuckDB Concurrent Access Deadlocks** — FastAPI async workers + DuckDB single-writer = silent deadlocks. MUST use single connection at app level with `.cursor()` per request. FastAPI auto-threadpools sync endpoints. This is foundational; retrofit is painful.
+**Build order dependencies:**
+```
+[Docker + Auth + Deploy] (parallel foundation)
+     |
+     v
+[YOLO + VOC Parsers] -> [Smart Folder Detection] -> [Split Handling]
+     |
+     v
+[Dataset Export] (requires format writers)
+     |
+     v
+[Image Quality Metrics] -> [Near-Duplicate Detection] -> [Composite Score]
+     |                                                       |
+     v                                                       v
+[Bbox Editing] -> [Keyboard Shortcuts] -> [Error Triage Mode]
+     |                                           |
+     v                                           v
+[Interactive Confusion Matrix] -> [Click-to-Filter]
+     |
+     v
+[Interactive Histograms]
+     |
+     v
+["Find Similar" Button]
+```
 
-2. **DuckDB-Qdrant Consistency Drift** — Metadata in DuckDB, embeddings in Qdrant. No distributed transaction coordinator. Deletions can succeed in one DB but fail in the other, creating ghost points. MUST establish DuckDB as source of truth, write DuckDB first, implement reconciliation job.
+**Confidence:** HIGH — grounded in official FiftyOne/Encord documentation
 
-3. **WebGL Context Loss** — 100K point scatter + hover thumbnails + other GPU usage = GPU OOM. Context goes black with no error. MUST listen for `webglcontextlost` event, show recovery UI, persist filter state in URL params.
+### From ARCHITECTURE.md: Feature Integration
 
-4. **Large COCO JSON OOM** — 100K+ image COCO files are 500MB-1GB. json.load() consumes 2-4GB RAM. MUST use ijson streaming parser from day one. Retrofitting requires rewriting entire ingestion pipeline.
+Architecture research analyzed the existing v1.0 codebase (12,720 LOC, 50+ files) to identify integration points for v1.1 features.
 
-5. **UMAP Compute Time** — 100K samples = 5-15 min on CPU. Synchronous execution blocks FastAPI, feels broken. MUST use background task with progress bar, cache results keyed by (dataset_id, model, params), offer PCA as fast fallback.
+**Current v1.0 architecture snapshot:**
+- **Backend:** FastAPI with 9 routers, 7 services, DuckDB (6 tables) + Qdrant local mode
+- **Frontend:** Next.js 16 with 3 Zustand stores, 14 TanStack Query hooks, TanStack Virtual grid
+- **Key properties:** DuckDB single-connection cursor-per-request, Qdrant local mode, SVG annotation overlays, SSE for progress streams
 
-**Additional major pitfalls:**
-- Qdrant collection schema lock-in (use named vectors per embedding model from start)
-- Virtualized grid Blob URL memory leaks (revoke URLs via LRU cache)
-- Embedding map <-> grid filter desync (single Zustand store as source of truth)
-- VLM agent hallucination (calibrate Moondream2, present findings as hypotheses with confidence)
-- GCS image serving latency (thumbnail cache + prefetch + pre-generation during ingestion)
+**Feature 1: Docker Deployment**
+
+Three-service topology (NOT four — Qdrant stays local):
+```
+[caddy :80/:443] -> [backend :8000 (FastAPI + DuckDB + Qdrant local)]
+                 -> [frontend :3000 (Next.js standalone)]
+```
+
+**Integration points:**
+- Create: `Dockerfile.backend`, `Dockerfile.frontend`, `docker-compose.yml`, `nginx/default.conf`
+- Modify: `app/config.py` (add `qdrant_url` for conditional mode), `similarity_service.py` (conditional client), `next.config.ts` (add `output: "standalone"`)
+
+**Qdrant mode switch:**
+```python
+# Conditional: local mode (dev) vs server mode (optional future)
+if settings.qdrant_url:
+    self.client = QdrantClient(url=settings.qdrant_url)
+else:
+    self.client = QdrantClient(path=str(path))  # existing
+```
+
+**Critical decisions:**
+- Keep Qdrant local — single-user <1M vectors does not need server container
+- Use Caddy reverse proxy — NEXT_PUBLIC_API_URL becomes `/api/` (same origin, no CORS)
+- Multi-stage builds — backend ~4GB (PyTorch CPU-only), frontend ~150MB
+- Single uvicorn worker — DuckDB single-writer constraint preserved
+
+**Feature 2: Single-User Auth**
+
+FastAPI dependency injection pattern (NOT middleware):
+```python
+# app/auth.py
+def verify_auth(credentials: HTTPBasicCredentials = Depends(security)) -> str:
+    # secrets.compare_digest to prevent timing attacks
+    ...
+
+# app/main.py
+app.include_router(datasets.router, dependencies=[Depends(verify_auth)])
+```
+
+**Why DI over middleware:**
+- Existing codebase uses Depends() for 9 dependencies already
+- Easier to exclude /health endpoint
+- Testable and composable
+- Recommended by FastAPI community (GitHub Discussion #8867)
+
+**SSE auth challenge:** EventSource cannot set Authorization headers. Solution: cookie-based session after initial Basic Auth login.
+
+**Feature 3: Smart Ingestion UI**
+
+New folder scanner service detects dataset structures:
+```
+POST /ingestion/scan { root_path }
+  -> FolderScanner.scan()
+  -> ScanResult { annotation_files, image_dirs, suggested_imports }
+  -> Frontend: confirmation UI
+  -> POST /datasets/ingest (existing SSE endpoint)
+```
+
+**Integration points:**
+- Create: `app/services/folder_scanner.py`, `app/routers/ingestion.py`, `app/models/scan.py`
+- Modify: `app/models/dataset.py` (add `split` field), `ingestion.py` (pass split to parser)
+- Frontend: new `/ingest` page with scan results display
+
+**Feature 4: Annotation Editing**
+
+**Critical observation:** Existing overlay is SVG, NOT react-konva. Architecture decision: use Konva ONLY in detail modal, keep SVG for grid.
+
+```
+sample-modal.tsx
+  |-- [Read-only mode] AnnotationOverlay (SVG, existing)
+  |-- [Edit mode] AnnotationEditor (NEW, react-konva)
+        |-- <Stage><Layer>
+        |     |-- <Image> (background)
+        |     |-- <Rect draggable /> (per annotation)
+        |     |-- <Transformer /> (resize handles)
+```
+
+**New backend endpoints:**
+- `PATCH /annotations/batch` — update bbox coordinates
+- `DELETE /annotations/{id}` — remove annotation
+
+**Data flow:**
+```
+User clicks "Edit" -> AnnotationEditStore.startEditing()
+  -> Modal switches to Konva
+  -> User drags/resizes (Konva handles visuals)
+  -> "Save" -> PATCH /annotations/batch
+  -> Invalidate TanStack Query cache
+  -> Modal switches back to SVG
+```
+
+**Coordinate normalization critical:** Konva Transformer modifies scaleX/scaleY, not width/height. Must normalize:
+```typescript
+const sx = node.scaleX(), sy = node.scaleY();
+node.scaleX(1); node.scaleY(1);
+const newW = node.width() * sx;
+const newH = node.height() * sy;
+```
+
+**Feature 5: Error Triage Workflow**
+
+Extends existing `error_analysis.py` with tagging and ranking:
+
+**New DuckDB table:**
+```sql
+CREATE TABLE triage_labels (
+    annotation_id VARCHAR,
+    dataset_id VARCHAR,
+    label VARCHAR,  -- 'confirmed', 'dismissed', 'needs_review'
+    created_at TIMESTAMP
+)
+```
+
+**New components:**
+- `app/routers/triage.py` — CRUD for triage labels
+- `app/services/triage_service.py` — "worst images" ranking algorithm
+- Frontend: `triage-store.ts` (5th Zustand store), `triage-action-bar.tsx`, `worst-images-panel.tsx`
+
+**Worst images ranking:**
+```python
+score = (2 * hard_fp_count) + (3 * label_error_count) + (1 * fn_count)
+        + (0.5 * low_confidence_count) - (0.1 * tp_count)
+```
+
+**Feature 6: Keyboard Shortcuts**
+
+react-hotkeys-hook for declarative shortcuts:
+```typescript
+useHotkeys('shift+/', () => openShortcutHelp(true));
+useHotkeys('g', () => setActiveTab('grid'));
+useHotkeys('/', () => document.querySelector('[data-shortcut-target="search"]')?.focus());
+```
+
+**Tier 1 shortcuts (v1.1):**
+- `?` — help overlay
+- Arrow keys — prev/next sample
+- `Escape` — close modal
+- `Space` — toggle label visibility
+- `Delete` — delete annotation (edit mode)
+- `Ctrl+Z` — undo (edit mode)
+- `1-9` — quick-assign class
+
+**Scoping:** Component-level via react-hotkeys-hook's ref scoping. Prevents firing when input fields are focused.
+
+**Build order:**
+```
+Phase 1: Docker Deployment (enables cloud deployment)
+  -> Phase 2: Auth (enables secure access)
+    -> Phase 3: Smart Ingestion (parallel with 4, 5)
+    -> Phase 4: Error Triage (parallel with 3, 5)
+    -> Phase 5: Annotation Editing (parallel with 3, 4)
+  -> Phase 6: Keyboard Shortcuts (last, layers on all UI)
+```
+
+**New files:** 13 backend, 14 frontend
+**Modified files:** 17 (app/config.py, main.py, repositories, services; frontend stores, components)
+**New Zustand stores:** 2 (annotation-edit-store, triage-store) — total 5 stores
+
+**Confidence:** HIGH — grounded in codebase analysis (12,720 LOC verified) + official docs
+
+### From PITFALLS.md: Domain-Specific Risks
+
+Pitfall research identified 16 risks across Docker, auth, annotation editing, ingestion, and deployment.
+
+**CRITICAL pitfalls (5):**
+
+**P1: DuckDB WAL file loss on Docker restart**
+- **Risk:** WAL file created alongside .duckdb file. If container killed before clean shutdown, WAL persists. If volume mounts only the .duckdb file (not directory), WAL vanishes -> silent data loss.
+- **Prevention:** Mount entire `data/` directory. Set `stop_grace_period: 30s`. Add `CHECKPOINT` in lifespan shutdown. Set `checkpoint_threshold='8MB'` for more frequent checkpoints.
+
+**P2: Qdrant local mode works fine in Docker (clarification)**
+- **Research update:** Local mode CAN run in Docker. The earlier concern was unfounded — local mode via `QdrantClient(path=...)` works with volume mount. Server mode is optional for multi-worker scenarios.
+- **Decision:** Keep local mode for v1.1. Conditional switch supports future migration.
+
+**P3: NEXT_PUBLIC_API_URL baked at build time**
+- **Risk:** `NEXT_PUBLIC_*` vars are inlined during `next build`. Built image has hardcoded API URL. Cannot change at runtime.
+- **Prevention:** Use Caddy reverse proxy to serve frontend and backend from same origin. Frontend calls `/api/` which Caddy routes to backend:8000. No CORS, no URL config needed.
+
+**P4: Basic auth over HTTP exposes credentials**
+- **Risk:** Base64 encoding is not encryption. HTTP transmits credentials in cleartext.
+- **Prevention:** Caddy provides automatic HTTPS via Let's Encrypt (zero config). EventSource (SSE) limitation requires cookie-based session, not per-request Basic Auth headers.
+
+**P5: SVG-to-Canvas coordinate mismatch**
+- **Risk:** SVG uses viewBox with preserveAspectRatio for automatic scaling. Konva uses Stage/Layer coordinates with manual scale. Transformer changes scaleX/scaleY, not width/height. Annotations can drift if coordinates not normalized.
+- **Prevention:** Compute single scale factor on load. Normalize Transformer scale to 1 on dragEnd/transformEnd. Write utility functions `toPixelSpace()` and `toDisplaySpace()` for all conversions. Keep SVG for read-only, Konva ONLY for edit mode.
+
+**MAJOR pitfalls (5):**
+
+**P6: Docker image bloat (8-12GB)**
+- **Risk:** PyTorch + transformers with CUDA = ~8GB image. Build takes 30+ min, push/pull times out.
+- **Prevention:** Use CPU-only PyTorch (200MB vs 2.5GB). Multi-stage build. `--no-cache-dir` everywhere. Pin versions.
+
+**P7: DuckDB annotation mutations without transactions**
+- **Risk:** v1.0 is read-heavy append-only. v1.1 adds UPDATE/DELETE. No PRIMARY KEY enforcement. Concurrent edits may conflict. Denormalized counts can drift.
+- **Prevention:** Wrap mutations in explicit transactions. Recompute counts from source tables. Verify annotation ID uniqueness in app code.
+
+**P8: Smart folder detection edge cases**
+- **Risk:** Datasets use 20+ conventions (COCO, YOLO, Roboflow, CVAT, custom). Detection heuristic cannot handle all. Dangerous: folder named `train/` containing train images (not training data).
+- **Prevention:** Detection is suggestion, not action. Show confidence scores. Manual override. Start COCO-only. Depth limit (3 levels max). No symlinks.
+
+**P9: GCP firewall blocks all ports by default**
+- **Risk:** GCP has default-deny inbound. VM starts, docker-compose runs, but `http://35.x.x.x:3000` times out. Developer spends 30 min debugging Docker before realizing it's firewall.
+- **Prevention:** Deployment script creates firewall rules automatically. Use port 80/443 only. Qdrant port 6333 NOT exposed (internal only). Tag VM and scope rules.
+
+**P10: Error triage state lost on page refresh**
+- **Risk:** Triage decisions in Zustand only. User tags 50 errors, refreshes page, all gone. 100K dataset with 5000 errors = significant manual work lost.
+- **Prevention:** Persist to DuckDB immediately. Debounce 500ms for rapid changes. Optimistic updates (Zustand first, DuckDB background). Use existing `samples.tags` column.
+
+**MODERATE pitfalls (4):**
+
+**P11: Docker volume mounts break image path resolution** — Store relative paths or path remap
+**P12: Keyboard shortcuts conflict with browser defaults** — Check activeElement, use modifiers for destructive actions
+**P13: CORS wildcard + credentials is spec-invalid** — Remove CORS via reverse proxy
+**P14: GCP persistent disk not auto-mounted on restart** — Add fstab entry with `nofail`
+
+**MINOR pitfalls (2):**
+
+**P15: Annotation delete without undo** — Soft delete or undo buffer
+**P16: docker-compose OOMs on small VMs** — Lazy model loading, document e2-standard-4 minimum
+
+**Integration pitfall matrix:**
+
+| Feature | Existing Component | Pitfall | Prevention |
+|---------|-------------------|---------|------------|
+| Docker | DuckDB file | P1: WAL loss | Mount `data/` dir, CHECKPOINT shutdown |
+| Docker | Next.js env | P3: Build-time URL | Caddy reverse proxy (same origin) |
+| Docker | PyTorch | P6: 8GB image | CPU-only torch, multi-stage |
+| Auth | SSE streams | P4: EventSource headers | Cookie-based session |
+| Auth | CORS | P13: Wildcard+creds | Reverse proxy removes CORS |
+| Annotation Edit | SVG overlay | P5: Coord mismatch | Keep SVG read-only, Konva edit-only |
+| Annotation Edit | DuckDB | P7: No transactions | Explicit transactions |
+| Smart Ingestion | COCOParser | P8: Edge cases | Suggestion not action |
+| Error Triage | Zustand | P10: State lost | Persist to DuckDB |
+| GCP Deploy | Firewall | P9: Blocks ports | Script creates rules |
+
+**Confidence:** MEDIUM-HIGH — critical pitfalls verified via official docs (DuckDB WAL, Next.js env vars, EventSource limitations). Edge cases (folder detection, Konva coords) based on community patterns.
+
+---
 
 ## Implications for Roadmap
 
-Based on research, **6 phases** are recommended with clear dependency structure.
+Based on synthesized research, **6 feature groupings** are recommended with clear dependencies and pitfall mitigation.
 
-### Phase 1: Foundation & Core Browsing
-**Rationale:** Establishes data foundation and basic browse workflow. Every other phase depends on this. Architecture patterns (DuckDB connection management, dual-DB strategy, streaming ingestion) MUST be correct here — retrofit is extremely painful.
+### Phase 1: Docker Deployment & Auth (Foundation)
+**Why first:** Establishes cloud deployment scaffold. Every other feature builds on this. Critical pitfalls (P1, P3, P4, P13) MUST be addressed here — retrofit is extremely painful.
 
-**Delivers:** Ingest COCO datasets, browse 100K+ images in virtualized grid, view annotations, filter by metadata.
+**Delivers:** GCP-deployable Docker Compose setup with automatic HTTPS and basic auth.
 
-**Features from FEATURES.md:**
-- Multi-format ingestion (COCO first, YOLO/VOC as plugins)
-- DuckDB metadata storage
-- Virtualized image grid view
-- Annotation overlay rendering (bounding boxes)
-- Deterministic class-to-color mapping
-- Sample detail modal
-- Sidebar metadata filtering
-- Basic search and sort
-- Local + GCS image sources (storage abstraction)
-- Plugin/hook system (BasePlugin class, hook registry)
+**Features:**
+- Docker Compose (backend, frontend, caddy)
+- Qdrant local mode with conditional switch
+- Multi-stage Dockerfiles (CPU-only PyTorch)
+- Caddy reverse proxy (HTTPS + basic_auth)
+- FastAPI HTTPBasic dependency injection
+- GCP deployment script + firewall rules
+- Local run script
 
 **Avoids pitfalls:**
-- P1: DuckDB concurrent access (single connection + cursor-per-request)
-- P2: Dual-DB consistency (DuckDB as source of truth, service layer)
-- P4: Large COCO OOM (ijson streaming parser)
-- P7: Blob URL leaks (LRU cache with revoke)
-- P10: GCS latency (thumbnail cache + pre-generation)
-- P11: Plugin API breakage (versioned API, context objects with **kwargs)
-- P12: Annotation format edge cases (lenient parsing with validation report)
+- P1: Mount `data/` directory, CHECKPOINT on shutdown
+- P3: Caddy serves frontend and API from same origin (no NEXT_PUBLIC_API_URL issue)
+- P4: Caddy auto-HTTPS, cookie-based session for SSE
+- P6: Multi-stage build, CPU-only torch, ~4GB backend image
+- P9: Deployment script creates firewall rules
+- P11: Path remapping for Docker volume mounts
+- P13: Reverse proxy removes CORS entirely
+- P14: fstab entry for persistent disk
 
-**Research flag:** SKIP — well-documented patterns. FastAPI, DuckDB, streaming JSON, virtualized grids are established.
+**Dependencies:** NONE — foundational
+**Research flag:** SKIP — Docker, Caddy, FastAPI auth are well-documented
 
-### Phase 2: Predictions & Model Debugging
-**Rationale:** Depends on Phase 1 foundation. Adds the core model debugging workflow (GT vs Predictions comparison). Completes the browse-filter-compare loop that is the central value prop.
+### Phase 2: Smart Ingestion UI
+**Why second:** Builds on Docker foundation (new endpoints need auth). Completes the "no-code dataset import" workflow.
 
-**Delivers:** Import predictions, toggle GT vs Predictions overlays (solid vs dashed), evaluation pipeline (TP/FP/FN), error categorization.
+**Delivers:** Point at folder, auto-detect structure, import with confirmation.
 
-**Features from FEATURES.md:**
-- Import predictions from models
-- GT vs Predictions comparison toggle (the differentiator vs FiftyOne)
-- Evaluation pipeline (IoU-based TP/FP/FN matching)
-- Error categorization (Hard FP, Label Error, FN)
-- Tag management (flag samples for review)
-
-**Uses stack:**
-- DuckDB for storing predictions as annotations with source="prediction"
-- react-konva for dual-layer overlays (GT solid, pred dashed)
-- Deterministic color hashing from Phase 1
-
-**Research flag:** SKIP — evaluation pipeline patterns are well-documented (IoU matching, TP/FP/FN assignment from COCO metrics).
-
-### Phase 3: Embedding Visualization
-**Rationale:** Parallel to Phase 2 (independent). Adds the deck.gl scatter plot that is the second major differentiator (1M+ points vs FiftyOne's 50K Plotly limit). Requires Qdrant integration.
-
-**Delivers:** UMAP/t-SNE embedding computation, deck.gl scatter plot, lasso selection -> grid filtering, hover thumbnails.
-
-**Features from FEATURES.md:**
-- Embedding generation (UMAP/t-SNE from CLIP/DINOv2)
-- deck.gl embedding scatter plot (ScatterplotLayer)
-- Lasso selection -> grid filtering (cross-view interaction)
-- Hover thumbnails on embedding points
-- Qdrant vector storage (for similarity search in Phase 4)
-
-**Uses stack:**
-- Qdrant 1.16.0 (local Docker, named vectors)
-- sentence-transformers (CLIP/DINOv2 batch embedding)
-- umap-learn + scikit-learn (dimensionality reduction)
-- deck.gl 9.2.6 (WebGL scatter with lasso selection)
-- Zustand cross-filtering (lasso -> filter store -> grid update)
+**Features:**
+- Folder scanner service (detect COCO/YOLO/splits)
+- Scan endpoint with structure detection
+- Frontend ingestion wizard with preview
+- Split detection in existing parser
+- Multi-format support hooks (YOLO/VOC deferred to later)
 
 **Avoids pitfalls:**
-- P3: WebGL context loss (recovery handler, persist state)
-- P5: UMAP compute time (background task, progress bar, caching)
-- P6: Qdrant schema lock-in (named vectors from start)
-- P8: Filter desync (Zustand single source of truth)
+- P8: Detection is suggestion not action, confidence scores, manual override
 
-**Research flag:** SKIP — deck.gl, UMAP, Qdrant are well-documented. WebGL context loss recovery is documented in deck.gl.
+**Dependencies:** Phase 1 (auth for new endpoints)
+**Research flag:** SKIP — folder scanning patterns are standard
 
-### Phase 4: Similarity Search (Hybrid Queries)
-**Rationale:** Depends on Phase 3 (Qdrant + embeddings). Completes the Query Coordinator pattern with hybrid DuckDB + Qdrant queries.
+### Phase 3: Annotation Editing
+**Why parallel with Phase 2/4:** Independent of ingestion and triage. Depends only on existing sample modal.
 
-**Delivers:** "Find similar" action, hybrid queries (similarity + metadata filters), Qdrant payload filtering.
+**Delivers:** Quick corrections in-app (move/resize/delete bboxes).
 
-**Features from FEATURES.md:**
-- Similarity search (find images like this one)
-- Hybrid queries coordinated across DuckDB + Qdrant
-
-**Implements architecture:**
-- Query Coordinator Service (routing logic for metadata-only, similarity-only, hybrid)
-- Qdrant payload filtering for simple filters
-- DuckDB post-filter for complex analytical queries
-
-**Research flag:** SKIP — Qdrant payload filtering is documented. Hybrid query pattern is established (Quiver project precedent).
-
-### Phase 5: Intelligence Layer (AI Agents)
-**Rationale:** Depends on Phases 2 (error categorization) + 3 (embeddings + metadata extraction). This is the NOVEL differentiator — no competitor has AI agent pattern detection.
-
-**Delivers:** Pydantic AI agents for blind spot detection, error pattern discovery (e.g., "90% of FN occur in low-light images").
-
-**Features from FEATURES.md:**
-- AI agent for error pattern detection (highest-value differentiator)
-- Metadata extraction (brightness, contrast, scene type via VLM)
-
-**Uses stack:**
-- Pydantic AI 1.58.0 (agent framework with tools)
-- Moondream2 (1.86B VLM for image analysis)
-- DuckDB + Qdrant as agent tools (query error distributions, metadata correlations)
+**Features:**
+- react-konva integration in detail modal ONLY
+- AnnotationEditor component with Transformer
+- AnnotationEditStore (new Zustand store)
+- PATCH /annotations/batch endpoint
+- Coordinate normalization utilities
 
 **Avoids pitfalls:**
-- P9: VLM hallucination (calibration framework, confidence scores, minimum sample size)
-- P13: GPU memory contention (serialize VLM + CLIP via task queue)
+- P5: Keep SVG read-only, Konva edit-only; explicit coord conversion
+- P7: Explicit transactions for mutations
+- P15: Soft delete or confirmation dialog
 
-**Research flag:** NEEDS RESEARCH — Pydantic AI tool design for DuckDB/Qdrant access, VLM prompt engineering for error analysis, calibration methodology are less documented. Use `/gsd:research-phase` for Phase 5 planning.
+**Dependencies:** Phase 1 (modal exists, auth for new endpoint)
+**Research flag:** SKIP — react-konva Transformer is documented
 
-### Phase 6: Extensibility & Polish
-**Rationale:** Depends on Phases 1-4 being stable. Adds ecosystem value (YOLO/VOC parsers, export, saved views).
+### Phase 4: Error Triage Workflow
+**Why parallel with Phase 2/3:** Extends existing error analysis. Independent of ingestion and annotation editing.
 
-**Delivers:** YOLO + VOC parsers, export filtered subsets, saved views, additional UI hooks.
+**Delivers:** Keyboard-driven error review workflow with persistence.
 
-**Features from FEATURES.md:**
-- YOLO parser, VOC parser (complete the 3 core formats)
-- Saved views / export filtered subsets
-- Plugin UI hooks (custom panels)
+**Features:**
+- triage_labels DuckDB table
+- Triage API endpoints
+- TriageStore (new Zustand store)
+- Worst images ranking algorithm
+- Grid highlight/dim mode
+- Keyboard shortcuts for triage (1/2/3 keys)
 
-**Research flag:** SKIP — annotation format specs are documented. Plugin patterns from Phase 1 extend naturally.
+**Avoids pitfalls:**
+- P10: Persist triage decisions to DuckDB immediately
 
-### Phase Ordering Rationale
+**Dependencies:** Phase 1 (existing error analysis built in v1.0)
+**Research flag:** SKIP — extends existing patterns
 
-**Why this order:**
-- Phases 1-2 deliver the core browse-filter-compare loop that replaces users' one-off scripts (MVP milestone)
-- Phases 2-3 can proceed in parallel (independent dependencies)
-- Phase 4 (hybrid queries) requires Phase 3 (Qdrant) to be working
-- Phase 5 (agents) requires both error categorization (Phase 2) and embeddings (Phase 3)
-- Phase 6 (polish) adds ecosystem value once core is proven
+### Phase 5: Keyboard Shortcuts
+**Why last:** Layers on top of all UI features. Must reference grid, modal, triage, annotation editing.
 
-**Why this grouping:**
-- Phase 1 is "data in, data out" — foundational CRUD
-- Phase 2 is "model debugging" — the GT vs Pred workflow
-- Phase 3 is "visual exploration" — the deck.gl embedding map
-- Phase 4 is "intelligence" — hybrid queries + AI agents
-- Phase 5 is "agents" — the novel differentiator
-- Phase 6 is "ecosystem" — parsers, exports, community features
+**Delivers:** Power-user keyboard navigation.
 
-**How this avoids pitfalls:**
-- All critical pitfalls (P1-P5) are addressed in Phase 1 or have explicit prevention steps in their phase
-- DuckDB patterns, dual-DB consistency, streaming ingestion are non-negotiable Phase 1 requirements
-- WebGL context loss and UMAP async are designed into Phase 3 from the start
-- VLM calibration is built alongside agent integration in Phase 5
+**Features:**
+- react-hotkeys-hook integration
+- Global shortcuts (tab switching, help)
+- Component-level shortcuts (grid nav, modal nav, edit mode)
+- Shortcut help overlay (? key)
 
-### Research Flags
+**Avoids pitfalls:**
+- P12: Check activeElement before handling, use modifiers for destructive actions
 
-**Phases needing deeper research during planning:**
-- **Phase 5 (Intelligence Layer):** Pydantic AI tool design for database access, VLM prompt engineering for error pattern detection, calibration methodology for Moondream2. Use `/gsd:research-phase` to explore agent architecture patterns and VLM integration best practices.
+**Dependencies:** Phases 1-4 (shortcuts reference all UI)
+**Research flag:** SKIP — react-hotkeys-hook is straightforward
 
-**Phases with standard patterns (skip research-phase):**
-- **Phase 1 (Foundation):** FastAPI, DuckDB, streaming JSON, virtualized grids, image serving — all well-documented
-- **Phase 2 (Model Debugging):** Evaluation metrics (IoU, TP/FP/FN) are standard COCO patterns
-- **Phase 3 (Embedding Viz):** deck.gl, UMAP, Qdrant are established with official docs
-- **Phase 4 (Similarity Search):** Qdrant payload filtering is documented; hybrid query pattern is known
-- **Phase 6 (Extensibility):** Annotation format specs (YOLO, VOC) are public; plugin patterns extend Phase 1
+### Phase 6: Competitive Features (Deferred to v1.2)
+**Why deferred:** Core v1.1 delivers deployment + workflows. These add ecosystem value but are not blocking.
+
+**Features:**
+- YOLO + VOC parsers
+- Dataset export (COCO, YOLO)
+- Interactive confusion matrix + click-to-filter
+- Near-duplicate detection
+- Image quality metrics
+- "Find Similar" UI button
+- Interactive histograms
+
+**Research flag:** SKIP — annotation format specs documented, existing patterns extend
+
+---
+
+### Phase Structure Summary
+
+**Dependency graph:**
+```
+Phase 1 (Docker + Auth) — FOUNDATIONAL
+    |
+    +-> Phase 2 (Smart Ingestion) — NEW ENDPOINTS
+    +-> Phase 3 (Annotation Edit) — PARALLEL
+    +-> Phase 4 (Error Triage) — PARALLEL
+    |
+    v
+Phase 5 (Keyboard Shortcuts) — LAYER ON ALL UI
+
+Phase 6 (Competitive Features) — DEFERRED v1.2
+```
+
+**Rationale:**
+- Phase 1 is non-negotiable foundation — Docker, auth, deployment
+- Phases 2-4 can proceed in parallel (independent)
+- Phase 5 references all UI, must come last
+- Phase 6 deferred — core v1.1 is deployment + workflows
+
+**Which phases need `/gsd:research-phase`?**
+- **NONE** — all v1.1 features use well-documented patterns (Docker, Caddy, FastAPI auth, react-konva, react-hotkeys-hook)
+- Phase 6 (if built in v1.2) also uses documented patterns (COCO/YOLO specs, Qdrant similarity)
+
+**Critical path:**
+- Phase 1 blocks everything (foundation)
+- Phases 2-4 are independent (can parallelize)
+- Phase 5 depends on 2-4 (shortcuts reference their UI)
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | **HIGH** | Every technology verified via official docs, PyPI/npm versions confirmed, compatibility matrix validated. No red flags. |
-| Features | **HIGH** | Competitive analysis grounded in official FiftyOne/CVAT/Roboflow/Encord docs. Feature dependencies mapped via FiftyOne architecture. |
-| Architecture | **MEDIUM-HIGH** | Core patterns (dual-DB, Query Coordinator, cross-filtering) are established. DuckDB concurrency verified via official docs. Some integration patterns (deck.gl + Zustand sync) are inferred. |
-| Pitfalls | **MEDIUM-HIGH** | Critical pitfalls (DuckDB concurrency, WebGL context loss, COCO OOM) verified via official docs + GitHub issues. VLM hallucination is general pattern, not Moondream2-specific. |
+| **Stack** | HIGH | Every dependency verified: react-konva 19.2.0 for React 19, react-hotkeys-hook 5.2.4 (published 9 days ago), Caddy 2-alpine. Zero new backend deps (auth uses FastAPI built-ins). Versions confirmed via npm/PyPI. |
+| **Features** | HIGH | Competitive analysis grounded in official FiftyOne v1.12.0 and Encord docs. 16 must-build features mapped to competitors. Dependencies validated (smart ingestion depends on auth, triage depends on error analysis). |
+| **Architecture** | HIGH | Integration points verified against actual v1.0 codebase (12,720 LOC, 50+ files). Qdrant local mode decision reversed after deeper research (can run in Docker). Konva-only-for-edit pattern avoids grid performance issues. |
+| **Pitfalls** | MEDIUM-HIGH | Critical pitfalls verified via official docs (DuckDB WAL behavior, Next.js NEXT_PUBLIC inlining, EventSource header limitations, Konva Transformer scale behavior). Edge cases (folder detection, Docker OOM) based on community patterns and GitHub issues. |
 
 **Overall confidence:** **HIGH**
 
-The stack is production-ready, the feature landscape is well-mapped via competitive analysis, and the architecture patterns are validated. The main uncertainty is Phase 5 (VLM agent integration), which is novel territory — hence the research flag.
+The stack is validated, features are grounded in competitive analysis, architecture patterns are proven against existing codebase, and pitfalls have clear prevention strategies. The main uncertainty (Qdrant local vs server) was resolved — local mode works fine for v1.1 single-user deployment.
 
-### Gaps to Address
+### Gaps to Address During Implementation
 
-**DuckDB + FastAPI concurrency under load:**
-- Research confirmed cursor-per-request pattern, but real-world load testing (100+ concurrent requests) will validate. Plan for early load testing in Phase 1.
+**Docker volume semantics for DuckDB WAL:**
+- Research confirmed WAL behavior and directory mount requirement, but real-world testing (kill -9 container, verify WAL replay) needed to validate prevention.
 
-**deck.gl performance at 1M+ points:**
-- Documentation claims 1M+ at 60 FPS, but actual performance depends on hardware (GPU, screen DPI). Plan for early performance testing with synthetic 1M-point dataset.
+**Konva coordinate normalization at different image scales:**
+- Transformer scale pattern documented, but implementation with real datasets (varied aspect ratios, zoom levels) will validate edge cases.
 
-**Moondream2 VLM accuracy for scene attributes:**
-- HuggingFace model card shows 1.86B params, but accuracy on specific attributes (lighting, occlusion, blur) is unknown. Phase 5 MUST include calibration on labeled validation set before deploying agent.
+**GCS image serving with signed URL expiry:**
+- Stack research mentioned GCS support exists (fsspec), but signed URL refresh during long browsing sessions needs implementation design.
 
-**UMAP incremental updates (.transform() method):**
-- UMAP docs confirm .transform() works for projecting new points, but "distribution must be consistent." Real-world datasets may not satisfy this. Plan for full recompute as fallback.
+**react-hotkeys-hook focus scoping with nested modals:**
+- Documentation confirms scoping, but interaction between modal shortcuts (arrow keys) and edit mode shortcuts (delete) needs testing.
 
-**GCS signed URL expiry and refresh:**
-- GCS docs confirm signed URLs, but refresh workflow during long browsing sessions needs design. Consider backend proxy with auth refresh.
+---
 
 ## Sources
 
-### Primary (HIGH confidence)
-- FastAPI PyPI 0.128.7 — verified current version
-- DuckDB PyPI 1.4.4 + official concurrency docs — single-writer model, cursor-per-thread pattern
-- Qdrant GitHub 1.16.0 releases + collection docs — named vectors, payload filtering
-- deck.gl npm 9.2.6 + performance docs — 1M points at 60fps, picking limits, context loss
-- Pydantic AI PyPI 1.58.0 + V1 announcement — API stability guarantee
-- Next.js 16 blog — Turbopack stable, React 19
-- Tailwind CSS v4 blog + npm 4.1.18 — v4 rewrite confirmed
-- UMAP 0.5.11 official docs — transform method, parametric UMAP
-- FiftyOne official docs (v1.12.0) — Brain, evaluation, plugins, embeddings
-- CVAT, Label Studio, Roboflow official docs — feature comparison
-- supervision PyPI 0.27.0 + dataset docs — COCO/YOLO/VOC loading
-- TanStack Virtual docs — virtualization patterns
-- react-konva GitHub — canvas annotation rendering
+### Stack Research (HIGH confidence)
+- [Caddy Docker image](https://hub.docker.com/_/caddy) — caddy:2-alpine, automatic HTTPS
+- [Caddy reverse proxy quickstart](https://caddyserver.com/docs/quick-starts/reverse-proxy)
+- [Caddy basic_auth directive](https://caddyserver.com/docs/caddyfile/directives/basic_auth)
+- [FastAPI HTTP Basic Auth](https://fastapi.tiangolo.com/advanced/security/http-basic-auth/)
+- [FastAPI Docker deployment](https://fastapi.tiangolo.com/deployment/docker/)
+- [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)
+- [react-konva npm](https://www.npmjs.com/package/react-konva) — v19.2.0 verified
+- [konva npm](https://www.npmjs.com/package/konva) — v10.2.0 verified
+- [Konva Transformer docs](https://konvajs.org/docs/react/Transformer.html)
+- [react-hotkeys-hook npm](https://www.npmjs.com/package/react-hotkeys-hook) — v5.2.4 verified
+- [Qdrant local mode](https://deepwiki.com/qdrant/qdrant-client/2.2-local-mode)
+- [GCP Container-Optimized OS](https://cloud.google.com/container-optimized-os/docs)
 
-### Secondary (MEDIUM confidence)
-- DuckDB FastAPI Discussion #13719 — concurrency patterns validated by community
-- deck.gl Context Loss Discussion #7841 + Issue #5398 — recovery patterns
-- TanStack Virtual Issue #196 — memory leak confirmation
-- FiftyOne Performance Issues #1740, #675 — 145K sample load times
-- Qdrant Embedding Change Discussion #3797 — migration patterns
-- Python JSON Streaming article — ijson 99.4% memory reduction claim
-- Moondream2 HuggingFace model card — 1.86B params confirmed
+### Feature Research (HIGH confidence)
+- [FiftyOne Import Datasets (v1.12.0)](https://docs.voxel51.com/user_guide/import_datasets.html)
+- [FiftyOne Export Datasets (v1.11.1)](https://docs.voxel51.com/user_guide/export_datasets.html)
+- [FiftyOne Evaluation (v1.11.1)](https://docs.voxel51.com/user_guide/evaluation.html)
+- [FiftyOne Brain](https://docs.voxel51.com/brain.html)
+- [FiftyOne Annotation (v1.11.0)](https://docs.voxel51.com/user_guide/annotation.html)
+- [Encord Annotate Overview](https://docs.encord.com/platform-documentation/Annotate/annotate-overview)
+- [Encord Label Editor](https://docs.encord.com/platform-documentation/Annotate/annotate-label-editor)
+- [Encord Active Quality Metrics](https://docs.encord.com/platform-documentation/Active/active-quality-metrics/active-model-quality-metrics)
+- [Encord Editor Shortcuts](https://docs.encord.com/platform-documentation/Annotate/annotate-label-editor/annotate-label-editor-settings-shortcuts)
 
-### Tertiary (LOW confidence)
-- Quiver project (DuckDB + HNSW) — referenced in MotherDuck blog, not primary source
-- GCS caching behavior for private buckets — inferred from docs, not benchmarked
-- Pillow thumbnail generation performance at 100K scale — assumed sufficient, not measured
+### Architecture Research (HIGH confidence)
+- DataVisor codebase: app/main.py, dependencies.py, config.py, repositories/duckdb_repo.py, services/similarity_service.py — existing patterns verified
+- DataVisor codebase: frontend/src/stores/*.ts, components/**/*.tsx — 3 Zustand stores, SVG annotation overlay confirmed
+- [FastAPI Dependency Injection (PropelAuth)](https://www.propelauth.com/post/fastapi-auth-with-dependency-injection)
+- [FastAPI Auth Discussion #8867](https://github.com/fastapi/fastapi/discussions/8867)
+- [Konva Drag and Resize Limits](https://konvajs.org/docs/select_and_transform/Resize_Limits.html)
+- [Qdrant Python Client](https://python-client.qdrant.tech/qdrant_client.qdrant_client)
+
+### Pitfall Research (MEDIUM-HIGH confidence)
+- [DuckDB Files Created](https://duckdb.org/docs/stable/operations_manual/footprint_of_duckdb/files_created_by_duckdb) — WAL behavior
+- [DuckDB Concurrency](https://duckdb.org/docs/stable/connect/concurrency) — single-writer model
+- [DuckDB WAL Issue #10002](https://github.com/duckdb/duckdb/issues/10002) — lock file not cleaned
+- [Next.js Environment Variables](https://nextjs.org/docs/pages/guides/environment-variables) — NEXT_PUBLIC build-time
+- [Next.js Docker Env Discussion #17641](https://github.com/vercel/next.js/discussions/17641)
+- [MDN EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials) — header limitations
+- [WHATWG EventSource Issue #2177](https://github.com/whatwg/html/issues/2177) — cannot set headers
+- [Konva Coordinate Issue #830](https://github.com/konvajs/konva/issues/830) — dragging and zooming
+- [Konva Transformer BBox Issue #1296](https://github.com/konvajs/konva/issues/1296) — incorrect bbox with scale
+- [GCP Persistent Disks](https://cloud.google.com/compute/docs/disks/add-persistent-disk)
+- [GCP Firewall Rules](https://cloud.google.com/compute/docs/networking/firewalls)
 
 ---
-*Research completed: 2026-02-10*
-*Ready for roadmap: yes*
+
+**Ready for Requirements Definition:** YES
+
+SUMMARY.md synthesizes findings from 4 parallel research files. Orchestrator can proceed to requirements definition for v1.1 roadmap.

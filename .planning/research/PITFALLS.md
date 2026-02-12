@@ -1,571 +1,767 @@
-# Pitfalls Research
+# Domain Pitfalls: DataVisor v1.1
 
-**Domain:** CV Dataset Introspection Tooling (DataVisor -- Voxel51 alternative)
-**Researched:** 2026-02-10
-**Confidence:** MEDIUM-HIGH (verified against official docs for DuckDB, Qdrant, deck.gl, UMAP; some areas LOW where noted)
+**Domain:** Adding Docker deployment, auth, annotation editing, smart ingestion, and error triage to an existing FastAPI + DuckDB + Next.js CV dataset introspection tool
+**Researched:** 2026-02-12
+**Scope:** Pitfalls specific to v1.1 features on the existing v1.0 codebase (12,720 LOC, 59 tests)
+**Overall confidence:** MEDIUM-HIGH
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, project-killing delays, or fundamental architecture failures.
+Mistakes that cause rewrites, data loss, or deployment failures.
 
-### Pitfall 1: DuckDB Concurrent Access Deadlocks Under FastAPI Async Workers
+### Pitfall 1: DuckDB WAL and Lock Files Not Surviving Docker Container Restarts
 
 **Severity:** CRITICAL
+**Affects:** Docker containerization, data persistence
 
 **What goes wrong:**
-FastAPI runs async request handlers across multiple threads/workers. DuckDB enforces a single-writer-multiple-reader model per process. When two FastAPI endpoints attempt simultaneous writes (e.g., ingestion running while a user saves a filter preset), the second writer gets a transaction conflict error: `"Transaction conflict: cannot update a table that has been altered!"`. Under load testing with tools like Locust, the entire FastAPI process can stop responding with no error output -- a silent deadlock.
+DuckDB creates three filesystem artifacts alongside the database file: `datavisor.duckdb`, `datavisor.duckdb.wal` (write-ahead log), and a `datavisor.duckdb.tmp/` directory for intermediate processing. The WAL file is deleted on clean shutdown but persists if the container is killed (SIGKILL from `docker stop` after the 10s grace period, OOM kill, or crash). On next container start, DuckDB replays the WAL to recover uncommitted data. If the WAL file is missing (because the volume mount was only for the `.duckdb` file, not the directory), data loss occurs silently -- DuckDB opens without error but the last transactions are gone.
+
+The existing `DuckDBRepo.__init__` in `app/repositories/duckdb_repo.py` creates the parent directory via `db_path.parent.mkdir(parents=True, exist_ok=True)` and connects to a file at `data/datavisor.duckdb` (from `config.py`). In Docker, this `data/` directory must be a volume mount, not just the `.duckdb` file.
 
 **Why it happens:**
-Developers treat DuckDB like PostgreSQL, creating per-request connections. DuckDB's official documentation states: "One process can both read and write to the database. Multiple processes can read from the database, but no processes can write." Within a single process, multiple threads can write using MVCC with optimistic concurrency control, but only through cursors from the same connection. Appends never conflict, but row-level updates from two threads trigger errors. Instantiating a new DuckDB connection per request is explicitly documented as problematic.
+Developers volume-mount only the database file (`-v ./data/datavisor.duckdb:/app/data/datavisor.duckdb`) instead of the entire directory. The WAL and tmp files are created as siblings on the container filesystem (ephemeral layer) and vanish when the container restarts. DuckDB's official documentation states: "If DuckDB exits normally, the WAL file is deleted upon exit. If DuckDB crashes, the WAL file is required to recover data."
 
-**How to avoid:**
-- Maintain a single DuckDB connection at the application level (FastAPI lifespan event).
-- Use `connection.cursor()` to create thread-local cursors for each request, not separate connections.
-- Serialize write operations through an async queue or background task worker (e.g., FastAPI `BackgroundTasks` or a dedicated write thread).
-- Keep reads on cursor-per-request and writes on a single serialized channel.
-- For ingestion (bulk writes), use DuckDB's bulk COPY/INSERT which are optimized for this pattern -- "DuckDB is optimized for bulk operations, so executing many small transactions is not a primary design goal."
+Additionally, Docker's default stop signal is SIGTERM with a 10-second timeout before SIGKILL. If FastAPI's shutdown handler (the `lifespan` context manager's cleanup in `app/main.py`) takes longer than 10 seconds -- possible during a large ingestion with thumbnail generation -- the container is killed before `db.close()` runs, leaving the WAL behind.
+
+**Prevention:**
+1. Volume-mount the entire `data/` directory, never individual files: `volumes: ["./data:/app/data"]`
+2. Add a `STOPSIGNAL SIGTERM` to the Dockerfile and set `stop_grace_period: 30s` in docker-compose.yml to give the lifespan handler time to close DuckDB cleanly
+3. Add an explicit `CHECKPOINT` call in the lifespan shutdown before `db.close()` to flush the WAL to the database file: `self.connection.execute("CHECKPOINT")`
+4. Ensure the container user has write permission to the entire mounted directory, not just the `.duckdb` file
+5. Set `checkpoint_threshold` via `PRAGMA checkpoint_threshold='8MB'` to checkpoint more frequently (default is 16MB), reducing WAL size and recovery window
 
 **Warning signs:**
-- Intermittent 500 errors during concurrent operations that disappear under single-user testing.
-- FastAPI process hangs under load with no logged error.
-- Transaction conflict errors in logs during ingestion while users are browsing.
+- Data disappears after `docker-compose restart` but not after `docker-compose down && docker-compose up`
+- A `.wal` file appears in the data directory after `docker stop` but is missing after `docker start`
+- `docker logs` shows DuckDB opening successfully but with fewer rows than expected
 
-**Phase to address:**
-Phase 1 (Foundation). The connection management pattern must be established before any endpoints are written. Retrofitting is painful because every endpoint touches the database.
+**Phase to address:** Docker containerization (Phase 1 of v1.1)
 
-**Confidence:** HIGH -- verified against DuckDB official concurrency docs and GitHub Discussion #13719.
+**Confidence:** HIGH -- verified against DuckDB official documentation on [files created by DuckDB](https://duckdb.org/docs/stable/operations_manual/footprint_of_duckdb/files_created_by_duckdb) and [WAL recovery behavior](https://duckdb.org/docs/stable/connect/concurrency). WAL lock file issue confirmed in [DuckDB Issue #10002](https://github.com/duckdb/duckdb/issues/10002).
 
 ---
 
-### Pitfall 2: DuckDB-Qdrant Dual Database Consistency Drift
+### Pitfall 2: Qdrant Local Mode Cannot Run in Docker -- Must Migrate to Server Mode
 
 **Severity:** CRITICAL
+**Affects:** Docker containerization, Qdrant integration
 
 **What goes wrong:**
-Metadata lives in DuckDB; embeddings live in Qdrant. When a user deletes images, re-ingests a dataset, or updates labels, both databases must be updated atomically. But Qdrant provides eventual consistency -- "if you ingest your data you can expect eventual consistency of it but it's not guaranteed at any level." DuckDB provides ACID guarantees. Result: a delete succeeds in DuckDB but the Qdrant point persists (or vice versa), causing ghost points in the embedding map that reference non-existent images, or images in the grid that have no embedding and crash the scatter plot.
+The current codebase uses Qdrant in **local embedded mode**: `QdrantClient(path=str(path))` in `app/services/similarity_service.py`. This runs Qdrant as an in-process Python library with on-disk persistence at `data/qdrant/`. In Docker, you need Qdrant as a separate container service (server mode) because: (a) the embedded Qdrant client does not support concurrent access, which matters when multiple uvicorn workers run, (b) it adds ~500MB to the FastAPI container image, and (c) Qdrant's Docker image (`qdrant/qdrant`) is the canonical deployment path and provides proper health checks, metrics, and persistence.
+
+Switching from `QdrantClient(path=...)` to `QdrantClient(host="qdrant", port=6333)` is a one-line code change, but the data migration is not. The local-mode on-disk format is not compatible with the server-mode storage. All existing embeddings synced to Qdrant must be re-synced from DuckDB after the migration.
 
 **Why it happens:**
-There is no distributed transaction coordinator between an embedded analytical DB and a vector DB. Developers implement the "happy path" (write to both) and never handle partial failures. The consistency models are fundamentally different: DuckDB is strongly consistent; Qdrant is eventually consistent.
+Local mode is the recommended development path ("useful for development, prototyping and testing") and the existing code was designed for single-process local execution. Developers assume the migration is just changing the constructor, but forget about: (a) data format incompatibility, (b) network connectivity in docker-compose, (c) the need for an API key for security, and (d) health check dependencies (FastAPI should wait for Qdrant to be healthy before starting).
 
-**How to avoid:**
-- Establish a canonical source of truth: DuckDB is the authority for "what exists." Qdrant is a derived index.
-- Every mutation goes through a service layer that writes to DuckDB first, then Qdrant. If Qdrant write fails, log it for retry rather than rolling back DuckDB.
-- Implement a reconciliation job: periodically compare DuckDB sample IDs against Qdrant point IDs and clean up orphans.
-- Use Qdrant's `wait=true` parameter on upserts when strong consistency is needed (trades latency for consistency).
-- Store the DuckDB sample ID as the Qdrant point ID (UUID or integer) so cross-referencing is trivial.
-- Never query Qdrant for "what samples exist" -- always query DuckDB and then look up embeddings by known IDs.
+**Prevention:**
+1. In `docker-compose.yml`, add Qdrant as a service with a volume for persistence:
+   ```yaml
+   qdrant:
+     image: qdrant/qdrant:latest
+     volumes: ["./data/qdrant_server:/qdrant/storage"]
+     ports: ["6333:6333"]
+   ```
+2. Update `SimilarityService.__init__` to accept either `path` (local) or `url` (server) based on environment:
+   ```python
+   if qdrant_url:
+       self.client = QdrantClient(url=qdrant_url)
+   else:
+       self.client = QdrantClient(path=str(path))
+   ```
+3. Add `DATAVISOR_QDRANT_URL` environment variable to `config.py` Settings class (default None for local dev)
+4. Add a `depends_on` with health check in docker-compose so FastAPI waits for Qdrant:
+   ```yaml
+   depends_on:
+     qdrant:
+       condition: service_healthy
+   ```
+5. On first Docker startup, the `ensure_collection` + `_sync_from_duckdb` flow in `SimilarityService` already handles syncing -- but verify it works when the collection is empty in a fresh Qdrant server
 
 **Warning signs:**
-- Embedding map shows points that produce 404 when clicked.
-- Grid count and embedding map point count diverge after deletions.
-- Similarity search returns results for images that were deleted.
+- `ConnectionRefusedError` on FastAPI startup because Qdrant container is not yet ready
+- Similarity search returns empty results in Docker but works locally
+- FastAPI container image is 8GB+ because it bundles the Qdrant Rust binaries via qdrant-client's local mode
 
-**Phase to address:**
-Phase 1 (Foundation). The dual-write service layer and ID strategy must be designed before any data is persisted. Changing ID schemes later requires full re-ingestion.
+**Phase to address:** Docker containerization (Phase 1 of v1.1)
 
-**Confidence:** HIGH -- verified against DuckDB concurrency docs and Qdrant collection docs.
+**Confidence:** HIGH -- verified against [Qdrant quickstart docs](https://qdrant.tech/documentation/quickstart/) and [qdrant-client README](https://github.com/qdrant/qdrant-client) which explicitly states "If you require concurrent access to local mode, you should use Qdrant server instead."
 
 ---
 
-### Pitfall 3: WebGL Context Loss in deck.gl Embedding Visualization
+### Pitfall 3: NEXT_PUBLIC_API_URL Baked at Build Time, Not Configurable at Runtime
 
 **Severity:** CRITICAL
+**Affects:** Docker containerization, deployment flexibility
 
 **What goes wrong:**
-When the user has been browsing for a while, or the embedding map renders a large number of points with large radii, the browser's GPU runs out of memory and fires a `webglcontextlost` event. The embedding scatter plot goes black. deck.gl's official guidance: "Once the context is lost, there is no way to 'restore' the purged WebGL resources." The user must reload the page, losing all filter state.
+The frontend's API base URL is set in `frontend/src/lib/constants.ts`:
+```typescript
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+```
+
+`NEXT_PUBLIC_` environment variables are **inlined into the JavaScript bundle at `next build` time**. They are string-replaced in the compiled JS -- there is no runtime resolution. If you build the Docker image with `NEXT_PUBLIC_API_URL=http://localhost:8000` (or leave it unset), the compiled JS will contain the literal string `"http://localhost:8000"`. When you deploy to a GCP VM at `http://35.202.x.x:8000`, the frontend still calls `localhost:8000`, which fails because the browser is on the user's machine, not the VM.
 
 **Why it happens:**
-WebGL is a shared GPU resource. Chrome caps contiguous allocations at ~1GB. A ScatterplotLayer with 100K points is well within deck.gl's comfort zone (1M+ points at 60FPS), but combined with hover thumbnails, image grid rendering, and other browser tab GPU usage, memory pressure accumulates. The real danger is not initial render but accumulated state: reloading data, switching between datasets, or zooming into dense clusters that trigger high fragment shader load (a 10M-point scatter with 5px radius = ~1 billion fragment invocations).
+Next.js explicitly documents this: "Public environment variables will be inlined into the JavaScript bundle during `next build`." Developers either: (a) hardcode the URL and rebuild per environment, (b) set it at build time and forget it cannot change, or (c) try to set it in `docker run -e` and discover it has no effect.
 
-**How to avoid:**
-- Listen for the `webglcontextlost` event and display a user-friendly "GPU memory exceeded -- click to reload visualization" message instead of a black canvas.
-- Implement deck.gl instance re-creation on `webglcontextrestored` (requires destroying and rebuilding the Deck instance).
-- Limit point radius at low zoom levels to reduce fragment shader load.
-- Disable `useDevicePixels` on high-DPI screens (4x pixel reduction).
-- Use deck.gl's picking limit awareness: max 16M items per layer for picking.
-- When switching datasets, explicitly destroy the previous Deck instance and release GPU buffers before creating a new one.
-- Persist filter state in URL params or session storage so page reload does not lose context.
+**Prevention:**
+1. **Option A (simplest for this project):** Use a reverse proxy (nginx/caddy) that serves both frontend and API from the same origin, eliminating the need for a separate API URL. Frontend calls `/api/...` which the proxy routes to the FastAPI backend. No CORS issues, no URL configuration.
+2. **Option B:** Use Next.js `publicRuntimeConfig` with `getServerSideProps` to inject the API URL at request time. But this forces SSR for every page.
+3. **Option C:** Use the `next-runtime-env` library to read environment variables at runtime via a thin server-side injection.
+4. **Option D:** Pass the API URL via a `<script>` tag injected into `_document.tsx` at container startup (entrypoint script replaces a placeholder in the built HTML).
+
+**Recommendation:** Option A is strongly preferred. A single-origin setup via reverse proxy eliminates CORS entirely and makes basic auth work seamlessly (see Pitfall 4). The existing `allow_origins=["*"]` in `app/main.py` can then be tightened.
 
 **Warning signs:**
-- Increasing frame drops when zooming into dense embedding clusters.
-- Browser tab memory climbing steadily during session.
-- Black canvas with no error in console (context loss fires as an event, not an exception).
+- Frontend works in local dev but shows "Failed to fetch" errors when deployed to GCP VM
+- Browser console shows requests to `http://localhost:8000` even though the app is accessed via a public IP
+- Setting `NEXT_PUBLIC_API_URL` in `docker run -e` has no effect
 
-**Phase to address:**
-Phase 2 (Embedding Visualization). Must be addressed when deck.gl is first integrated, not deferred.
+**Phase to address:** Docker containerization (Phase 1 of v1.1)
 
-**Confidence:** HIGH -- verified against deck.gl performance docs and GitHub Discussion #7841 / Issue #5398.
+**Confidence:** HIGH -- verified against [Next.js environment variables documentation](https://nextjs.org/docs/pages/guides/environment-variables) and [multiple GitHub discussions](https://github.com/vercel/next.js/discussions/17641) confirming this is a build-time-only mechanism.
 
 ---
 
-### Pitfall 4: Large COCO JSON Files Blow Up Memory During Ingestion
+### Pitfall 4: Basic Auth Over HTTP Sends Credentials in Cleartext
 
 **Severity:** CRITICAL
+**Affects:** Authentication, GCP VM deployment
 
 **What goes wrong:**
-A COCO annotation file for a 100K+ image dataset with dense bounding boxes can easily be 500MB-1GB. Python's `json.load()` on a 500MB file consumes 2-4GB of RAM and takes 30+ seconds. If you load the entire file into a dict and then iterate, you spike memory to 4-8GB during the transform step. On a 16GB dev machine with a GPU model loaded, this causes OOM kills.
+HTTP Basic Authentication encodes credentials as `base64(username:password)` in the `Authorization` header. Base64 is encoding, not encryption. Without HTTPS, every request sends the password in cleartext over the network. On a GCP VM accessed over the public internet, anyone on the network path (ISP, coffee shop WiFi, GCP internal routing) can intercept the credentials. This is not a theoretical risk -- it is trivially exploitable with tools like Wireshark or `tcpdump`.
+
+Additionally, the existing SSE streams (ingestion progress, embedding progress, VLM progress) use the browser's native `EventSource` API, which **cannot set custom HTTP headers**. The `EventSource` constructor only supports `withCredentials: true` (for cookies) -- not `Authorization` headers. This means SSE endpoints either: (a) must use cookie-based auth instead of header-based auth, (b) must accept a token in the URL query string, or (c) must use a polyfill like `event-source-plus` or `@microsoft/fetch-event-source` that uses `fetch` under the hood.
 
 **Why it happens:**
-The COCO format stores all annotations in a single monolithic JSON file with `images`, `annotations`, and `categories` arrays. The `annotations` array for 100K images with 5+ boxes each contains 500K+ annotation objects. Developers use `json.load()` because it is the obvious approach and it works on small test datasets.
+"Single-user basic auth" sounds simple, but the interaction between HTTP Basic Auth, HTTPS requirements, SSE limitations, and CORS creates a surprisingly complex surface. Developers implement basic auth on the API, test in the browser (which shows a native auth dialog), confirm it works, then deploy to HTTP and do not realize the credentials are exposed. The SSE issue is discovered only when progress streams break after adding auth middleware.
 
-**How to avoid:**
-- Use `ijson` (streaming JSON parser) to parse COCO files incrementally. Read `categories` first (small), then stream `images` and `annotations` in chunks.
-- Build a lookup dict for `image_id -> annotations` incrementally rather than loading all annotations into memory.
-- Process in batches: parse 1000 images worth of annotations, insert into DuckDB, release memory, repeat.
-- For YOLO format (one .txt per image), this is not an issue -- but implement a unified streaming interface so the ingestion pipeline handles both patterns.
-- Set a configurable `batch_size` on the ingestion pipeline. Default to 1000 images per batch.
-- Profile memory during ingestion of your largest expected dataset EARLY -- do not wait until integration testing.
+**Prevention:**
+1. **HTTPS is mandatory.** Use one of:
+   - Caddy as a reverse proxy (automatic HTTPS via Let's Encrypt, zero configuration for a domain)
+   - nginx with certbot
+   - GCP load balancer with managed SSL certificate (overkill for single-user)
+2. **For SSE + auth:** Use a session cookie set by a login endpoint rather than per-request Basic Auth headers. The flow: POST `/auth/login` with credentials -> server sets `HttpOnly, Secure, SameSite=Strict` cookie -> all subsequent requests (including `EventSource`) include the cookie automatically
+3. **If using reverse proxy (recommended from Pitfall 3):** Caddy/nginx can handle basic auth at the proxy layer, before requests reach FastAPI. This means zero auth code in FastAPI and SSE streams work without modification.
+4. **Never put credentials in URL query strings** -- they end up in server logs, browser history, and proxy logs
 
 **Warning signs:**
-- Ingestion works fine on 1K-image test sets but crashes or freezes on real 100K+ datasets.
-- Python process memory spikes to 4GB+ during ingestion.
-- OOM killer terminates the FastAPI process mid-ingestion.
+- SSE streams break after adding `Depends(verify_auth)` to endpoints because `EventSource` does not send the `Authorization` header
+- Browser shows the native Basic Auth dialog on every page load (no session persistence)
+- Penetration test flags "credentials transmitted over unencrypted channel"
 
-**Phase to address:**
-Phase 1 (Ingestion). The streaming parser must be the default path from the start. Retrofitting streaming into a `json.load()`-based parser requires rewriting the entire ingestion pipeline.
+**Phase to address:** Docker containerization / deployment (Phase 1 of v1.1)
 
-**Confidence:** HIGH -- verified against Python JSON streaming benchmarks (99.4% memory reduction with streaming).
+**Confidence:** HIGH -- EventSource header limitation verified against [MDN EventSource docs](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials) and [WHATWG HTML spec issue #2177](https://github.com/whatwg/html/issues/2177).
 
 ---
 
-### Pitfall 5: UMAP Compute Time Makes Interactive Exploration Impractical
+### Pitfall 5: SVG-to-Canvas Coordinate System Mismatch When Adding Interactive Annotation Editing
 
 **Severity:** CRITICAL
+**Affects:** Annotation editing feature
 
 **What goes wrong:**
-Running UMAP on 100K 512-dimensional image embeddings takes 5-15 minutes on CPU. t-SNE takes 45+ minutes. If the user imports a dataset and expects to see the embedding map, they face a multi-minute wait with no progress indicator. Worse: if they change parameters (n_neighbors, min_dist) or add new images, the entire UMAP must re-run. The tool feels broken for its core use case.
+The current annotation overlay in `frontend/src/components/grid/annotation-overlay.tsx` uses SVG with a `viewBox` matching the original image dimensions (`viewBox="0 0 ${imageWidth} ${imageHeight}"`). Annotation coordinates are in **original pixel space** and the SVG `preserveAspectRatio` handles all scaling automatically. This is elegant and correct for read-only display.
+
+For interactive editing (move, resize, delete bounding boxes), you need to switch to react-konva (Canvas-based) because SVG does not have built-in drag handles, transform controls, or efficient hit testing. But react-konva's coordinate system works differently:
+
+1. **Konva uses Stage/Layer coordinates**, not viewBox. There is no equivalent of SVG's `preserveAspectRatio="xMidYMid meet"`. You must manually compute the scale factor between the displayed image size and the original image dimensions.
+2. **Konva's Transformer modifies `scaleX`/`scaleY`, not `width`/`height`**. After a resize, the shape's `width()` is unchanged but `scaleX()` is 2.0. If you save `width()` to the database without multiplying by `scaleX()`, the annotation silently shrinks back to its original size.
+3. **Zoom and pan change the coordinate space.** If the user zooms in on an image, pointer events return coordinates in the zoomed space. Converting back to original pixel space requires `stage.getPointerPosition()` -> divide by stage scale -> subtract stage offset. Getting this wrong means annotations drift from their intended positions when zoomed.
+4. **The current system stores absolute pixel coordinates** (`bbox_x`, `bbox_y`, `bbox_w`, `bbox_h` in `annotations` table). Mutations must write back in the same coordinate space, not in display-space or stage-space.
 
 **Why it happens:**
-UMAP's time complexity is approximately O(N^1.14) for construction of the fuzzy simplicial set and optimization. At 100K samples, this is substantial. Developers prototype with 1K samples where UMAP runs in seconds, then discover the scaling wall. The incremental update story is also weak: standard UMAP's `.transform()` can project new points into an existing embedding, but "the overall distribution in your higher-dimensional vectors [must] be consistent between training and testing data." When it isn't, you need Parametric UMAP with neural network training, adding significant complexity.
+SVG handles coordinate transforms transparently; Canvas does not. Developers who have only worked with SVG overlays underestimate the manual coordinate math required by Canvas. The Transformer tool's scale-vs-dimension behavior is a [well-documented source of confusion](https://longviewcoder.com/2022/04/28/what-the-hell-did-the-transformer-actually-do-to-my-shape/) in the Konva community.
 
-**How to avoid:**
-- Pre-compute UMAP embeddings during ingestion as a background task. Store 2D coordinates in DuckDB alongside the sample metadata. The user sees the map immediately on next visit.
-- Show a clear progress bar during embedding computation. Use UMAP's `verbose=True` and stream epoch progress to the frontend via WebSocket.
-- Cache UMAP results keyed by (dataset_id, embedding_model, n_neighbors, min_dist). Only recompute when parameters change.
-- For incremental updates (new images added), use UMAP's `.transform()` method to project new points into the existing space without re-fitting. This is fast (~335ms for test sets) but requires the original fitted model to be serialized and stored.
-- Consider offering PCA as a fast fallback (seconds on 100K) for initial exploration, with UMAP as an async upgrade.
-- Use `umap.UMAP(low_memory=True)` for datasets approaching memory limits.
+**Prevention:**
+1. **Compute a single scale factor** when the image loads:
+   ```typescript
+   const scale = Math.min(
+     containerWidth / imageWidth,
+     containerHeight / imageHeight
+   );
+   ```
+   Store this in component state. All coordinate conversions go through it.
+2. **In `onTransformEnd`, always normalize scale back to 1:**
+   ```typescript
+   const node = shapeRef.current;
+   const sx = node.scaleX(), sy = node.scaleY();
+   node.scaleX(1); node.scaleY(1);
+   const newW = node.width() * sx;
+   const newH = node.height() * sy;
+   // Convert display coords to original pixel space
+   const bboxX = node.x() / scale;
+   const bboxW = newW / scale;
+   ```
+3. **Set `boundBoxFunc` on the Transformer** to prevent annotations from being dragged outside the image bounds
+4. **In `onDragEnd`, convert position back to pixel space** before persisting
+5. **Keep the SVG overlay for read-only contexts** (grid thumbnails, non-edit modal). Only use Konva in the edit modal. This limits the migration surface.
+6. **Write a `toPixelSpace(displayCoords, scale)` and `toDisplaySpace(pixelCoords, scale)` utility** and use it everywhere. Never do ad-hoc coordinate math.
 
 **Warning signs:**
-- Embedding page shows a spinner for minutes with no progress feedback.
-- Users click away before UMAP completes, triggering wasted compute.
-- "Recompute embeddings" button triggers a full refit when only 100 new images were added.
+- Annotations appear in the correct position but after save-and-reload they are offset by a fixed amount
+- Annotations "jump" when the user starts dragging (because initial position was in wrong coordinate space)
+- Resizing an annotation and saving causes it to shrink or grow unexpectedly
+- Annotations drift when the user zooms in/out during editing
 
-**Phase to address:**
-Phase 2 (Embedding Visualization). The background compute + caching pattern is foundational to the embedding experience.
+**Phase to address:** Annotation editing (Phase 3 of v1.1)
 
-**Confidence:** HIGH -- verified against UMAP 0.5.8 official docs (transform method, parametric UMAP).
+**Confidence:** HIGH -- Transformer scale behavior verified against [Konva official Transformer docs](https://konvajs.org/docs/react/Transformer.html) and [Konva Issue #830](https://github.com/konvajs/konva/issues/830) on coordinate changes with zoom. The [Konva Issue #1296](https://github.com/konvajs/konva/issues/1296) confirms bounding box calculation issues with stroke and scale.
 
 ---
 
 ## Major Pitfalls
 
-Mistakes that cause significant rework, degraded UX, or weeks of debugging.
+Mistakes that cause significant rework, broken features, or deployment delays.
 
-### Pitfall 6: Qdrant Collection Schema Lock-In on Embedding Model Change
+### Pitfall 6: Docker Image Bloat from PyTorch + Transformers (8-12GB)
 
 **Severity:** MAJOR
+**Affects:** Docker containerization, deployment speed
 
 **What goes wrong:**
-You create a Qdrant collection with 512-dimensional vectors (e.g., CLIP ViT-B/32). Later you want to switch to a better model with 768 dimensions (e.g., CLIP ViT-L/14). Qdrant collections have fixed vector dimensions -- "the vector of each point within the same collection must have the same dimensionality." You cannot ALTER the collection. You must create a new collection, re-embed all images, and migrate. For 100K images, re-embedding takes hours of GPU time.
+The current `pyproject.toml` includes `torch>=2.10.0` and `transformers>=5.1.0` as direct dependencies. A naive `pip install` of these in a Docker image results in:
+- PyTorch with CUDA support: ~2.5GB
+- Transformers library: ~500MB
+- Combined with Python, DuckDB, Pillow, scikit-learn, etc.: **8-12GB total image**
+
+This makes `docker pull` take 10+ minutes on a GCP VM, `docker build` takes 20+ minutes, and disk usage on the VM is excessive.
+
+Python 3.14 adds a complication: as of the project's `requires-python = ">=3.14"`, the official `python:3.14-slim` images are available on Docker Hub, but some ML packages may not have pre-built wheels for 3.14 yet, forcing source compilation and further increasing build time.
 
 **Why it happens:**
-Vector databases enforce fixed-dimension collections for performance reasons (HNSW index optimization). Developers pick an embedding model early and do not plan for model upgrades. Qdrant explicitly does not support ALTER TABLE -- "it's a drop-and-recreate operation."
+ML dependencies are massive. PyTorch bundles CUDA libraries by default even if you only need CPU inference. The `transformers` library pulls in many transitive dependencies. Developers build the image once, accept the size, and only discover the problem when CI/CD pipelines time out or GCP VM disk fills up.
 
-**How to avoid:**
-- Use Qdrant's **named vectors** feature: create a collection with named vector fields (`{"clip_vit_b32": {...}, "clip_vit_l14": {...}}`). Each named vector can have independent dimensionality. This allows side-by-side embedding models without collection recreation.
-- Store the embedding model name alongside the vector in Qdrant payloads. Version your embeddings.
-- Design the embedding pipeline to be model-agnostic: accept any (model_name, dimension) pair and route to the correct named vector.
-- Plan for migration: implement a background re-embedding job that can process images incrementally and populate a new named vector while the old one remains queryable.
+**Prevention:**
+1. **Use CPU-only PyTorch** for the Docker image unless GPU inference is needed in Docker:
+   ```dockerfile
+   RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
+   ```
+   This reduces PyTorch from ~2.5GB to ~200MB.
+2. **Multi-stage build:** Build dependencies in a `builder` stage, copy only site-packages and the app to a slim runtime stage:
+   ```dockerfile
+   FROM python:3.14-slim AS builder
+   RUN pip install --no-cache-dir --target=/deps ...
+   FROM python:3.14-slim AS runtime
+   COPY --from=builder /deps /usr/local/lib/python3.14/site-packages
+   ```
+3. **Use `--no-cache-dir` everywhere** to avoid pip cache bloating the image
+4. **Pin exact versions** to avoid pulling unnecessary updates during builds
+5. **For GPU support on GCP VMs:** Use NVIDIA Container Toolkit and mount the host GPU at runtime rather than bundling CUDA in the image
+6. **Consider MPS is NOT available in Docker on macOS** -- the DINOv2 embedding and Moondream2 VLM services will fall back to CPU. The `_detect_device()` function in `config.py` will return "cpu" in Docker.
 
 **Warning signs:**
-- Hardcoded `vector_size=512` in collection creation.
-- No embedding model version stored in metadata.
-- Desire to try a new embedding model triggers "we need to re-ingest everything" conversation.
+- `docker build` takes 30+ minutes
+- GCP VM disk fills up after a few image pulls
+- `docker push` to registry takes 20+ minutes
 
-**Phase to address:**
-Phase 1 (Foundation). The Qdrant collection schema and named vector strategy must be decided before the first embedding is stored.
+**Phase to address:** Docker containerization (Phase 1 of v1.1)
 
-**Confidence:** HIGH -- verified against Qdrant official collection docs (named vectors, migration tool).
+**Confidence:** HIGH -- verified against [PyTorch Docker optimization guide](https://mveg.es/posts/optimizing-pytorch-docker-images-cut-size-by-60percent/) and [Docker Hub Python 3.14 images](https://hub.docker.com/_/python).
 
 ---
 
-### Pitfall 7: Virtualized Image Grid Memory Leaks from Unreleased Blob URLs
+### Pitfall 7: DuckDB Annotation Mutations Without Transactions Cause Inconsistent State
 
 **Severity:** MAJOR
+**Affects:** Annotation editing, error triage workflow
 
 **What goes wrong:**
-The infinite-scroll grid creates thumbnails by fetching image data (from disk, GCS, or cache) and rendering them. If images are loaded as Blob URLs via `URL.createObjectURL()`, each URL holds a reference to the underlying binary data. As the user scrolls through 100K images, thousands of Blob URLs accumulate. Even though virtualization removes DOM elements, the Blob URLs persist in memory. Memory usage climbs from 200MB to 2GB+ during a single browsing session, eventually crashing the tab.
+The annotation editing feature will introduce **write mutations** to the `annotations` table (UPDATE for move/resize, DELETE for remove). The error triage workflow will also mutate data (adding tags, changing error classifications). The current codebase is **read-heavy with append-only writes** -- ingestion inserts in bulk, predictions insert in bulk, and all reads use cursors. There are no UPDATE operations anywhere in the existing code.
+
+Adding per-annotation UPDATEs introduces new failure modes:
+1. **No primary key enforcement.** The DuckDB schema in `duckdb_repo.py` explicitly avoids PRIMARY KEY constraints ("No PRIMARY KEY or FOREIGN KEY constraints are used -- this yields ~3.8x faster bulk inserts"). This means UPDATE must use composite WHERE clauses (`WHERE id = ? AND dataset_id = ?`), and there is no unique constraint to prevent duplicate annotation IDs.
+2. **Cursor-per-request writes may conflict.** The existing `get_cursor` dependency yields a cursor from the single connection. Two concurrent annotation edits from the same user (e.g., rapid-fire drag operations) create two cursors both attempting writes. DuckDB uses optimistic concurrency control -- the second write may fail with a transaction conflict if both touch the same row.
+3. **Annotation count denormalization.** The `datasets` table stores `annotation_count`. Deleting an annotation must update this counter. If the DELETE succeeds but the UPDATE to `datasets` fails (or the user's connection drops mid-request), the count drifts.
 
 **Why it happens:**
-Virtualization libraries (react-window, TanStack Virtual) unmount off-screen components but do not manage Blob URL lifecycle. Developers assume garbage collection handles cleanup. It does not: "Each time you call createObjectURL(), a new object URL is created, and each of these must be released by calling URL.revokeObjectURL()." Documented memory leaks in TanStack Virtual (Issue #196) show memory jumping to 143MB after scrolling just 2000 rows.
+Append-only systems do not need transactions or unique constraints. The v1.0 architecture was correctly designed for its workload (bulk ingestion + reads). v1.1 changes the workload to include interactive single-row mutations, which is a fundamentally different access pattern.
 
-**How to avoid:**
-- Call `URL.revokeObjectURL(url)` in the component's cleanup/unmount hook when the image leaves the viewport.
-- Better yet: use a fixed-size LRU cache of Blob URLs (e.g., 500 entries). When the cache evicts an entry, revoke the URL. This bounds memory regardless of scroll distance.
-- For GCS images, serve thumbnails via signed URLs with short expiry rather than downloading and creating Blob URLs. Let the browser's HTTP cache handle lifecycle.
-- Use `<img src={url}>` with standard HTTP URLs where possible -- the browser manages memory for HTTP-cached images far better than for Blob URLs.
-- Profile memory in Chrome DevTools during a scroll-through-all test early. Look for the "JS Heap" climbing linearly.
+**Prevention:**
+1. **Add annotation IDs as unique identifiers.** While not enforcing a PRIMARY KEY (to preserve bulk insert performance), verify annotation ID uniqueness in application code before UPDATE.
+2. **Wrap mutation operations in explicit transactions:**
+   ```python
+   cursor = db.connection.cursor()
+   try:
+       cursor.begin()
+       cursor.execute("UPDATE annotations SET bbox_x=?, bbox_y=?, bbox_w=?, bbox_h=? WHERE id=? AND dataset_id=?", [...])
+       cursor.execute("UPDATE datasets SET annotation_count = (SELECT COUNT(*) FROM annotations WHERE dataset_id=?) WHERE id=?", [...])
+       cursor.commit()
+   except Exception:
+       cursor.rollback()
+       raise
+   finally:
+       cursor.close()
+   ```
+3. **Debounce annotation mutations on the frontend.** Do not send a PATCH request on every mouse move during drag. Send one PATCH on `onDragEnd` / `onTransformEnd`.
+4. **Consider adding a `modified_at` timestamp column** to annotations for conflict detection (optimistic locking).
+5. **Recompute denormalized counts** from source tables rather than incrementing/decrementing (avoids drift).
 
 **Warning signs:**
-- Chrome DevTools shows JS Heap growing linearly with scroll distance.
-- Browser tab crashes after extended browsing sessions.
-- "Aw, Snap!" errors on Chrome after viewing thousands of images.
+- Annotation count in the sidebar does not match the actual number of annotations after edits
+- Rapid annotation edits occasionally fail with "Transaction conflict" errors
+- Deleted annotations reappear after page refresh (DELETE executed on cursor but transaction not committed)
 
-**Phase to address:**
-Phase 1 (Grid View). Must be designed into the image loading strategy from the start. Retrofitting Blob URL cleanup into an existing grid requires touching every image component.
+**Phase to address:** Annotation editing (Phase 3 of v1.1)
 
-**Confidence:** MEDIUM-HIGH -- verified against MDN Blob URL docs; TanStack Virtual Issue #196 confirms the pattern.
+**Confidence:** HIGH -- verified against existing schema in `duckdb_repo.py` and DuckDB's [concurrency documentation](https://duckdb.org/docs/stable/connect/concurrency) on optimistic concurrency control.
 
 ---
 
-### Pitfall 8: Embedding Map <-> Grid View Filter Desynchronization
+### Pitfall 8: Smart Folder Structure Detection Has Unbounded Edge Cases
 
 **Severity:** MAJOR
+**Affects:** Smart dataset ingestion UI
 
 **What goes wrong:**
-The user lasso-selects a cluster on the embedding map. The grid should filter to show only those images. But the filter state drifts: the grid shows 347 images while the embedding map highlights 352 points. Or the user applies a metadata filter in the sidebar, the grid updates, but the embedding map still shows all points. The tool feels untrustworthy -- the core value proposition (visual exploration) is undermined.
+The smart ingestion feature must auto-detect dataset folder structures. Real-world CV datasets use dozens of conventions:
+
+**Standard COCO:**
+```
+dataset/
+  annotations/
+    instances_train2017.json
+    instances_val2017.json
+  train2017/
+  val2017/
+```
+
+**Standard YOLO:**
+```
+dataset/
+  images/
+    train/
+    val/
+  labels/
+    train/
+    val/
+  data.yaml
+```
+
+**Roboflow exports:**
+```
+dataset/
+  train/
+    images/
+    labels/
+  valid/
+    images/
+    labels/
+  test/
+    images/
+    labels/
+  data.yaml
+```
+
+**FiftyOne exports, CVAT exports, custom layouts** all differ further. The detection heuristic must handle: (a) split names in folder names (`train`, `training`, `trn`, `val`, `valid`, `validation`, `test`, `testing`), (b) splits at different directory levels (top-level vs. inside images/), (c) missing splits (no test set), (d) annotation files at different levels, (e) symlinks to shared image directories, (f) datasets with NO split structure (flat single folder).
+
+The dangerous edge case: a dataset with folder names that coincidentally match split names (e.g., a `train/` directory that contains images of trains, not training data).
 
 **Why it happens:**
-Two independent visualization systems (deck.gl scatter plot, React virtualized grid) with separate data pipelines. Filter state lives in three places: URL params, React state, and server-side query results. Race conditions emerge when: (a) lasso selection sends IDs to the server while a metadata filter is still in-flight, (b) the grid paginates lazily so total count is estimated, (c) deck.gl's picking returns point indices that map to stale data after a re-sort.
+There is no standard. Every annotation tool exports differently. Every ML team has their own conventions. Developers implement detection for the 3 formats they have seen and discover the other 20 in user bug reports.
 
-**How to avoid:**
-- Single source of truth for filter state: one Zustand/Jotai store that both the grid and the embedding map subscribe to. Never let either component maintain its own filter state.
-- Filter pipeline: User action -> update store -> derive DuckDB query -> execute query -> return sample IDs -> both grid and map render from the same ID set.
-- The embedding map does NOT query Qdrant for display -- it reads pre-computed 2D coordinates from DuckDB. Qdrant is only used for similarity search. This eliminates a cross-database consistency surface.
-- For lasso selection: deck.gl returns point indices -> map to sample IDs via the data array -> set IDs in the filter store -> grid reads the same IDs.
-- Debounce filter updates (200ms) to prevent rapid state thrashing during lasso drawing.
-- Display the exact count in both views: "Showing 347 of 102,453 samples" must be identical in both the grid header and the embedding map legend.
+**Prevention:**
+1. **Detection is a suggestion, not an action.** Show the detected structure to the user and let them confirm/correct before ingestion. Never auto-ingest without confirmation.
+2. **Use a scoring/confidence system.** Score each candidate split detection by:
+   - Presence of known annotation files (`.json`, `.yaml`, `.xml`, `.txt`)
+   - Image file ratio (a real split directory has mostly images)
+   - Naming conventions (weighted: `train` > `trn`)
+   - Sibling directory patterns (if `train/` and `val/` exist as siblings, confidence is higher)
+3. **Support manual override.** If detection fails, let the user manually specify: "This folder is train, this folder is val, this file is the annotation file."
+4. **Start with COCO only (since v1.0 only parses COCO).** Detect COCO-style structures first. The existing `COCOParser` expects a single annotation JSON and a single image directory. Smart ingestion for v1.1 should: find `.json` files that look like COCO, find image directories, let the user map them.
+5. **Ignore symlinks on first pass.** Following symlinks can cause infinite loops and unexpected cross-filesystem traversal. Use `os.walk(followlinks=False)` or `Path.iterdir()` (which does not follow symlinks by default).
+6. **Set a directory scan depth limit** (e.g., max 3 levels deep) to avoid accidentally scanning a mounted filesystem root.
 
 **Warning signs:**
-- Grid and embedding map show different counts for the same filter.
-- Lasso selection sometimes includes/excludes edge points inconsistently.
-- Applying a sidebar filter does not update the embedding map (or vice versa).
-- Rapid filter changes cause the UI to flash between states.
+- Auto-detection picks the wrong directory as "training images"
+- A dataset with subdirectories organized by class (ImageNet-style) is misinterpreted as split-based
+- User reports that "the ingestion imported my test images as training images"
 
-**Phase to address:**
-Phase 2 (Embedding Visualization + Filter Integration). The filter architecture must be designed when the embedding map is added, not bolted on later.
+**Phase to address:** Smart ingestion (Phase 2 of v1.1)
 
-**Confidence:** MEDIUM -- based on common state management patterns; no specific prior art for this exact scenario was found.
+**Confidence:** MEDIUM -- based on analysis of common dataset formats from [YOLO dataset structure](https://github.com/ultralytics/ultralytics/blob/main/docs/en/datasets/detect/index.md) and COCO convention documentation. Edge cases are experiential knowledge.
 
 ---
 
-### Pitfall 9: VLM Agent Hallucination and False Positive Recommendations
+### Pitfall 9: GCP Firewall Rules Block All Ports by Default
 
 **Severity:** MAJOR
+**Affects:** GCP VM deployment
 
 **What goes wrong:**
-The Pydantic AI agent analyzes error distribution and recommends actions like "90% of False Negatives occur in low-light images." But the VLM (Moondream2) hallucinated: it described a well-lit image as "low-light" because of dark-colored objects. The agent confidently surfaces a pattern that does not exist. The user acts on it (augmenting training data with more low-light images), wasting time. Trust in the agentic workflow erodes permanently.
+GCP Compute Engine has a **default-deny inbound** firewall policy. When you create a VM and run `docker-compose up`, the services bind to their ports inside the VM, but no external traffic can reach them. The developer SSHs into the VM, runs `curl localhost:3000` and sees the frontend. They open `http://35.202.x.x:3000` in their browser -- connection timeout. They spend 30 minutes debugging Docker port mapping before realizing it is a GCP firewall issue.
+
+Even after creating a firewall rule for port 3000 (frontend) and 8000 (API), developers forget: (a) Qdrant port 6333 should NOT be exposed publicly (internal only), (b) the DuckDB file is accessible via the API, so exposing port 8000 without auth is equivalent to exposing the database, (c) firewall rules apply to all VMs with the matching network tag -- accidentally broad rules expose other VMs.
 
 **Why it happens:**
-Moondream2 is a 1.86B parameter model -- tiny by VLM standards. It is optimized for edge deployment, not for nuanced scene analysis. Its visual understanding has gaps, particularly for: lighting conditions, subtle occlusions, image quality assessment, and counting objects. The Pydantic AI agent trusts the VLM's structured output without calibration. LLM agents hallucinate with structured output just as readily as with free text -- the JSON schema constrains the format, not the accuracy.
+AWS opens ports 22/80/443 in common security groups. GCP's default is more restrictive -- only SSH (port 22), ICMP, and RDP (port 3389) are allowed by default via the `default-allow-ssh` and `default-allow-icmp` rules. Developers familiar with AWS muscle-memory expect ports to be open.
 
-**How to avoid:**
-- Calibrate the VLM on a labeled validation set before deploying the agent. Measure precision/recall for each attribute the agent relies on (lighting, occlusion, blur, etc.). Document known failure modes.
-- The agent must present findings as hypotheses, not facts: "Based on VLM analysis (73% agreement with manual review), the following pattern MAY exist..."
-- Include a confidence score derived from VLM output consistency (run the same image through the VLM 3 times; report the agreement rate).
-- Provide a "verify" workflow: when the agent identifies a pattern, show the user a sample of 10-20 images that triggered the pattern so they can spot-check.
-- Set a minimum sample size for pattern detection. Do not surface "90% of X are Y" when N=10. Require N >= 50 for pattern claims.
-- Use the agent for aggregation and statistics (which it does well) rather than per-image classification (which the VLM does poorly at the margins).
+**Prevention:**
+1. **Deployment script must create firewall rules automatically:**
+   ```bash
+   gcloud compute firewall-rules create datavisor-web \
+     --allow tcp:80,tcp:443 \
+     --target-tags datavisor \
+     --source-ranges 0.0.0.0/0
+   ```
+2. **Use a reverse proxy (Caddy/nginx) on port 80/443 only.** Never expose port 8000 (FastAPI) or 3000 (Next.js dev) directly. All traffic goes through the proxy.
+3. **Do NOT expose Qdrant port 6333 externally.** It should only be accessible within the docker-compose network. In docker-compose.yml, do not publish the port:
+   ```yaml
+   qdrant:
+     expose: ["6333"]  # internal only, no 'ports:' mapping
+   ```
+4. **Tag the VM** with a specific network tag and scope firewall rules to that tag
+5. **Document the firewall rules** in the deployment script README -- this is the #1 support question for GCP deployments
 
 **Warning signs:**
-- Agent recommendations change dramatically when re-run on the same dataset.
-- The "pattern" the agent finds does not hold up when the user manually inspects flagged images.
-- Users stop trusting agent recommendations after 2-3 false patterns.
+- "Connection timed out" when accessing the VM's public IP
+- Services work fine via SSH tunnel but not via direct access
+- Qdrant dashboard is accidentally accessible from the internet
 
-**Phase to address:**
-Phase 3 (VLM/Agent Integration). The calibration framework must be built alongside the agent, not after deployment.
+**Phase to address:** GCP deployment (Phase 1 of v1.1)
 
-**Confidence:** MEDIUM -- Moondream2 capabilities verified via HuggingFace model card; hallucination patterns based on general VLM literature, not Moondream2-specific benchmarks.
+**Confidence:** HIGH -- verified against [GCP firewall documentation](https://cloud.google.com/compute/docs/networking/firewalls) and common deployment patterns.
 
 ---
 
-### Pitfall 10: GCS Image Serving Latency Destroys Grid Scroll Performance
+### Pitfall 10: Error Triage State Not Persisted -- Lost on Page Refresh
 
 **Severity:** MAJOR
+**Affects:** Error triage workflow
 
 **What goes wrong:**
-Each image thumbnail requires a network round-trip to GCS. At ~80-150ms per request (depending on region), scrolling through a grid of 50 visible thumbnails means 50 sequential or parallel requests. Even with parallelization, loading 50 thumbnails takes 500ms-2s, causing visible pop-in and blank tiles during scrolling. The UX feels sluggish compared to local disk browsing, which is instant.
+The error triage workflow involves the user reviewing error samples and tagging them (FP, TP, FN, confirmed mistake, etc.). If this triage state lives only in the frontend Zustand store (like the current `filter-store.ts` and `ui-store.ts`), all triage progress is lost when the user refreshes the page, navigates away, or the browser crashes.
+
+A 100K-image dataset with 5000 error detections requires significant manual review time. Losing 30 minutes of triage work because of a page refresh makes the feature unusable.
 
 **Why it happens:**
-Developers test with local images (instant) and add GCS support as a secondary path. The network latency is not felt until testing with real GCS-hosted datasets. GCS's built-in CDN caching only works for publicly accessible objects; private buckets (common for ML datasets) bypass the cache entirely.
+The v1.0 architecture stores transient UI state in Zustand and persistent data in DuckDB. Developers add triage state to Zustand for speed (no API call on each tag) and plan to "persist later," but the persistence never gets built or gets deferred because it requires a new API endpoint + DuckDB schema change.
 
-**How to avoid:**
-- Implement a local thumbnail cache: on first access, download and resize the image to thumbnail dimensions (e.g., 256x256), store the thumbnail locally, serve from local cache on subsequent views.
-- Pre-generate thumbnails during ingestion as a background task. Store thumbnail paths in DuckDB alongside the full image path.
-- Use GCS signed URLs with a backend proxy that handles authentication and adds `Cache-Control: max-age=3600` headers. This enables browser HTTP caching even for private buckets.
-- Implement prefetching: when the user scrolls, prefetch thumbnails for the next 2-3 screens worth of images.
-- Display a low-quality placeholder (colored rectangle matching the dominant color, or a tiny 8x8 blur-up) while the full thumbnail loads.
-- Batch GCS requests using the JSON API's batch endpoint rather than individual object downloads.
+**Prevention:**
+1. **Persist triage decisions to DuckDB immediately.** Add a `triage_status` column to the `annotations` table (or a separate `triage_decisions` table) and PATCH on each tag action.
+2. **Debounce but persist.** Debounce the API call by 500ms to batch rapid changes, but always persist before the user moves to the next image.
+3. **Use optimistic updates:** Update the Zustand store immediately (for snappy UI), then persist to DuckDB in the background. If the persist fails, show a non-blocking error and retry.
+4. **Add the `tags` column on `samples` table (already exists in the schema as `VARCHAR[]`)** for sample-level triage tags. For annotation-level triage, add a new column or use the existing `metadata` JSON column on annotations.
+5. **Consider using the existing saved views system** to persist triage filter state (which errors are visible, what filters are applied).
 
 **Warning signs:**
-- Blank white tiles visible during scrolling with GCS-hosted datasets.
-- Grid performance is fast with local datasets but noticeably laggy with GCS datasets.
-- Network tab shows hundreds of sequential GCS requests during scroll.
+- User tags 50 error samples, refreshes, all tags are gone
+- Triage progress is not visible to the same user in a different browser tab
+- "Save triage" button exists but is easy to forget
 
-**Phase to address:**
-Phase 1 (Grid View + Ingestion). The thumbnail cache and prefetch strategy must be built alongside the image source abstraction.
+**Phase to address:** Error triage workflow (Phase 4 of v1.1)
 
-**Confidence:** MEDIUM-HIGH -- verified against GCS caching docs; latency numbers based on typical GCS performance.
+**Confidence:** HIGH -- based on analysis of existing Zustand stores in the codebase, which are all transient. The `samples.tags` column exists for persistence.
 
 ---
 
 ## Moderate Pitfalls
 
-Mistakes that cause delays, technical debt, or degraded functionality.
+Mistakes that cause delays, degraded UX, or technical debt.
 
-### Pitfall 11: Plugin System API Breakage Without Versioning Strategy
+### Pitfall 11: Docker Compose File Mounts Break Image Path Resolution
 
 **Severity:** MODERATE
+**Affects:** Docker containerization, image serving
 
 **What goes wrong:**
-You ship a `BasePlugin` class with hooks like `on_ingest(sample)`, `on_transform(image)`, `on_ui_render(panel)`. Early adopters write plugins. Then you need to change the hook signatures to add a `context` parameter. All existing plugins break. Plugin authors are frustrated. You either maintain backward compatibility forever (accumulating cruft) or break plugins on every release (destroying trust).
+The current `StorageBackend` in `app/repositories/storage.py` resolves local image paths with `Path(path).resolve()`. During ingestion, the user provides an image directory like `/Users/ortizeg/datasets/coco/images/`. This absolute host path is stored in the `datasets.image_dir` column and used to serve images.
+
+In Docker, this host path does not exist inside the container. The container filesystem has a different root. Even with a volume mount (`-v /Users/ortizeg/datasets:/data/datasets`), the stored path (`/Users/ortizeg/datasets/coco/images/`) does not match the container path (`/data/datasets/coco/images/`).
 
 **Why it happens:**
-Plugin APIs are contracts with external developers. Internal refactoring does not break internal code (you update all call sites). But plugin authors cannot be updated by you. The API surface is frozen the moment the first external plugin is published. Developers underestimate how quickly this happens and how painful backward compatibility is.
+The v1.0 system was designed for local execution where host paths and process paths are identical. Docker introduces a path namespace boundary. The DuckDB database remembers absolute host paths from ingestion, which become invalid inside the container.
 
-**How to avoid:**
-- Use `**kwargs` in all hook signatures from day one. Pass a context object rather than positional parameters: `on_ingest(self, *, context: IngestContext)` where `IngestContext` is a Pydantic model that can be extended without breaking existing plugins.
-- Version the plugin API explicitly: `class BasePlugin(api_version=1)`. When you need breaking changes, create `api_version=2` and support both for at least one major release.
-- Keep the initial plugin API minimal. Resist adding hooks for everything. Each hook is a compatibility surface. Start with 3-4 hooks and expand based on real usage.
-- Write 3-4 example plugins yourself before releasing the API. This surfaces design flaws before external adoption.
-- Adopt SemVer strictly for the plugin API. MAJOR bump = hook signature change.
+**Prevention:**
+1. **Store relative paths in DuckDB, not absolute paths.** During ingestion, strip the base dataset directory and store only the relative portion. The base directory is configured at runtime via environment variable.
+2. **Alternatively, use a canonical mount point.** Require datasets to be mounted at a fixed container path (e.g., `/data/datasets/`) and store paths relative to that root.
+3. **For existing datasets (v1.0 migration):** Provide a path remapping configuration:
+   ```yaml
+   # docker-compose.yml
+   environment:
+     DATAVISOR_PATH_REMAP: "/Users/ortizeg/datasets:/data/datasets"
+   ```
+4. **Update `StorageBackend.resolve_image_path()`** to apply the path remap before resolution.
+5. **Test image serving in Docker immediately** after the first successful build -- this will break early.
 
 **Warning signs:**
-- Plugin hook signatures include more than 2-3 positional parameters.
-- No explicit `api_version` field on `BasePlugin`.
-- Desire to "just add one more parameter" to an existing hook.
+- Thumbnails show broken image icons in Docker but work locally
+- `FileNotFoundError` in logs for paths that exist on the host but not in the container
+- Ingesting a dataset inside Docker works, but datasets ingested before dockerization cannot serve images
 
-**Phase to address:**
-Phase 1 (Foundation). The plugin API contract must be designed carefully before any plugins are written. This is a "measure twice, cut once" decision.
+**Phase to address:** Docker containerization (Phase 1 of v1.1)
 
-**Confidence:** MEDIUM -- based on general plugin architecture patterns; Python-specific patterns verified against community guides.
+**Confidence:** HIGH -- verified by reading the existing `storage.py` code which uses `Path(path).resolve()` and the `datasets.image_dir` column which stores absolute paths.
 
 ---
 
-### Pitfall 12: Annotation Format Edge Cases in YOLO and VOC Parsers
+### Pitfall 12: Keyboard Shortcuts Conflict with Browser and Input Field Defaults
 
 **Severity:** MODERATE
+**Affects:** Keyboard shortcuts feature
 
 **What goes wrong:**
-YOLO format: coordinates are normalized (0-1) relative to image dimensions. A label file contains `class_id x_center y_center width height`. Edge cases that crash parsers:
-- Coordinates slightly outside [0, 1] due to floating point (e.g., `1.0000001`).
-- Negative coordinates for boxes that extend beyond the image boundary.
-- Empty `.txt` files for images with no annotations (valid, but parsers that expect at least one line crash).
-- Class IDs that do not match the `classes.txt` / `data.yaml` mapping.
-- Windows line endings (`\r\n`) in files created on different OS.
+Common keyboard shortcut choices conflict with browser defaults or text input:
+- `Delete` / `Backspace`: Navigates back in Firefox; deletes text in input fields
+- `Space`: Scrolls the page; toggles checkboxes
+- Arrow keys: Scroll the page; move cursor in text inputs
+- `Ctrl+A`: Select all (browser default)
+- `Ctrl+Z`: Browser undo in text fields
+- `Escape`: Closes the detail modal (already implemented); also closes browser dialogs
 
-VOC format: XML files where `<object>` tags may be missing `<bndbox>` (object exists but is not localized). Or `<truncated>` and `<difficult>` flags that parsers ignore, losing metadata.
-
-COCO format: `iscrowd` flag on annotations that use RLE-encoded segmentation instead of polygon format. Parsers expecting polygons crash on crowd annotations.
+If shortcuts are registered globally (`document.addEventListener('keydown', ...)`), they fire even when the user is typing in the search input (`search-input.tsx`), the saved view name input, or the annotation label field (if editing annotations). Pressing `Delete` to clear a search term instead deletes the selected annotation.
 
 **Why it happens:**
-Each format has real-world variations created by different annotation tools (CVAT, LabelImg, Roboflow, custom scripts). No dataset perfectly conforms to the spec. Developers test with clean, tool-generated examples and never encounter the edge cases that appear in production datasets.
+Developers test shortcuts with no focus on input elements. The shortcut handler does not check `document.activeElement` or `event.target.tagName`. Global event listeners are the easiest to implement but the hardest to get right.
 
-**How to avoid:**
-- Implement lenient parsing with strict validation: parse what you can, log warnings for anomalies, reject only truly corrupt data.
-- Clamp YOLO coordinates to [0, 1] with a warning rather than crashing.
-- Handle empty annotation files gracefully (image with zero annotations is valid).
-- Strip `\r` from all line input before parsing.
-- For COCO: check `iscrowd` flag and handle RLE segmentation separately or skip with a warning.
-- Build a validation report during ingestion: "Parsed 102,453 images. 47 had out-of-bounds coordinates (clamped). 3 had missing class mappings (skipped). 12 had empty annotation files (treated as unannotated)."
-- Test parsers against deliberately malformed datasets. Create a `test_fixtures/malformed/` directory with known edge cases.
+**Prevention:**
+1. **Check focus before handling.** In the keydown handler:
+   ```typescript
+   const tag = (e.target as HTMLElement).tagName;
+   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+   if ((e.target as HTMLElement).isContentEditable) return;
+   ```
+2. **Use a shortcut library** like `react-hotkeys-hook` that handles focus scoping automatically.
+3. **Scope shortcuts to specific components.** Navigation shortcuts (arrow keys for next/prev image) should only work when the grid or modal is focused, not globally.
+4. **Avoid single-key shortcuts** that conflict with browser defaults. Use modifier keys for destructive actions: `Shift+Delete` to delete annotation, not just `Delete`.
+5. **Show a shortcut overlay** (triggered by `?` key) that lists available shortcuts -- this also serves as documentation.
 
 **Warning signs:**
-- Parser crashes on a real dataset that "should work."
-- Annotation count from parser does not match expected count from the source.
-- Silent data loss: images ingested but their annotations were silently dropped.
+- User cannot type the letter "d" in the search box because it triggers "delete annotation"
+- Arrow keys scroll the page instead of navigating images
+- `Escape` closes both the annotation editor and the modal simultaneously
 
-**Phase to address:**
-Phase 1 (Ingestion). The parser robustness must be built and tested during initial ingestion development.
+**Phase to address:** Keyboard shortcuts (Phase 5 of v1.1)
 
-**Confidence:** HIGH -- COCO iscrowd/RLE is documented in the COCO dataset spec; YOLO edge cases are well-documented in community conversion tools.
+**Confidence:** HIGH -- standard web development pattern, verified against current codebase which has the `search-input.tsx` component and `<dialog>` elements that consume keyboard events.
 
 ---
 
-### Pitfall 13: Moondream2 GPU Memory Contention with Embedding Generation
+### Pitfall 13: CORS Configuration Must Change from Wildcard to Specific Origin in Production
 
 **Severity:** MODERATE
+**Affects:** Authentication, deployment
 
 **What goes wrong:**
-Both the VLM inference (Moondream2, 1.86B params) and embedding model (CLIP, ~400M params) need GPU memory. Moondream2 in fp16 requires ~3.7GB VRAM. CLIP ViT-L/14 requires ~1.6GB. Batch embedding generation with batch_size=32 adds ~2GB for intermediate activations. Total: ~7.3GB, which fits on an 8GB GPU only barely -- and fails if CUDA allocator fragmentation is high. Running both models simultaneously (VLM analyzing while embeddings are being generated) causes CUDA OOM.
+The current `app/main.py` has:
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for dev -- will restrict later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+Per the CORS specification, `allow_origins=["*"]` and `allow_credentials=True` is **invalid**. Browsers reject this combination -- you cannot use wildcards with credentials. When basic auth is added (which sends credentials), the browser will block all cross-origin requests.
+
+Even if you switch to `allow_origins=["http://35.202.x.x:3000"]`, you must update this value for every deployment. This is fragile.
 
 **Why it happens:**
-Developers test models individually and each fits comfortably. The combined memory footprint is not tested until integration. CUDA memory fragmentation means actual usable memory is less than total VRAM. "Large-batch inference remains memory-bound, with most GPU compute capabilities underutilized due to DRAM bandwidth saturation as the primary bottleneck."
+The wildcard was intentional for development (the comment says "will restrict later"). But the interaction between `allow_credentials=True` and `allow_origins=["*"]` is a spec violation that browsers enforce silently -- the request fails with a cryptic CORS error in the console.
 
-**How to avoid:**
-- Never run VLM inference and embedding generation simultaneously. Implement a GPU task queue that serializes GPU-bound work.
-- Profile actual VRAM usage with both models loaded using `torch.cuda.memory_allocated()` and `torch.cuda.memory_reserved()`.
-- Use dynamic batch sizing: start with batch_size=32, catch CUDA OOM, halve batch size, retry. Converge on the maximum safe batch size.
-- Unload the embedding model before loading the VLM for inference (and vice versa). Use `model.cpu()` or `del model; torch.cuda.empty_cache()`.
-- Support offloading to cloud GPU for heavy lifting while keeping the local GPU for interactive tasks.
-- Consider quantized variants: Moondream2 in INT4 reduces VRAM to ~1GB, leaving room for CLIP.
+**Prevention:**
+1. **Use a reverse proxy (repeated from Pitfalls 3 and 4).** If frontend and API share the same origin, CORS is not needed at all. Remove the CORS middleware entirely.
+2. **If CORS is needed:** Set `allow_origins` from an environment variable:
+   ```python
+   origins = settings.allowed_origins.split(",") if settings.allowed_origins else ["http://localhost:3000"]
+   ```
+3. **Never combine `allow_origins=["*"]` with `allow_credentials=True`.** The spec forbids it.
+4. **Test CORS from a real browser** (not curl/httpx which do not enforce CORS). Open the browser console and check for CORS errors.
 
 **Warning signs:**
-- CUDA OOM errors that appear only when running "full pipeline" but not individual components.
-- GPU utilization looks low (30-40%) but VRAM is at 95% -- memory-bound, not compute-bound.
-- Embedding generation slows dramatically when VLM is loaded in memory (even if not actively inferring).
+- API calls work from curl but fail from the browser with "CORS policy" errors
+- Adding basic auth breaks all frontend requests
+- The error says `Access-Control-Allow-Origin` must not be `*` when credentials are included
 
-**Phase to address:**
-Phase 3 (VLM Integration). GPU memory management must be explicitly designed when the VLM is added alongside the existing embedding pipeline.
+**Phase to address:** Docker containerization / auth (Phase 1 of v1.1)
 
-**Confidence:** MEDIUM -- Moondream2 model size verified via HuggingFace model card; combined memory analysis is estimated, not measured.
+**Confidence:** HIGH -- verified against [FastAPI CORS documentation](https://fastapi.tiangolo.com/tutorial/cors/) and the CORS specification.
 
 ---
 
-## Technical Debt Patterns
+### Pitfall 14: GCP Persistent Disk Not Mounted on VM Restart
 
-Shortcuts that seem reasonable but create long-term problems.
+**Severity:** MODERATE
+**Affects:** GCP VM deployment
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| `json.load()` for COCO files | Simple, works on test data | OOM on 100K+ datasets, requires full rewrite to streaming | Never -- use `ijson` from the start |
-| Hardcoded embedding dimension (512) | Simpler Qdrant setup | Cannot switch models without recreating collection; hours of re-embedding | Never -- use named vectors |
-| Single global filter state as React useState | Quick prototyping | Race conditions, desync between grid and map, impossible to debug | MVP only -- migrate to Zustand by Phase 2 |
-| Synchronous UMAP on the API thread | User sees result immediately | Blocks FastAPI worker for 5-15 min; timeouts, no progress feedback | Never -- always background task |
-| Per-request DuckDB connections | Familiar PostgreSQL pattern | Silent deadlocks, transaction conflicts under load | Never -- use cursor-per-request from single connection |
-| Storing full image paths in Qdrant payloads | Easy to query images from Qdrant | Data duplication with DuckDB; staleness when paths change; violates single-source-of-truth | Only if Qdrant is the sole DB (not applicable here) |
-| No thumbnail pre-generation | Faster initial ingestion | 80-150ms latency per image on GCS; grid feels broken | MVP with local-only images -- must add for GCS |
+**What goes wrong:**
+The deployment script creates a GCP VM and attaches a persistent disk for data storage. Docker volumes point to a directory on this disk. But if the VM restarts (maintenance event, preemptible VM, manual restart), the persistent disk may not auto-mount. The VM comes back up, Docker starts, but the volume mount points to an empty directory. DuckDB creates a new empty database, Qdrant creates empty collections, and the user thinks their data is gone.
 
-## Integration Gotchas
+**Why it happens:**
+Attaching a disk to a GCP VM does not auto-mount it. You must: (a) format the disk (first time), (b) create a mount point, (c) mount it, and (d) add an entry to `/etc/fstab` for persistence across reboots. Developers do steps (a)-(c) manually during setup and forget step (d). The VM restarts fine -- but the disk is attached, not mounted.
 
-Common mistakes when connecting the specific services in DataVisor.
+**Prevention:**
+1. **Deployment script must add an fstab entry:**
+   ```bash
+   echo "UUID=$(blkid -s UUID -o value /dev/sdb) /mnt/data ext4 defaults,nofail 0 2" >> /etc/fstab
+   ```
+2. **Use `nofail` option** so the VM boots even if the disk mount fails (prevents boot loops)
+3. **Add a health check** in the startup script that verifies the data directory is mounted before starting Docker:
+   ```bash
+   if ! mountpoint -q /mnt/data; then
+     mount /dev/sdb /mnt/data || echo "FATAL: Data disk not mounted"
+   fi
+   ```
+4. **Use GCP startup scripts** that run on every boot, not just first boot
+5. **Prefer standard persistent disks** over local SSDs (which do NOT survive VM stop/start)
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| FastAPI + DuckDB | Creating new connection per request | Single app-level connection, `cursor()` per request |
-| DuckDB + Qdrant | No reconciliation for partial write failures | DuckDB as source of truth; async Qdrant sync with retry |
-| deck.gl + React state | Passing new data array on every render (triggers full GPU buffer rebuild) | Memoize data array; use `updateTriggers` for partial updates |
-| UMAP + FastAPI | Running UMAP in the request handler | Background task with WebSocket progress updates |
-| Moondream2 + CLIP | Loading both models into GPU simultaneously | GPU task queue; unload one before loading the other |
-| GCS + Image Grid | Direct GCS signed URL per thumbnail | Local thumbnail cache; pre-generate during ingestion |
-| Pydantic AI + VLM | Trusting VLM output as ground truth | Calibration set; present findings as hypotheses with confidence scores |
-| Plugin hooks + Core API | Positional parameters in hook signatures | `**kwargs` + context objects; explicit API versioning |
+**Warning signs:**
+- Data disappears after VM restart but returns after manual `mount` command
+- `df -h` shows the data directory is on the root filesystem (small) instead of the persistent disk (large)
+- Docker logs show DuckDB initializing a fresh schema on startup (because it created a new empty database file)
 
-## Performance Traps
+**Phase to address:** GCP deployment (Phase 1 of v1.1)
 
-Patterns that work at small scale but fail as usage grows.
+**Confidence:** HIGH -- standard GCP operational knowledge, verified against [GCP persistent disk documentation](https://cloud.google.com/compute/docs/disks/add-persistent-disk).
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Non-streaming COCO JSON parsing | Works fine on 10K images | Use `ijson` streaming parser | >50K images (~200MB+ JSON) |
-| Full UMAP recompute on filter change | Acceptable at 1K samples | Pre-compute and cache; use `.transform()` for incremental | >10K samples (~30s+ compute) |
-| All-points-visible on embedding map | Smooth at 10K points | Level-of-detail: aggregate distant points; reduce radius at zoom-out | >500K points (fragment shader bottleneck) |
-| DuckDB full table scan for filtering | Fast at 10K rows | Create indexes on commonly filtered columns; use columnar predicates | >100K rows with complex filters |
-| Blob URL per image without revocation | No visible issue at 100 images | LRU cache with `revokeObjectURL()` on eviction | >2000 images scrolled (memory climbs past 1GB) |
-| Synchronous GCS downloads in grid render | Works locally, acceptable for 10 GCS images | Async fetch with thumbnail cache and prefetch | >50 visible GCS images (2s+ load time) |
-| Single Qdrant collection for all embedding models | Works with one model | Named vectors per model; version payloads | When switching embedding models |
+---
 
-## Security Mistakes
+## Minor Pitfalls
 
-Domain-specific security issues beyond general web security.
+Mistakes that cause annoyance or minor rework.
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| GCS service account key committed to repo or embedded in frontend | Full bucket access exposure; data breach | Use Workload Identity Federation or service account impersonation; keys only in environment variables / secret manager |
-| Plugin system executes arbitrary Python without sandboxing | Malicious plugin can read filesystem, exfiltrate data, delete DB | Run plugins in subprocess with restricted permissions; whitelist importable modules; review plugins before loading |
-| Signed GCS URLs with long expiry (24h+) shared in browser history | URLs leaked via browser history grant temporary bucket access | Use short-lived signed URLs (15 min); refresh via backend proxy |
-| DuckDB file readable by any local process | Other applications or scripts can read/modify dataset metadata | Set file permissions to owner-only (0600); consider encryption at rest for sensitive datasets |
-| VLM prompt injection via annotation text | Malicious annotation labels could manipulate VLM agent behavior | Sanitize annotation text before including in VLM prompts; treat all dataset content as untrusted |
+### Pitfall 15: Annotation Delete Without Undo Causes Data Loss Anxiety
 
-## UX Pitfalls
+**Severity:** MINOR
+**Affects:** Annotation editing
 
-Common user experience mistakes in CV dataset introspection tools.
+**What goes wrong:**
+The user accidentally deletes an annotation. There is no undo. The annotation is gone from DuckDB. The user must re-create it from scratch or re-ingest the dataset (losing all other edits). This makes users hesitant to use the editing feature.
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| No progress feedback during ingestion of large datasets | User thinks the app is frozen; kills the process | Progress bar with samples/sec, ETA, and current stage (parsing, embedding, indexing) |
-| Embedding map loads before UMAP completes -- empty canvas | User sees a blank page, assumes it is broken | Show "Computing embeddings..." with progress; offer PCA preview while UMAP runs |
-| Annotation overlay colors conflict with image content | Cannot distinguish boxes from image regions | Deterministic color hashing is correct; additionally provide configurable opacity and outline-only mode |
-| Grid shows raw image with no metadata until clicked | User cannot identify images without opening each one | Show filename, class distribution mini-bar, and annotation count on hover |
-| Error messages expose stack traces | Confusing and unprofessional | User-facing error messages with "Details" expander for technical info |
-| No way to undo filter operations | User gets lost in filter chains, cannot return to starting point | Filter history stack with breadcrumb trail; "Clear all filters" always visible |
-| FiftyOne's known pain: 10+ minute load times on 145K samples | Users abandon the tool | Virtualize everything; lazy-load metadata; never load full dataset into memory |
+**Prevention:**
+1. **Soft delete first.** Add a `deleted_at` timestamp column. Mark annotations as deleted rather than removing them. Purge after 30 days or on explicit "purge deleted" action.
+2. **Undo buffer.** Keep the last N deleted annotations in Zustand state. Show an "Undo" toast for 10 seconds after deletion. On undo, re-insert the annotation.
+3. **At minimum:** Show a confirmation dialog for delete actions. "Delete this 'person' annotation? This cannot be undone."
 
-## "Looks Done But Isn't" Checklist
+**Phase to address:** Annotation editing (Phase 3 of v1.1)
 
-Things that appear complete but are missing critical pieces.
+**Confidence:** HIGH -- standard UX pattern.
 
-- [ ] **COCO Ingestion:** Often missing `iscrowd` RLE handling -- verify that RLE-encoded segmentation masks do not crash the parser
-- [ ] **YOLO Ingestion:** Often missing empty file handling -- verify that images with no annotations (empty .txt) are ingested as unannotated, not skipped
-- [ ] **Embedding Map:** Often missing WebGL context loss recovery -- verify that GPU memory exhaustion shows a user-friendly message and allows re-initialization
-- [ ] **Grid Virtualization:** Often missing Blob URL cleanup -- verify that scrolling through 5000+ images does not cause memory to climb unboundedly
-- [ ] **DuckDB Writes:** Often missing concurrent write serialization -- verify that two simultaneous write operations do not deadlock the process
-- [ ] **Qdrant Sync:** Often missing orphan cleanup -- verify that deleting a dataset from DuckDB also removes all corresponding Qdrant points
-- [ ] **UMAP Caching:** Often missing parameter-keyed invalidation -- verify that changing n_neighbors triggers recompute but re-opening the same dataset does not
-- [ ] **Plugin Hooks:** Often missing error isolation -- verify that a crashing plugin does not take down the main application
-- [ ] **GCS Integration:** Often missing authentication refresh -- verify that expired credentials trigger a re-auth flow, not a cryptic 403
-- [ ] **VLM Agent:** Often missing minimum sample size -- verify that pattern claims are not made on fewer than 50 samples
-- [ ] **Filter Sync:** Often missing bidirectional sync -- verify that lasso selection updates the grid AND sidebar metadata filters update the embedding map
+---
 
-## Recovery Strategies
+### Pitfall 16: `docker-compose up` OOMs on Small GCP VMs with Embedding Model
 
-When pitfalls occur despite prevention, how to recover.
+**Severity:** MINOR
+**Affects:** GCP deployment
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| DuckDB deadlocks | LOW | Restart FastAPI process; implement connection pooling fix; no data loss (ACID) |
-| DuckDB-Qdrant drift | MEDIUM | Run reconciliation job to sync IDs; delete Qdrant orphans; re-embed missing points |
-| WebGL context loss | LOW | Reload the page; if state was persisted in URL params, no work is lost |
-| COCO OOM during ingestion | HIGH | Rewrite parser to use streaming; all ingested data from crashed run may need re-ingestion |
-| UMAP blocking the API | MEDIUM | Kill the long-running request; move to background task; re-trigger UMAP computation |
-| Qdrant schema lock-in | HIGH | Create new collection with named vectors; re-embed all images (hours of GPU time); migrate data |
-| Blob URL memory leak | LOW | Implement LRU cache with revocation; user refreshes page for immediate relief |
-| Filter desync | MEDIUM | Refactor to single filter store; requires touching all filter-consuming components |
-| VLM false positives | LOW | Add calibration framework; recalibrate agent on labeled validation set |
-| GCS latency | MEDIUM | Implement thumbnail cache layer; pre-generate during ingestion; existing datasets need thumbnail backfill |
-| Plugin API breakage | HIGH | Version the API; maintain backward compatibility adapter; all existing plugins need review |
-| Annotation edge cases | LOW | Add lenient parsing with warnings; re-ingest affected datasets to pick up previously dropped annotations |
+**What goes wrong:**
+The `EmbeddingService.load_model()` in `app/main.py`'s lifespan loads the DINOv2-base model at startup. On a GCP `e2-standard-2` (2 vCPU, 8GB RAM) running Docker (overhead: ~200MB), Qdrant (overhead: ~500MB), Next.js (overhead: ~200MB), and DINOv2 (overhead: ~1.5GB in CPU mode), total memory pressure approaches 4-5GB before any data is loaded. Loading a 100K-sample dataset into DuckDB can add another 1-2GB.
 
-## Pitfall-to-Phase Mapping
+**Prevention:**
+1. **Lazy model loading is partially implemented** (VLM is lazy, but EmbeddingService loads at startup). Make embedding model loading lazy too -- only load when the user triggers embedding generation.
+2. **Document minimum VM specs:** Recommend `e2-standard-4` (4 vCPU, 16GB RAM) for comfortable operation, `e2-standard-2` (8GB) as absolute minimum.
+3. **Add memory limits to docker-compose services** to prevent one service from OOM-killing others:
+   ```yaml
+   services:
+     api:
+       deploy:
+         resources:
+           limits:
+             memory: 6G
+     qdrant:
+       deploy:
+         resources:
+           limits:
+             memory: 2G
+   ```
 
-How roadmap phases should address these pitfalls.
+**Phase to address:** GCP deployment (Phase 1 of v1.1)
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| DuckDB concurrent access (P1) | Phase 1: Foundation | Load test with 10 concurrent requests; verify no transaction conflicts |
-| Dual DB consistency (P2) | Phase 1: Foundation | Delete a dataset; verify DuckDB and Qdrant both clean; check for orphan points |
-| Large JSON OOM (P4) | Phase 1: Ingestion | Ingest a 100K+ COCO dataset; monitor memory stays under 2GB |
-| Annotation edge cases (P12) | Phase 1: Ingestion | Run parser against malformed test fixtures; verify lenient handling |
-| Blob URL leaks (P7) | Phase 1: Grid View | Scroll through 5000 images; verify memory does not exceed 500MB |
-| GCS latency (P10) | Phase 1: Image Sources | Browse a GCS dataset; verify thumbnail load < 200ms after cache warm |
-| Plugin API stability (P11) | Phase 1: Plugin Architecture | Write 3 example plugins; evolve API once; verify plugins still work |
-| WebGL context loss (P3) | Phase 2: Embedding Viz | Render 100K points; force context loss via DevTools; verify recovery |
-| UMAP compute time (P5) | Phase 2: Embedding Viz | Run UMAP on 100K embeddings; verify background task + progress bar |
-| Filter desync (P8) | Phase 2: Filter Integration | Apply filter; verify grid count = map count; lasso select; verify sync |
-| Qdrant schema lock-in (P6) | Phase 1: Foundation (schema) / Phase 2 (migration tooling) | Switch embedding model; verify named vector migration works |
-| GPU memory contention (P13) | Phase 3: VLM Integration | Run VLM + CLIP sequentially; verify no CUDA OOM |
-| VLM hallucination (P9) | Phase 3: Agent Integration | Run agent on calibration set; verify false positive rate < 15% |
+**Confidence:** MEDIUM -- memory estimates based on typical model sizes; actual numbers depend on the specific DINOv2 variant and batch size.
+
+---
+
+## Integration Pitfalls Matrix
+
+How new v1.1 features interact with the existing v1.0 system.
+
+| New Feature | Existing Component | Integration Risk | Specific Pitfall |
+|---|---|---|---|
+| Docker | DuckDB file | WAL file loss on unclean shutdown | P1: Must mount entire `data/` directory |
+| Docker | Qdrant local mode | Cannot run embedded in multi-container setup | P2: Must migrate to server mode |
+| Docker | Image path storage | Host absolute paths invalid in container | P11: Must use relative paths or path remapping |
+| Docker | Next.js env vars | `NEXT_PUBLIC_API_URL` baked at build time | P3: Must use reverse proxy or runtime injection |
+| Docker | PyTorch/Transformers | 8-12GB image size | P6: Use CPU-only torch, multi-stage build |
+| Basic Auth | SSE streams | EventSource cannot set auth headers | P4: Must use cookie-based auth or fetch polyfill |
+| Basic Auth | CORS middleware | Wildcard + credentials is spec-invalid | P13: Remove CORS via reverse proxy |
+| Annotation Edit | SVG overlay | SVG coord system differs from Canvas | P5: Separate read-only (SVG) from edit (Konva) |
+| Annotation Edit | DuckDB writes | No existing UPDATE pattern, no transactions | P7: Add explicit transactions for mutations |
+| Annotation Edit | `annotations` table | No unique constraints | P7: Verify ID uniqueness in app code |
+| Smart Ingestion | COCOParser | Expects single JSON + single image dir | P8: Must handle multi-split structures |
+| Error Triage | Zustand stores | UI state lost on refresh | P10: Persist triage decisions to DuckDB |
+| Keyboard Shortcuts | Search input | Global handlers capture input keystrokes | P12: Check activeElement before handling |
+| GCP Deploy | Firewall | Default deny blocks all ports | P9: Script must create rules |
+| GCP Deploy | Persistent disk | Disk not auto-mounted on restart | P14: Add fstab entry |
+| GCP Deploy | Memory | Model loading exhausts small VM RAM | P16: Lazy loading, document minimum specs |
+
+---
+
+## Phase-Specific Warnings
+
+Which pitfalls to address in which phase, and what to watch for.
+
+| Phase | Pitfalls to Address | Critical Action | Verification |
+|---|---|---|---|
+| Docker + Deploy | P1, P2, P3, P4, P6, P9, P11, P13, P14, P16 | Use reverse proxy (Caddy), mount `data/` dir, migrate Qdrant to server mode | Access app from browser (not curl) via public IP; restart VM; verify data persists |
+| Smart Ingestion | P8 | Detection is suggestion, not action; confirm before ingest | Test with 5+ dataset layouts including edge cases |
+| Annotation Editing | P5, P7, P15 | Konva coordinate normalization; DuckDB transactions; soft delete | Edit annotation, save, refresh, verify position unchanged |
+| Error Triage | P10 | Persist triage state to DuckDB, not just Zustand | Tag 10 errors, refresh page, verify tags persist |
+| Keyboard Shortcuts | P12 | Check focus before handling; modifier keys for destructive actions | Type in search box with shortcuts enabled |
+
+---
+
+## "What Might I Have Missed?" Review
+
+Areas of uncertainty that could not be fully verified:
+
+1. **Python 3.14 + torch in Docker:** The `requires-python = ">=3.14"` constraint means the Docker image must use Python 3.14. While official Docker images exist (`python:3.14-slim`), not all ML packages have pre-built wheels for 3.14. Source compilation in Docker adds build time and image size. **Confidence: MEDIUM** -- wheels availability not verified for torch 2.10 on Python 3.14.
+
+2. **DuckDB file locking across Docker volume backends:** Docker volume mounts use different storage drivers (overlay2, btrfs, devicemapper). DuckDB relies on POSIX file locking for WAL safety. NFS-backed volumes (common in Kubernetes, not typical for Compose) may not support file locking correctly. For standard Docker Compose with bind mounts on ext4/APFS, this should be fine. **Confidence: MEDIUM** -- not verified for all storage drivers.
+
+3. **Konva performance with many annotation boxes:** The existing SVG overlay handles arbitrary annotation counts. If an image has 500+ annotations and all are rendered as Konva shapes with Transformers, canvas performance may degrade. **Confidence: LOW** -- not measured; Konva documentation claims good performance but does not specify limits for interactive Transformer usage.
+
+4. **Qdrant data migration from local to server mode:** The exact steps to migrate existing data from the embedded SQLite-based Qdrant local mode to the Qdrant server's RocksDB-based storage are not documented. The existing `_sync_from_duckdb` method re-creates the collection from DuckDB embeddings, which is a workaround but means the first Docker startup must re-sync all embeddings. For 100K samples, this may take several minutes. **Confidence: MEDIUM** -- the code path exists but has not been tested at scale for this migration.
+
+---
 
 ## Sources
 
 ### Official Documentation (HIGH confidence)
-- [DuckDB Concurrency](https://duckdb.org/docs/stable/connect/concurrency) -- single writer model, MVCC, concurrent access patterns
-- [DuckDB Multiple Python Threads](https://duckdb.org/docs/stable/guides/python/multiple_threads) -- cursor-per-thread pattern
-- [Qdrant Collections](https://qdrant.tech/documentation/concepts/collections/) -- fixed dimensions, named vectors, migration
-- [deck.gl Performance](https://deck.gl/docs/developer-guide/performance) -- 1M point limit, buffer regeneration, picking limits, DPI
-- [UMAP Transform](https://umap-learn.readthedocs.io/en/latest/transform.html) -- incremental projection, distribution consistency requirement
-- [UMAP Parametric](https://umap-learn.readthedocs.io/en/latest/transform_landmarked_pumap.html) -- neural network approach for incremental updates
-- [GCS Caching](https://cloud.google.com/storage/docs/caching) -- Cache-Control, CDN behavior, private bucket limitations
-- [WebGL Context Loss](https://www.khronos.org/webgl/wiki/HandlingContextLost) -- recovery protocol, event handling
-- [MDN Blob URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/blob) -- revokeObjectURL, memory management
+- [DuckDB Files Created](https://duckdb.org/docs/stable/operations_manual/footprint_of_duckdb/files_created_by_duckdb) -- WAL, lock files, tmp directory behavior
+- [DuckDB Concurrency](https://duckdb.org/docs/stable/connect/concurrency) -- MVCC, optimistic concurrency, single-writer model
+- [Qdrant Installation](https://qdrant.tech/documentation/guides/installation/) -- Docker deployment, server mode
+- [qdrant-client README](https://github.com/qdrant/qdrant-client) -- local mode vs server mode migration
+- [Konva Transformer Docs](https://konvajs.org/docs/react/Transformer.html) -- scale vs dimension behavior, normalization pattern
+- [Next.js Environment Variables](https://nextjs.org/docs/pages/guides/environment-variables) -- NEXT_PUBLIC build-time inlining
+- [FastAPI CORS](https://fastapi.tiangolo.com/tutorial/cors/) -- wildcard + credentials restriction
+- [GCP Persistent Disks](https://cloud.google.com/compute/docs/disks/add-persistent-disk) -- mount, fstab, restart behavior
+- [GCP Firewall Rules](https://cloud.google.com/compute/docs/networking/firewalls) -- default deny policy
+- [MDN EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials) -- header limitations
 
-### GitHub Issues and Discussions (MEDIUM confidence)
-- [DuckDB + FastAPI Discussion #13719](https://github.com/duckdb/duckdb/discussions/13719) -- in-memory DuckDB concurrency with FastAPI
-- [deck.gl Context Loss Discussion #7841](https://github.com/visgl/deck.gl/discussions/7841) -- restoring Deck after context loss
-- [deck.gl Context Loss Issue #5398](https://github.com/visgl/deck.gl/issues/5398) -- basic handling of context lost event
-- [TanStack Virtual Memory Leak Issue #196](https://github.com/TanStack/virtual/issues/196) -- memory leak with virtualization
-- [FiftyOne Performance Issue #1740](https://github.com/voxel51/fiftyone/issues/1740) -- large dataset performance (145K+ samples)
-- [FiftyOne Memory Issue #675](https://github.com/voxel51/fiftyone/issues/675) -- memory issues with large datasets
-- [Qdrant Embedding Change Discussion #3797](https://github.com/orgs/qdrant/discussions/3797) -- best way to change embeddings
+### GitHub Issues (MEDIUM confidence)
+- [DuckDB WAL Lock File Issue #10002](https://github.com/duckdb/duckdb/issues/10002) -- lock file not cleaned on forced close
+- [DuckDB WAL Issue #10952](https://github.com/duckdb/duckdb/issues/10952) -- .wal stays open after parquet import
+- [Konva Coordinate Issue #830](https://github.com/konvajs/konva/issues/830) -- dragging and zooming alter coordinates
+- [Konva Transformer BBox Issue #1296](https://github.com/konvajs/konva/issues/1296) -- incorrect bounding box with stroke and scale
+- [WHATWG EventSource Headers Issue #2177](https://github.com/whatwg/html/issues/2177) -- cannot set headers on EventSource
+- [Next.js Docker Env Vars Discussion #17641](https://github.com/vercel/next.js/discussions/17641) -- NEXT_PUBLIC in Docker
 
-### Community and Research (LOW-MEDIUM confidence)
-- [Moondream2 HuggingFace Model Card](https://huggingface.co/vikhyatk/moondream2) -- 1.86B params, edge deployment focus
-- [Python JSON Streaming](https://pythonspeed.com/articles/json-memory-streaming/) -- ijson, 99.4% memory reduction on 500MB files
-- [GPU Memory Management for LLMs](https://www.runpod.io/articles/guides/gpu-memory-management-for-large-language-models-optimization-strategies-for-production-deployment) -- VRAM bottlenecks, batch sizing
+### Community Sources (LOW-MEDIUM confidence)
+- [Konva Transformer Explained](https://longviewcoder.com/2022/04/28/what-the-hell-did-the-transformer-actually-do-to-my-shape/) -- detailed walkthrough of Transformer behavior
+- [Building Canvas Editors in React](https://www.alikaraki.me/blog/canvas-editors-konva) -- Konva patterns and gotchas
+- [Next.js Runtime Env Vars](https://nemanjamitic.com/blog/2025-12-13-nextjs-runtime-environment-variables/) -- solutions for Docker runtime configuration
+- [PyTorch Docker Optimization](https://mveg.es/posts/optimizing-pytorch-docker-images-cut-size-by-60percent/) -- 60% image size reduction strategies
+- [Running Qdrant with Docker Compose](https://www.spasov.me/blog/running-qdrant-with-docker-compose-api-access-networking-and-api-keys) -- networking and API key configuration
+- [Secure EventSource Authentication](https://openillumi.com/en/en-eventsource-auth-header-solution/) -- workarounds for SSE auth
+- [FastAPI Security Best Practices](https://blog.greeden.me/en/2025/07/29/fastapi-security-best-practices-from-authentication-authorization-to-cors/) -- auth and CORS configuration
 
 ---
-*Pitfalls research for: DataVisor -- CV Dataset Introspection Tooling*
-*Researched: 2026-02-10*
+*Pitfalls research for: DataVisor v1.1 -- Docker deployment, auth, annotation editing, smart ingestion, error triage*
+*Researched: 2026-02-12*
