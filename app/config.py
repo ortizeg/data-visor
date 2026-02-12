@@ -3,7 +3,17 @@
 from functools import lru_cache
 from pathlib import Path
 
+import torch
 from pydantic_settings import BaseSettings
+
+
+def _detect_device() -> str:
+    """Auto-detect best available device (MPS > CUDA > CPU)."""
+    if torch.backends.mps.is_available():
+        return "mps"
+    if torch.cuda.is_available():
+        return "cuda"
+    return "cpu"
 
 
 class Settings(BaseSettings):
@@ -23,7 +33,7 @@ class Settings(BaseSettings):
     port: int = 8000
     gcs_credentials_path: str | None = None
     agent_model: str = "openai:gpt-4o"
-    vlm_device: str = "cpu"
+    vlm_device: str = _detect_device()
 
     model_config = {
         "env_prefix": "VISIONLENS_",

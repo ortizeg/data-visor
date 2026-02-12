@@ -17,6 +17,7 @@ import torch
 from PIL import Image
 from pydantic import BaseModel
 from transformers import AutoModelForCausalLM
+from transformers.dynamic_module_utils import get_class_from_dynamic_module
 
 from app.repositories.duckdb_repo import DuckDBRepo
 from app.repositories.storage import StorageBackend
@@ -80,9 +81,21 @@ class VLMService:
         """Load Moondream2 via transformers (on-demand, not at startup).
 
         Uses ``trust_remote_code=True`` as required by Moondream2's
-        custom architecture.
+        custom architecture.  Patches ``all_tied_weights_keys`` for
+        compatibility with transformers 5.x.
         """
         logger.info("Loading Moondream2 VLM on device: %s", self._device)
+
+        # Moondream2's HfMoondream class lacks `all_tied_weights_keys`
+        # required by transformers 5.x — patch it before from_pretrained.
+        cls = get_class_from_dynamic_module(
+            "hf_moondream.HfMoondream",
+            "vikhyatk/moondream2",
+            revision="2025-01-09",
+        )
+        if not hasattr(cls, "all_tied_weights_keys"):
+            cls.all_tied_weights_keys = {}
+
         self._model = AutoModelForCausalLM.from_pretrained(
             "vikhyatk/moondream2",
             revision="2025-01-09",
