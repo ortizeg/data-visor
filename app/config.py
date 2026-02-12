@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     thumbnail_cache_dir: Path = Path("data/thumbnails")
     thumbnail_default_size: str = "medium"
     thumbnail_webp_quality: int = 80
+    qdrant_path: Path = Path("data/qdrant")
     plugin_dir: Path = Path("plugins")
     host: str = "0.0.0.0"
     port: int = 8000

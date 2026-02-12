@@ -12,6 +12,7 @@ from app.services.image_service import ImageService
 from app.services.embedding_service import EmbeddingService
 from app.services.ingestion import IngestionService
 from app.services.reduction_service import ReductionService
+from app.services.similarity_service import SimilarityService
 
 
 def get_db(request: Request) -> DuckDBRepo:
@@ -53,6 +54,11 @@ def get_embedding_service(request: Request) -> EmbeddingService:
 def get_reduction_service(request: Request) -> ReductionService:
     """Return the application-wide ReductionService stored on app.state."""
     return request.app.state.reduction_service
+
+
+def get_similarity_service(request: Request) -> SimilarityService:
+    """Return the application-wide SimilarityService stored on app.state."""
+    return request.app.state.similarity_service
 
 
 def get_ingestion_service(

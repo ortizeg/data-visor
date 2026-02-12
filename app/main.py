@@ -15,6 +15,7 @@ from app.repositories.storage import StorageBackend
 from app.services.embedding_service import EmbeddingService
 from app.services.image_service import ImageService
 from app.services.reduction_service import ReductionService
+from app.services.similarity_service import SimilarityService
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     reduction_service = ReductionService(db=db)
     app.state.reduction_service = reduction_service
 
+    # Similarity service (Qdrant local mode for vector similarity search)
+    similarity_service = SimilarityService(
+        qdrant_path=settings.qdrant_path, db=db
+    )
+    app.state.similarity_service = similarity_service
+
     # Plugin registry
     plugin_registry = PluginRegistry()
     plugin_dir = Path(settings.plugin_dir)
@@ -72,6 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Shutdown
     plugin_registry.shutdown()
+    similarity_service.close()
     db.close()
 
 
@@ -91,7 +99,7 @@ app.add_middleware(
 )
 
 # Router includes
-from app.routers import datasets, embeddings, images, samples, statistics, views  # noqa: E402
+from app.routers import datasets, embeddings, images, samples, similarity, statistics, views  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
@@ -99,6 +107,7 @@ app.include_router(images.router)
 app.include_router(views.router)
 app.include_router(statistics.router)
 app.include_router(embeddings.router)
+app.include_router(similarity.router)
 
 
 @app.get("/health")
