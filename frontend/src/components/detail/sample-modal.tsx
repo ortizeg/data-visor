@@ -13,13 +13,15 @@
  * Closed via Escape key, backdrop click, or the X button.
  */
 
-import { useEffect, useRef, useCallback, type MouseEvent } from "react";
+import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react";
 
 import { fullImageUrl } from "@/lib/api";
 import { useAnnotations } from "@/hooks/use-annotations";
+import { useSimilarity } from "@/hooks/use-similarity";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
 import { AnnotationList } from "./annotation-list";
+import { SimilarityPanel } from "./similarity-panel";
 import type { Sample } from "@/types/sample";
 
 interface SampleModalProps {
@@ -51,6 +53,20 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
 
   // Fetch annotations for the selected sample via per-sample endpoint
   const { data: annotations } = useAnnotations(datasetId, selectedSampleId);
+
+  // Similarity search state -- only fetches when user clicks "Find Similar"
+  const [showSimilar, setShowSimilar] = useState(false);
+  const { data: similarityData, isLoading: similarityLoading } = useSimilarity(
+    datasetId,
+    selectedSampleId,
+    20,
+    showSimilar,
+  );
+
+  // Reset showSimilar when the selected sample changes
+  useEffect(() => {
+    setShowSimilar(false);
+  }, [selectedSampleId]);
 
   // Sync dialog open/close with Zustand state
   useEffect(() => {
@@ -178,6 +194,13 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                   {sample.dataset_id}
                 </dd>
               </dl>
+
+              <button
+                onClick={() => setShowSimilar(!showSimilar)}
+                className="mt-3 w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+              >
+                {showSimilar ? "Hide Similar" : "Find Similar"}
+              </button>
             </div>
 
             {/* Right: annotation list table */}
@@ -197,6 +220,23 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
               )}
             </div>
           </div>
+
+          {/* Similarity results panel (shown when "Find Similar" is clicked) */}
+          {showSimilar && (
+            <div className="border-t border-zinc-200 p-5 dark:border-zinc-700">
+              <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                Similar Images
+              </h3>
+              <SimilarityPanel
+                datasetId={datasetId}
+                results={similarityData?.results ?? []}
+                isLoading={similarityLoading}
+                onSelectSample={(sampleId) => {
+                  useUIStore.getState().openDetailModal(sampleId);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
     </dialog>
