@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 8 of 13 (Docker Deployment & Auth)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-12 — Roadmap created for v1.1
+Plan: 2 of 5 in current phase
+Status: In progress
+Last activity: 2026-02-12 — Completed 08-02-PLAN.md
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (v1.1: 0/TBD plans)
+Progress: [████░░░░░░░░░░░░░░░░] 8% (v1.1: 1/5 plans in phase 8)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (v1.
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | — | — | — |
+| 8. Docker Deployment & Auth | 1/5 | 2 min | 2.0 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -57,6 +57,8 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: Caddy over nginx for reverse proxy (auto-HTTPS, built-in basic_auth)
 - [v1.1 Roadmap]: react-konva for annotation editing in detail modal only (SVG stays for grid)
 - [v1.1 Roadmap]: FastAPI HTTPBasic DI over middleware (testable, composable)
+- [08-02]: NEXT_PUBLIC_API_URL=/api baked at build time for same-origin API via Caddy
+- [08-02]: Caddy handles all auth at proxy layer -- zero application code changes
 
 ### Pending Todos
 
@@ -70,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: v1.1 roadmap created, ready to plan Phase 8
+Stopped at: Completed 08-02-PLAN.md (frontend Dockerfile + Caddyfile)
 Resume file: None
