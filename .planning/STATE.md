@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 6 complete. Both plans (error categorization, similarity search) delivered. Ready for Phase 7.
+**Current focus:** Phase 7 in progress. Plan 01 (agent infrastructure) complete. VLM auto-tagging and frontend intelligence UI remain.
 
 ## Current Position
 
-Phase: 6 of 7 (Error Analysis & Similarity)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-12 -- Completed 06-02-PLAN.md
+Phase: 7 of 7 (Intelligence & Agents)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-12 -- Completed 07-01-PLAN.md
 
-Progress: [██████████████████░░░] 18/21
+Progress: [███████████████████░░] 19/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 4.1 min
-- Total execution time: 73 min
+- Total plans completed: 19
+- Average duration: 3.9 min
+- Total execution time: 76 min
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: [██████████████████░░░] 18/2
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 | 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
 | 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
+| 7. Intelligence & Agents | 1/3 | 3 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (4 min), 05-04 (4 min), 06-01 (5 min), 06-02 (4 min)
+- Last 5 plans: 05-04 (4 min), 06-01 (5 min), 06-02 (4 min), 07-01 (3 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -120,6 +121,10 @@ Recent decisions affecting current work:
 - [06-02]: Sequential integer IDs for Qdrant points with sample_id in payload (Qdrant requires int/UUID IDs)
 - [06-02]: useSimilarity hook uses enabled flag for on-demand fetching (no auto-fetch on mount)
 - [06-02]: Empty results return 200 with empty list, not 404 (user sees "no similar images found")
+- [07-01]: Lazy agent creation via _get_agent() to defer model resolution until first call
+- [07-01]: Error samples passed through AnalysisDeps dataclass (in-memory, not materialized to DuckDB table)
+- [07-01]: Confidence distribution computed in-memory from error samples (not DuckDB query)
+- [07-01]: Agent endpoint returns 503 with clear message when API key is missing
 
 ### Pending Todos
 
@@ -127,10 +132,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 7: Pydantic AI tool design and VLM prompt engineering are less documented -- use research-phase before planning
+- Phase 7: VLM prompt engineering calibration needs testing with real images (Plan 02)
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 06-02-PLAN.md (Phase 6 complete, 2/2 plans)
+Stopped at: Completed 07-01-PLAN.md (Phase 7, plan 1/3)
 Resume file: None
