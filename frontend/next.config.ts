@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     // We serve our own WebP thumbnails from the backend -- no need for
     // Next.js Image Optimization. Using unoptimized to avoid double
