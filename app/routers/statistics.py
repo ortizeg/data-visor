@@ -3,6 +3,7 @@
 Endpoints:
 - GET /datasets/{dataset_id}/statistics -- aggregated dataset statistics
 - GET /datasets/{dataset_id}/evaluation -- model evaluation metrics
+- GET /datasets/{dataset_id}/error-analysis -- per-detection error categorization
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_db
+from app.models.error_analysis import ErrorAnalysisResponse
 from app.models.evaluation import EvaluationResponse
 from app.models.statistics import (
     ClassDistribution,
@@ -18,6 +20,7 @@ from app.models.statistics import (
     SummaryStats,
 )
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.services.error_analysis import categorize_errors
 from app.services.evaluation import compute_evaluation
 
 router = APIRouter(prefix="/datasets", tags=["statistics"])
@@ -133,6 +136,45 @@ def get_evaluation(
             )
 
         return compute_evaluation(
+            cursor, dataset_id, source, iou_threshold, conf_threshold
+        )
+    finally:
+        cursor.close()
+
+
+@router.get("/{dataset_id}/error-analysis", response_model=ErrorAnalysisResponse)
+def get_error_analysis(
+    dataset_id: str,
+    source: str = Query("prediction"),
+    iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
+    conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
+    db: DuckDBRepo = Depends(get_db),
+) -> ErrorAnalysisResponse:
+    """Return per-detection error categorization comparing predictions to GT.
+
+    Classifies each prediction as True Positive, Hard False Positive,
+    Label Error, or False Negative using IoU matching with greedy assignment.
+    """
+    cursor = db.connection.cursor()
+    try:
+        row = cursor.execute(
+            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+
+        # Verify that the requested source has annotations
+        source_count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, source],
+        ).fetchone()[0]
+        if source_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No annotations found for source '{source}'",
+            )
+
+        return categorize_errors(
             cursor, dataset_id, source, iou_threshold, conf_threshold
         )
     finally:
