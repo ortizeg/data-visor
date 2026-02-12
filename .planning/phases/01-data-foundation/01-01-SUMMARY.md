@@ -27,7 +27,7 @@ key-files:
 
 key-decisions:
   - "No PK/FK constraints on DuckDB tables for 3.8x faster bulk inserts"
-  - "Pydantic Settings with VISIONLENS_ env prefix and lru_cache singleton"
+  - "Pydantic Settings with DATAVISOR_ env prefix and lru_cache singleton"
   - "Single DuckDB connection via lifespan, cursor-per-request via DI"
   - "pytest-asyncio with auto mode for async test support"
 
@@ -73,7 +73,7 @@ Each task was committed atomically:
 - `.gitignore` - Python project gitignore
 - `app/__init__.py` - App package init (plus 6 subpackage inits)
 - `app/main.py` - FastAPI app with lifespan, CORS, /health endpoint
-- `app/config.py` - Pydantic Settings with VISIONLENS_ prefix
+- `app/config.py` - Pydantic Settings with DATAVISOR_ prefix
 - `app/dependencies.py` - DI functions: get_db, get_cursor, stubs for storage/image
 - `app/repositories/duckdb_repo.py` - DuckDB connection wrapper, schema init
 - `app/models/dataset.py` - IngestRequest, DatasetResponse, DatasetListResponse

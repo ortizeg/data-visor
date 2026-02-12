@@ -8,7 +8,7 @@
 
 ## System Overview
 
-VisionLens is a dual-database, full-stack application for exploring 100K+ image datasets with both analytical metadata queries and vector similarity search. The architecture follows a **layered monolith** pattern: a Python backend serves as the single coordination point between two specialized databases and a rich SPA frontend.
+DataVisor is a dual-database, full-stack application for exploring 100K+ image datasets with both analytical metadata queries and vector similarity search. The architecture follows a **layered monolith** pattern: a Python backend serves as the single coordination point between two specialized databases and a rich SPA frontend.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -69,7 +69,7 @@ VisionLens is a dual-database, full-stack application for exploring 100K+ image 
 ## Recommended Project Structure
 
 ```
-visionlens/
+datavisor/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI app factory, lifespan, CORS
@@ -301,7 +301,7 @@ _duckdb_conn: duckdb.DuckDBPyConnection | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _duckdb_conn
-    _duckdb_conn = duckdb.connect("data/visionlens.duckdb")
+    _duckdb_conn = duckdb.connect("data/datavisor.duckdb")
     _duckdb_conn.execute("PRAGMA threads=4")
     yield
     _duckdb_conn.close()
@@ -849,5 +849,5 @@ Phase 6: Extensibility (depends on Phase 1, parallel to others)
 - Pillow thumbnail generation performance at 100K scale -- Assumed sufficient based on imgproxy precedent
 
 ---
-*Architecture research for: VisionLens -- CV Dataset Introspection Tool*
+*Architecture research for: DataVisor -- CV Dataset Introspection Tool*
 *Researched: 2026-02-10*

@@ -33,7 +33,7 @@ def analyze_errors(
     then returns structured pattern insights and recommendations.
 
     Requires an LLM API key to be configured (e.g., OPENAI_API_KEY)
-    for the model specified in VISIONLENS_AGENT_MODEL.
+    for the model specified in DATAVISOR_AGENT_MODEL.
     """
     request = body or AnalysisRequest()
     cursor = db.connection.cursor()
@@ -67,7 +67,7 @@ def analyze_errors(
         raise HTTPException(
             status_code=503,
             detail=(
-                f"{exc}. Configure VISIONLENS_AGENT_MODEL and the "
+                f"{exc}. Configure DATAVISOR_AGENT_MODEL and the "
                 f"corresponding API key (e.g., OPENAI_API_KEY)."
             ),
         ) from exc

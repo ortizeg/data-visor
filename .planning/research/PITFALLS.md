@@ -1,6 +1,6 @@
 # Pitfalls Research
 
-**Domain:** CV Dataset Introspection Tooling (VisionLens -- Voxel51 alternative)
+**Domain:** CV Dataset Introspection Tooling (DataVisor -- Voxel51 alternative)
 **Researched:** 2026-02-10
 **Confidence:** MEDIUM-HIGH (verified against official docs for DuckDB, Qdrant, deck.gl, UMAP; some areas LOW where noted)
 
@@ -431,7 +431,7 @@ Shortcuts that seem reasonable but create long-term problems.
 
 ## Integration Gotchas
 
-Common mistakes when connecting the specific services in VisionLens.
+Common mistakes when connecting the specific services in DataVisor.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
@@ -567,5 +567,5 @@ How roadmap phases should address these pitfalls.
 - [GPU Memory Management for LLMs](https://www.runpod.io/articles/guides/gpu-memory-management-for-large-language-models-optimization-strategies-for-production-deployment) -- VRAM bottlenecks, batch sizing
 
 ---
-*Pitfalls research for: VisionLens -- CV Dataset Introspection Tooling*
+*Pitfalls research for: DataVisor -- CV Dataset Introspection Tooling*
 *Researched: 2026-02-10*

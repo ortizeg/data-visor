@@ -1,7 +1,7 @@
 [project]
 name = "data-visor"
 version = "0.1.0"
-description = "VisionLens - Unified CV dataset introspection tool"
+description = "DataVisor - Unified CV dataset introspection tool"
 requires-python = ">=3.14"
 dependencies = [
     "accelerate>=1.12.0",

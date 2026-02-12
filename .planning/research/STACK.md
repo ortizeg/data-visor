@@ -77,8 +77,8 @@ The user's proposed stack (FastAPI + DuckDB + Qdrant + Next.js + Tailwind + deck
 
 ```bash
 # Using uv (recommended)
-uv init visionlens-backend
-cd visionlens-backend
+uv init datavisor-backend
+cd datavisor-backend
 
 # Core
 uv add fastapi uvicorn[standard] duckdb pydantic-ai qdrant-client
@@ -96,8 +96,8 @@ uv add --dev pytest pytest-asyncio ruff httpx
 ### Frontend
 
 ```bash
-npx create-next-app@latest visionlens-ui --typescript --tailwind --app --turbopack
-cd visionlens-ui
+npx create-next-app@latest datavisor-ui --typescript --tailwind --app --turbopack
+cd datavisor-ui
 
 # Core visualization
 npm install deck.gl @deck.gl/core @deck.gl/layers @deck.gl/react @luma.gl/core
@@ -175,7 +175,7 @@ docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant:v1.16.0
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
 | Pydantic AI | LangChain | Never for new projects in 2026. LangChain is bloated, over-abstracted, and has unstable APIs. Pydantic AI is lean, type-safe, and v1-stable. |
-| Pydantic AI | LangGraph | If you need complex multi-step agent orchestration with stateful graph execution. For VisionLens, the agents are relatively simple (analyze error distribution, detect patterns) -- Pydantic AI's tool-calling model is sufficient. |
+| Pydantic AI | LangGraph | If you need complex multi-step agent orchestration with stateful graph execution. For DataVisor, the agents are relatively simple (analyze error distribution, detect patterns) -- Pydantic AI's tool-calling model is sufficient. |
 | Pydantic AI | Raw OpenAI/Anthropic SDK | If you want zero framework overhead. But you lose structured output validation, tool registration, and model-agnostic portability. Pydantic AI's overhead is minimal and the safety net is worth it. |
 
 ---
@@ -199,7 +199,7 @@ docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant:v1.16.0
 ## Stack Patterns by Variant
 
 **If deploying as a purely local tool (default):**
-- DuckDB file on local disk (e.g., `~/.visionlens/metadata.duckdb`)
+- DuckDB file on local disk (e.g., `~/.datavisor/metadata.duckdb`)
 - Qdrant via Docker on localhost:6333
 - FastAPI on localhost:8000
 - Next.js dev server on localhost:3000
@@ -363,5 +363,5 @@ deck.gl ScatterplotLayer (frontend)
 - [Moondream2 HuggingFace](https://huggingface.co/vikhyatk/moondream2) -- 1.86B param VLM (HIGH confidence)
 
 ---
-*Stack research for: VisionLens -- CV dataset introspection tool*
+*Stack research for: DataVisor -- CV dataset introspection tool*
 *Researched: 2026-02-10*

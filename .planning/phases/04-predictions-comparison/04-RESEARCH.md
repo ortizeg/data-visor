@@ -406,7 +406,7 @@ import {
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Separate predictions table | Same table with `source` discriminator | VisionLens Phase 1 decision | Already implemented in schema; no migration needed |
+| Separate predictions table | Same table with `source` discriminator | DataVisor Phase 1 decision | Already implemented in schema; no migration needed |
 | Custom chart rendering | Recharts 3.x with SVG | Recharts 3.0 (2025) | React 19 compatible, tree-shakable, smaller bundle |
 | Full JSON.parse for predictions | Streaming ijson parser | Already in codebase | Handles 100K+ predictions without OOM |
 | Canvas-based annotation rendering | SVG with viewBox scaling | Phase 2 decision | stroke-dasharray works natively; no canvas context needed |

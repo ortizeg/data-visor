@@ -134,7 +134,7 @@ VLM inference accuracy depends on image content and model quality. Need to verif
 2. Verify Intelligence sub-tab appears with purple accent
 3. Test source dropdown, IoU slider, Conf slider controls
 4. Trigger analysis without API key configured
-5. Verify 503 error message shows clear instructions for OPENAI_API_KEY and VISIONLENS_AGENT_MODEL
+5. Verify 503 error message shows clear instructions for OPENAI_API_KEY and DATAVISOR_AGENT_MODEL
 6. Configure API key and trigger analysis again
 7. Verify loading spinner appears during 10-30s agent execution
 8. Verify results display with proper card layouts, badges, and styling
@@ -179,7 +179,7 @@ No gaps found. All 14 must-haves verified:
 - ✓ AnalysisReport models with Field descriptions
 - ✓ Agent service with 4 DuckDB tools
 - ✓ POST /analyze endpoint with 503 error handling
-- ✓ Agent model configurable via VISIONLENS_AGENT_MODEL
+- ✓ Agent model configurable via DATAVISOR_AGENT_MODEL
 - ✓ Wired to main.py
 
 **Plan 07-02 (VLM Auto-Tagging):**

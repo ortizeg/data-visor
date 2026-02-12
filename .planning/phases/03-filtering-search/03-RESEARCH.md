@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 3 adds filtering, search, sorting, tagging, and saved views to the existing VisionLens application. The backend (FastAPI + DuckDB) already supports basic `category` and `split` filters on `GET /samples`, and the frontend (Next.js 16 + TanStack Query + Zustand) already has an infinite-scroll grid with pagination. This phase extends both layers to support arbitrary metadata filtering, filename search, column sorting, user-defined tags, and persisted filter configurations (saved views).
+Phase 3 adds filtering, search, sorting, tagging, and saved views to the existing DataVisor application. The backend (FastAPI + DuckDB) already supports basic `category` and `split` filters on `GET /samples`, and the frontend (Next.js 16 + TanStack Query + Zustand) already has an infinite-scroll grid with pagination. This phase extends both layers to support arbitrary metadata filtering, filename search, column sorting, user-defined tags, and persisted filter configurations (saved views).
 
 The standard approach is to build a **dynamic query builder** on the backend that constructs parameterized DuckDB SQL from a structured filter payload, paired with a **Zustand filter store** on the frontend that drives TanStack Query's `queryKey` for automatic refetch-on-filter-change. Tags are stored using a DuckDB `VARCHAR[]` (LIST) column on the `samples` table, which supports `list_contains()` for efficient filtering. Saved views are persisted in a new `saved_views` DuckDB table with the filter configuration serialized as JSON.
 

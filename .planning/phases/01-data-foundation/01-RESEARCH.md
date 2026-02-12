@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 1 establishes the entire data layer for VisionLens: a FastAPI backend that can ingest COCO-format annotation files (100K+ annotations) via streaming parser into DuckDB, serve images from local disk or GCS with cached thumbnails, and expose a BasePlugin extension point. This is backend-only -- no frontend UI.
+Phase 1 establishes the entire data layer for DataVisor: a FastAPI backend that can ingest COCO-format annotation files (100K+ annotations) via streaming parser into DuckDB, serve images from local disk or GCS with cached thumbnails, and expose a BasePlugin extension point. This is backend-only -- no frontend UI.
 
 The standard approach is well-documented: FastAPI lifespan for DuckDB connection management (single connection, cursor-per-request), ijson for streaming COCO JSON parsing to avoid OOM, Pillow for WebP thumbnail generation with disk cache, fsspec/gcsfs for transparent local/GCS storage abstraction, and a hook-based plugin system using Python ABCs with importlib dynamic loading.
 
@@ -56,8 +56,8 @@ The critical discovery is that **DuckDB's Python API does not support the Append
 
 ```bash
 # Using uv
-uv init visionlens
-cd visionlens
+uv init datavisor
+cd datavisor
 
 # Core
 uv add fastapi uvicorn[standard] duckdb pydantic pydantic-settings
@@ -80,7 +80,7 @@ uv add --dev pytest pytest-asyncio httpx ruff
 ### Recommended Project Structure
 
 ```
-visionlens/
+datavisor/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py                 # FastAPI app factory, lifespan, CORS
@@ -125,7 +125,7 @@ visionlens/
 │       └── __init__.py
 │
 ├── data/                       # Runtime data directory
-│   ├── visionlens.duckdb       # DuckDB database file
+│   ├── datavisor.duckdb       # DuckDB database file
 │   └── thumbnails/             # Thumbnail cache directory
 │
 ├── tests/
@@ -541,7 +541,7 @@ class PluginContext:
     metadata: dict[str, Any] | None = None
 
 class BasePlugin(ABC):
-    """Base class for VisionLens plugins.
+    """Base class for DataVisor plugins.
 
     Plugin API version: 1
     All hooks receive a PluginContext and return None or modified data.
@@ -705,7 +705,7 @@ Problems that look simple but have existing solutions:
 
 **Why it happens:** COCO format uses iscrowd flag to indicate crowd annotations. When iscrowd=1, segmentation is RLE-encoded (a dict with `counts` and `size` keys) instead of a polygon list. This is part of the COCO spec but not obvious from simple examples.
 
-**How to avoid:** Check `ann.get("iscrowd", 0)` for every annotation. For VisionLens Phase 1, skip segmentation entirely (we only need bbox). Store iscrowd as a boolean flag. Treat iscrowd annotations' bboxes normally but flag them in metadata.
+**How to avoid:** Check `ann.get("iscrowd", 0)` for every annotation. For DataVisor Phase 1, skip segmentation entirely (we only need bbox). Store iscrowd as a boolean flag. Treat iscrowd annotations' bboxes normally but flag them in metadata.
 
 **Warning signs:** Parser crashes on specific COCO datasets (like COCO 2017 val) but works on simpler test datasets.
 
@@ -1027,7 +1027,7 @@ class Settings(BaseSettings):
     """Application configuration via environment variables and .env file."""
 
     # Database
-    db_path: Path = Path("data/visionlens.duckdb")
+    db_path: Path = Path("data/datavisor.duckdb")
 
     # Image serving
     thumbnail_cache_dir: Path = Path("data/thumbnails")
@@ -1044,7 +1044,7 @@ class Settings(BaseSettings):
     # GCS (optional)
     gcs_credentials_path: str | None = None
 
-    model_config = {"env_prefix": "VISIONLENS_", "env_file": ".env"}
+    model_config = {"env_prefix": "DATAVISOR_", "env_file": ".env"}
 
 _settings: Settings | None = None
 

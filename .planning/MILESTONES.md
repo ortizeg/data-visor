@@ -1,4 +1,4 @@
-# Project Milestones: VisionLens
+# Project Milestones: DataVisor
 
 ## v1.0 MVP (Shipped: 2026-02-12)
 

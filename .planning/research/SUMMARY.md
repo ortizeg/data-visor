@@ -1,13 +1,13 @@
 # Project Research Summary
 
-**Project:** VisionLens (CV Dataset Introspection Tool)
+**Project:** DataVisor (CV Dataset Introspection Tool)
 **Domain:** Computer Vision Dataset Exploration and Model Debugging
 **Researched:** 2026-02-10
 **Confidence:** HIGH
 
 ## Executive Summary
 
-VisionLens is a FiftyOne alternative focused on dataset introspection and model debugging for CV engineers. Research across 100+ sources reveals a clear architecture: **dual-database system (DuckDB for analytical metadata + Qdrant for vector similarity) with a FastAPI backend serving a Next.js frontend**. This architecture delivers 10-100x performance over FiftyOne's MongoDB for analytical queries while enabling embedding visualization at 1M+ points (vs FiftyOne's ~50K Plotly limit).
+DataVisor is a FiftyOne alternative focused on dataset introspection and model debugging for CV engineers. Research across 100+ sources reveals a clear architecture: **dual-database system (DuckDB for analytical metadata + Qdrant for vector similarity) with a FastAPI backend serving a Next.js frontend**. This architecture delivers 10-100x performance over FiftyOne's MongoDB for analytical queries while enabling embedding visualization at 1M+ points (vs FiftyOne's ~50K Plotly limit).
 
 The recommended approach prioritizes the **browse-filter-compare feedback loop** as the core value proposition. Phase 1 establishes the data foundation and basic browsing; Phase 2 adds embedding visualization with deck.gl; Phase 3 layers on AI agents for pattern detection. The stack is validated as production-ready: FastAPI 0.128.7, DuckDB 1.4.4, Qdrant 1.16.0, Next.js 16, deck.gl 9.2.6, Pydantic AI 1.58.0. Every choice is verified against official documentation and actively maintained.
 
@@ -36,7 +36,7 @@ The user's proposed stack (FastAPI + DuckDB + Qdrant + Next.js + Tailwind + deck
 
 ### Expected Features
 
-Feature research validated VisionLens positioning via competitive analysis of FiftyOne, CVAT, Label Studio, Roboflow, Supervisely, Encord Active.
+Feature research validated DataVisor positioning via competitive analysis of FiftyOne, CVAT, Label Studio, Roboflow, Supervisely, Encord Active.
 
 **Must have (table stakes):**
 - Multi-format ingestion (COCO/YOLO/VOC) — every serious CV tool supports these
@@ -48,7 +48,7 @@ Feature research validated VisionLens positioning via competitive analysis of Fi
 
 **Should have (competitive differentiators):**
 - **deck.gl embedding visualization** — handles 1M+ points vs FiftyOne's ~50K Plotly limit
-- **Lasso selection -> grid filtering** — FiftyOne has this, but VisionLens will be faster at scale
+- **Lasso selection -> grid filtering** — FiftyOne has this, but DataVisor will be faster at scale
 - **Error categorization (Hard FP, Label Error, FN)** — more opinionated than FiftyOne's generic scores
 - **AI agent pattern detection** — NO competitor does this. Novel value proposition.
 - **Free GCS support** — FiftyOne gates cloud storage behind Enterprise pricing
@@ -62,7 +62,7 @@ Feature research validated VisionLens positioning via competitive analysis of Fi
 
 ### Architecture Approach
 
-VisionLens follows a **layered monolith** pattern: FastAPI backend coordinates two specialized databases (DuckDB for metadata, Qdrant for vectors), serving a rich Next.js SPA frontend.
+DataVisor follows a **layered monolith** pattern: FastAPI backend coordinates two specialized databases (DuckDB for metadata, Qdrant for vectors), serving a rich Next.js SPA frontend.
 
 **Major components:**
 1. **Query Coordinator Service** — Routes queries to DuckDB (metadata/analytical) or Qdrant (vector similarity), joins results via sample_id. Handles hybrid queries like "find images similar to X with confidence < 0.5".

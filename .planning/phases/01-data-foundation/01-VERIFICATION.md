@@ -20,7 +20,7 @@ re_verification: false
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | User can point VisionLens at a COCO JSON file (100K+ annotations) and it ingests without OOM via streaming parser | ✓ VERIFIED | COCOParser uses ijson streaming with DataFrame batches (1000 records), tested with 10-image fixture, no in-memory loading of entire JSON |
+| 1 | User can point DataVisor at a COCO JSON file (100K+ annotations) and it ingests without OOM via streaming parser | ✓ VERIFIED | COCOParser uses ijson streaming with DataFrame batches (1000 records), tested with 10-image fixture, no in-memory loading of entire JSON |
 | 2 | User can load images from both a local directory and a GCS bucket using the same interface | ✓ VERIFIED | StorageBackend abstracts local/GCS via fsspec, resolve_image_path handles both protocols, images router serves both via storage.read_bytes() |
 | 3 | Thumbnails are generated and cached during ingestion so subsequent browsing is instant | ✓ VERIFIED | ImageService generates WebP thumbnails during ingestion (first 500), get_or_generate_thumbnail checks cache first, test_thumbnail_cache_hit confirms |
 | 4 | All sample metadata (filenames, dimensions, classes, splits) is stored in DuckDB and queryable via the API | ✓ VERIFIED | 4 tables (datasets, samples, annotations, categories), GET /samples supports pagination + category/split filtering, GET /samples/{id}/annotations retrieves annotations |

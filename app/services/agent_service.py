@@ -197,7 +197,7 @@ def run_analysis(
         agent = _get_agent()
     except Exception as exc:
         raise ValueError(
-            f"Failed to initialize agent. Ensure VISIONLENS_AGENT_MODEL is set "
+            f"Failed to initialize agent. Ensure DATAVISOR_AGENT_MODEL is set "
             f"and the corresponding API key is configured: {exc}"
         ) from exc
 
@@ -244,7 +244,7 @@ def run_analysis(
             raise ValueError(
                 "LLM API key not configured. Set the appropriate API key "
                 "environment variable (e.g., OPENAI_API_KEY or ANTHROPIC_API_KEY) "
-                "for the model specified in VISIONLENS_AGENT_MODEL."
+                "for the model specified in DATAVISOR_AGENT_MODEL."
             ) from exc
         raise ValueError(
             f"Agent analysis failed: {exc}"

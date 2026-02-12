@@ -1,4 +1,4 @@
-"""Application configuration using Pydantic Settings."""
+"""DataVisor application configuration using Pydantic Settings."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -17,13 +17,13 @@ def _detect_device() -> str:
 
 
 class Settings(BaseSettings):
-    """VisionLens application settings.
+    """DataVisor application settings.
 
     All fields can be overridden via environment variables with
-    the VISIONLENS_ prefix (e.g., VISIONLENS_DB_PATH).
+    the DATAVISOR_ prefix (e.g., DATAVISOR_DB_PATH).
     """
 
-    db_path: Path = Path("data/visionlens.duckdb")
+    db_path: Path = Path("data/datavisor.duckdb")
     thumbnail_cache_dir: Path = Path("data/thumbnails")
     thumbnail_default_size: str = "medium"
     thumbnail_webp_quality: int = 80
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     vlm_device: str = _detect_device()
 
     model_config = {
-        "env_prefix": "VISIONLENS_",
+        "env_prefix": "DATAVISOR_",
         "env_file": ".env",
     }
 

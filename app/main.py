@@ -1,4 +1,4 @@
-"""VisionLens FastAPI application entry point."""
+"""DataVisor FastAPI application entry point."""
 
 import logging
 from collections.abc import AsyncIterator
@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="VisionLens",
+    title="DataVisor",
     description="Unified CV dataset introspection tool",
     version="0.1.0",
     lifespan=lifespan,

@@ -27,7 +27,7 @@ key-files:
 key-decisions:
   - "useMutation (not useQuery) for agent analysis -- on-demand, long-running (10-30s)"
   - "Purple accent color for Intelligence tab to distinguish from blue evaluation tabs"
-  - "503 error shows actionable configuration instructions (OPENAI_API_KEY, VISIONLENS_AGENT_MODEL)"
+  - "503 error shows actionable configuration instructions (OPENAI_API_KEY, DATAVISOR_AGENT_MODEL)"
   - "Idle state with sparkle icon and descriptive text before first analysis run"
 
 patterns-established:
@@ -73,7 +73,7 @@ Each task was committed atomically:
 ## Decisions Made
 - **useMutation over useQuery:** Agent analysis is on-demand and long-running (10-30s), so useMutation with explicit button trigger is the right pattern (not auto-fetching useQuery)
 - **Purple accent for Intelligence tab:** Distinguishes the AI-powered tab from the blue-accented data tabs (Overview, Evaluation, Error Analysis)
-- **503 error handling:** Detects 503 status in error message and shows specific configuration instructions for OPENAI_API_KEY and VISIONLENS_AGENT_MODEL instead of generic error
+- **503 error handling:** Detects 503 status in error message and shows specific configuration instructions for OPENAI_API_KEY and DATAVISOR_AGENT_MODEL instead of generic error
 - **Idle state with sparkle icon:** Provides clear call-to-action before first analysis run, explaining what the agent does
 
 ## Deviations from Plan

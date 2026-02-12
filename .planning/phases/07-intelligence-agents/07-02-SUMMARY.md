@@ -109,7 +109,7 @@ None - Moondream2 is downloaded automatically from HuggingFace on first use. No 
 ## Next Phase Readiness
 - VLM auto-tagging fully operational, ready for Plan 03 (frontend intelligence UI)
 - Agent service tag-error correlation tool can now query populated samples.tags for pattern analysis
-- VISIONLENS_VLM_DEVICE config allows switching between cpu/mps/cuda
+- DATAVISOR_VLM_DEVICE config allows switching between cpu/mps/cuda
 
 ---
 *Phase: 07-intelligence-agents*

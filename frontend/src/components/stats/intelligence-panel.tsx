@@ -306,7 +306,7 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
                 </code>{" "}
                 environment variable and configure{" "}
                 <code className="px-1 py-0.5 rounded bg-red-100 dark:bg-red-900/60 font-mono">
-                  VISIONLENS_AGENT_MODEL
+                  DATAVISOR_AGENT_MODEL
                 </code>{" "}
                 (defaults to openai:gpt-4o).
               </p>

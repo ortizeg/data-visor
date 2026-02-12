@@ -1,10 +1,10 @@
 """VLM (Vision-Language Model) auto-tagging service using Moondream2.
 
-Loads Moondream2 on-demand (not at startup) via the transformers library
-to avoid memory pressure when coexisting with DINOv2.  Processes images
-in batches with encode-once optimization, validates tags against a
-controlled vocabulary, and merges results into the existing samples.tags
-column in DuckDB.
+Part of DataVisor's intelligence layer. Loads Moondream2 on-demand (not at
+startup) via the transformers library to avoid memory pressure when
+coexisting with DINOv2.  Processes images in batches with encode-once
+optimization, validates tags against a controlled vocabulary, and merges
+results into the existing samples.tags column in DuckDB.
 """
 
 from __future__ import annotations

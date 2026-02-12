@@ -16,7 +16,7 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-50 p-8 dark:bg-zinc-950">
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          VisionLens
+          DataVisor
         </h1>
         <p className="mt-1 text-zinc-500 dark:text-zinc-400">
           Select a dataset to browse

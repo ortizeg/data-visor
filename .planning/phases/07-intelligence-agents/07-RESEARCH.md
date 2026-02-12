@@ -249,7 +249,7 @@ class VLMService:
 ### Anti-Patterns to Avoid
 - **LLM doing math:** Never ask the LLM to count errors or compute percentages. Use DuckDB queries exposed as tools. LLMs are unreliable at arithmetic.
 - **Loading entire datasets into agent context:** Use the deps reference pattern (from data analyst example). Store results in deps, pass references to the LLM.
-- **Hardcoded model provider:** Make the LLM model configurable via environment variable (e.g., VISIONLENS_AGENT_MODEL). Users may use OpenAI, Anthropic, or local models.
+- **Hardcoded model provider:** Make the LLM model configurable via environment variable (e.g., DATAVISOR_AGENT_MODEL). Users may use OpenAI, Anthropic, or local models.
 - **Blocking VLM inference on request thread:** VLM tagging is slow (seconds per image). Always use background tasks with progress tracking.
 - **Installing `moondream` PyPI package:** It declares Python <4.0 and won't install on Python 3.14. Use `transformers` directly.
 
@@ -276,7 +276,7 @@ class VLMService:
 ### Pitfall 2: LLM API Key Not Configured
 **What goes wrong:** Agent fails at runtime because no API key is set.
 **Why it happens:** Unlike DINOv2/Moondream2 which run locally, the analysis agent calls an external LLM API.
-**How to avoid:** Make model provider configurable via `VISIONLENS_AGENT_MODEL` env var (e.g., "openai:gpt-4o" or "anthropic:claude-sonnet-4-5"). Validate at startup or return clear error. Document required env vars (OPENAI_API_KEY or ANTHROPIC_API_KEY).
+**How to avoid:** Make model provider configurable via `DATAVISOR_AGENT_MODEL` env var (e.g., "openai:gpt-4o" or "anthropic:claude-sonnet-4-5"). Validate at startup or return clear error. Document required env vars (OPENAI_API_KEY or ANTHROPIC_API_KEY).
 **Warning signs:** Hardcoded model strings, missing .env documentation.
 
 ### Pitfall 3: Agent Tool Functions Returning Too Much Data
@@ -532,7 +532,7 @@ async def analyze_errors(
 1. **LLM API Key Management**
    - What we know: The agent needs an LLM API key (OpenAI or Anthropic). All other models in the project run locally.
    - What's unclear: Should this be a required env var at startup, or should the agent feature gracefully degrade when no key is configured?
-   - Recommendation: Make it optional. If no `VISIONLENS_AGENT_MODEL` or API key is set, the `/analyze` endpoint returns a clear "configure API key" error. VLM tagging works independently (local model).
+   - Recommendation: Make it optional. If no `DATAVISOR_AGENT_MODEL` or API key is set, the `/analyze` endpoint returns a clear "configure API key" error. VLM tagging works independently (local model).
 
 2. **Error Samples Storage for Agent Queries**
    - What we know: `categorize_errors()` returns error data in memory (not persisted). Agent tools need to query this data via SQL.
@@ -542,7 +542,7 @@ async def analyze_errors(
 3. **VLM Model Memory Management**
    - What we know: Moondream2 is ~4GB in memory. DINOv2 is already loaded at startup (~350MB).
    - What's unclear: Can both models coexist on a 16GB MPS machine?
-   - Recommendation: Load VLM on-demand (not at startup). If memory is tight, add a `VISIONLENS_VLM_DEVICE` config option defaulting to "cpu" to avoid MPS memory pressure.
+   - Recommendation: Load VLM on-demand (not at startup). If memory is tight, add a `DATAVISOR_VLM_DEVICE` config option defaulting to "cpu" to avoid MPS memory pressure.
 
 4. **Tag Prompt Engineering and Validation**
    - What we know: Moondream2 responds well to "one word" prompts. Tags need to be from a controlled vocabulary.

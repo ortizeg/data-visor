@@ -1,8 +1,8 @@
-# VisionLens
+# DataVisor
 
 ## What This Is
 
-VisionLens is an open-source dataset introspection tool for computer vision — an alternative to Voxel51. It combines a high-performance visual browser with VLM-powered agentic workflows to automatically discover dataset blind spots (poor lighting, rare occlusions, label errors). Built as a personal tool for exploring 100K+ image datasets with COCO format annotations.
+DataVisor is an open-source dataset introspection tool for computer vision — an alternative to Voxel51. It combines a high-performance visual browser with VLM-powered agentic workflows to automatically discover dataset blind spots (poor lighting, rare occlusions, label errors). Built as a personal tool for exploring 100K+ image datasets with COCO format annotations.
 
 ## Core Value
 
@@ -48,7 +48,7 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 
 - Multi-user collaboration / auth — personal tool, not a platform
 - Video annotation support — image-only for now
-- Training pipeline integration — VisionLens inspects data, doesn't train models
+- Training pipeline integration — DataVisor inspects data, doesn't train models
 - Mobile/tablet interface — desktop browser only
 - Real-time streaming inference — batch-oriented analysis
 

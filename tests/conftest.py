@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for VisionLens tests."""
+"""Shared pytest fixtures for DataVisor tests."""
 
 from pathlib import Path
 
