@@ -12,9 +12,9 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: 8 of 13 (Docker Deployment & Auth)
 Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 08-02-PLAN.md
+Last activity: 2026-02-12 — Completed 08-01-PLAN.md
 
-Progress: [████░░░░░░░░░░░░░░░░] 8% (v1.1: 1/5 plans in phase 8)
+Progress: [████████░░░░░░░░░░░░] 16% (v1.1: 2/5 plans in phase 8)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [████░░░░░░░░░░░░░░░░] 8% (v1.
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | 1/5 | 2 min | 2.0 min |
+| 8. Docker Deployment & Auth | 2/5 | 6 min | 3.0 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -57,6 +57,8 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: Caddy over nginx for reverse proxy (auto-HTTPS, built-in basic_auth)
 - [v1.1 Roadmap]: react-konva for annotation editing in detail modal only (SVG stays for grid)
 - [v1.1 Roadmap]: FastAPI HTTPBasic DI over middleware (testable, composable)
+- [08-01]: CPU-only PyTorch via post-sync replacement in Dockerfile (uv sync then uv pip install from CPU index)
+- [08-01]: CORS restricted to localhost:3000 in dev, disabled entirely behind proxy (DATAVISOR_BEHIND_PROXY=true)
 - [08-02]: NEXT_PUBLIC_API_URL=/api baked at build time for same-origin API via Caddy
 - [08-02]: Caddy handles all auth at proxy layer -- zero application code changes
 
@@ -72,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-02-PLAN.md (frontend Dockerfile + Caddyfile)
+Stopped at: Completed 08-01-PLAN.md (backend Dockerfile + config fixes)
 Resume file: None
