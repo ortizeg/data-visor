@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 8 — Docker Deployment & Auth
+**Current focus:** Phase 8 complete -- Docker Deployment & Auth
 
 ## Current Position
 
 Phase: 8 of 13 (Docker Deployment & Auth)
 Plan: 5 of 5 in current phase
-Status: Checkpoint pending (08-05 awaiting user verification of Docker stack)
-Last activity: 2026-02-12 — Completed 08-05-PLAN.md Task 1 (checkpoint pending)
+Status: Phase complete
+Last activity: 2026-02-12 — Completed 08-05-PLAN.md (user verified Docker stack)
 
-Progress: [████████████████████] 40% (v1.1: 5/5 plans in phase 8, checkpoint pending)
+Progress: [████████████████████] 40% (v1.1: 5/5 plans in phase 8 complete)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [████████████████████] 40% (v1
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | 5/5 | 10 min | 2.0 min |
+| 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -67,6 +67,7 @@ Recent decisions affecting current work:
 - [08-04]: VM startup script does NOT auto-start docker compose -- requires manual .env setup first
 - [08-04]: GCP config via env vars with defaults (only GCP_PROJECT_ID required)
 - [08-05]: 10-section deployment docs covering local Docker, GCP, custom domain HTTPS, data persistence, troubleshooting
+- [08-05]: opencv-python-headless replaces opencv-python in Docker builder stage (no X11/GUI libs in slim images)
 
 ### Pending Todos
 
@@ -74,11 +75,10 @@ None.
 
 ### Blockers/Concerns
 
-- [P1] DuckDB WAL files must persist via directory mount (not file mount) in Docker
 - [P5] SVG-to-Canvas coordinate mismatch requires explicit conversion utilities for Phase 10
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: 08-05-PLAN.md checkpoint -- awaiting user verification of full Docker stack
+Stopped at: Completed 08-05-PLAN.md -- Phase 8 (Docker Deployment & Auth) fully complete
 Resume file: None
