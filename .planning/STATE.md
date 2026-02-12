@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 8 complete -- Docker Deployment & Auth
+**Current focus:** Phase 9 in progress -- Smart Ingestion
 
 ## Current Position
 
-Phase: 8 of 13 (Docker Deployment & Auth)
-Plan: 5 of 5 in current phase
-Status: Phase complete
-Last activity: 2026-02-12 — Completed 08-05-PLAN.md (user verified Docker stack)
+Phase: 9 of 13 (Smart Ingestion)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-12 -- Completed 09-01-PLAN.md
 
-Progress: [████████████████████] 40% (v1.1: 5/5 plans in phase 8 complete)
+Progress: [██████████████████████████████████████████████████████] 96% (v1.1: 27/28 plans complete)
 
 ## Performance Metrics
 
@@ -40,7 +40,7 @@ Progress: [████████████████████] 40% (v1
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
-| 9. Smart Ingestion | — | — | — |
+| 9. Smart Ingestion | 1/2 | 5 min | 5.0 min |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
 | 12. Interactive Viz & Discovery | — | — | — |
@@ -68,6 +68,10 @@ Recent decisions affecting current work:
 - [08-04]: GCP config via env vars with defaults (only GCP_PROJECT_ID required)
 - [08-05]: 10-section deployment docs covering local Docker, GCP, custom domain HTTPS, data persistence, troubleshooting
 - [08-05]: opencv-python-headless replaces opencv-python in Docker builder stage (no X11/GUI libs in slim images)
+- [09-01]: Three-layout priority detection: Roboflow > Standard COCO > Flat
+- [09-01]: ijson peek at top-level keys for COCO detection (max 10 keys, files >500MB skipped)
+- [09-01]: Optional dataset_id param on ingest_with_progress for multi-split ID sharing
+- [09-01]: INSERT-or-UPDATE pattern for dataset record across multi-split imports
 
 ### Pending Todos
 
@@ -80,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-05-PLAN.md -- Phase 8 (Docker Deployment & Auth) fully complete
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
