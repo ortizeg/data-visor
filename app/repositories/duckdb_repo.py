@@ -102,6 +102,18 @@ class DuckDBRepo:
             )
         """)
 
+        # Phase 5: Embeddings table for image embeddings and 2D reduced coordinates
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS embeddings (
+                sample_id       VARCHAR NOT NULL,
+                dataset_id      VARCHAR NOT NULL,
+                model_name      VARCHAR NOT NULL,
+                vector          FLOAT[768],
+                x               DOUBLE,
+                y               DOUBLE
+            )
+        """)
+
     def close(self) -> None:
         """Close the underlying DuckDB connection."""
         self.connection.close()
