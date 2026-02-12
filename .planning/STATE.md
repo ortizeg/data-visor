@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 7 in progress. Plans 01 (agent infrastructure) and 03 (frontend intelligence UI) complete. VLM auto-tagging (Plan 02) remains.
+**Current focus:** Phase 7 complete. All 21 plans across 7 phases delivered.
 
 ## Current Position
 
 Phase: 7 of 7 (Intelligence & Agents)
-Plan: 3 of 3 in current phase (wave 2)
-Status: In progress (Plan 02 remaining)
-Last activity: 2026-02-12 -- Completed 07-03-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete -- ALL PLANS DELIVERED
+Last activity: 2026-02-12 -- Completed 07-02-PLAN.md
 
-Progress: [████████████████████░] 20/21
+Progress: [█████████████████████] 21/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 3.8 min
-- Total execution time: 78 min
+- Total plans completed: 21
+- Average duration: 3.9 min
+- Total execution time: 82 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [████████████████████░] 20/2
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 | 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
 | 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
-| 7. Intelligence & Agents | 2/3 | 5 min | 2.5 min |
+| 7. Intelligence & Agents | 3/3 | 9 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (5 min), 06-02 (4 min), 07-01 (3 min), 07-03 (2 min)
-- Trend: stable/accelerating
+- Last 5 plans: 06-02 (4 min), 07-01 (3 min), 07-02 (4 min), 07-03 (2 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -128,17 +128,22 @@ Recent decisions affecting current work:
 - [07-03]: useMutation (not useQuery) for agent analysis -- on-demand, long-running (10-30s)
 - [07-03]: Purple accent color for Intelligence tab to distinguish from blue evaluation tabs
 - [07-03]: 503 error shows actionable configuration instructions (OPENAI_API_KEY, VISIONLENS_AGENT_MODEL)
+- [07-02]: VLM model loaded on-demand (not at startup) to avoid memory pressure with DINOv2
+- [07-02]: Encode-once optimization: encode_image() called once, query() per tag dimension
+- [07-02]: 5 tag dimensions with controlled vocabulary; invalid VLM responses silently discarded
+- [07-02]: Tags merged via list_distinct(list_concat(...)) to preserve user-applied tags
+- [07-02]: AutoTagButton invalidates both samples and filter-facets caches on completion
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- Phase 7: VLM prompt engineering calibration needs testing with real images (Plan 02)
+None -- all 21 plans complete.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 07-03-PLAN.md (Phase 7, plan 3/3 -- wave 2)
+Stopped at: Completed 07-02-PLAN.md (Phase 7, plan 2/3 -- final plan)
 Resume file: None
