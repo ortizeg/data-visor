@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 8 of 13 (Docker Deployment & Auth)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 08-03-PLAN.md
+Last activity: 2026-02-12 — Completed 08-04-PLAN.md
 
-Progress: [████████████░░░░░░░░] 24% (v1.1: 3/5 plans in phase 8)
+Progress: [████████████████░░░░] 32% (v1.1: 4/5 plans in phase 8)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [████████████░░░░░░░░] 24% (v1
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | 3/5 | 7 min | 2.3 min |
+| 8. Docker Deployment & Auth | 4/5 | 8 min | 2.0 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -64,6 +64,8 @@ Recent decisions affecting current work:
 - [08-03]: Directory bind mount ./data:/app/data for DuckDB WAL + Qdrant + thumbnails persistence
 - [08-03]: AUTH_PASSWORD_HASH has no default -- forces explicit auth configuration before deployment
 - [08-03]: Only Caddy exposes ports 80/443 -- backend and frontend are Docker-internal only
+- [08-04]: VM startup script does NOT auto-start docker compose -- requires manual .env setup first
+- [08-04]: GCP config via env vars with defaults (only GCP_PROJECT_ID required)
 
 ### Pending Todos
 
@@ -77,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-03-PLAN.md (Docker Compose orchestration + env config)
+Stopped at: Completed 08-04-PLAN.md (Deployment scripts for local Docker and GCP)
 Resume file: None
