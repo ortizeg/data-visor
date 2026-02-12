@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 5 in progress. Plan 02 (dimensionality reduction) complete. Proceeding with scatter plot visualization.
+**Current focus:** Phase 5 in progress. Plan 03 (scatter plot visualization) complete. Proceeding with lasso selection and cross-filtering.
 
 ## Current Position
 
 Phase: 5 of 7 (Embeddings & Visualization)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-11 -- Completed 05-02-PLAN.md
+Last activity: 2026-02-12 -- Completed 05-03-PLAN.md
 
-Progress: [██████████████████░░░] 14/21
+Progress: [███████████████████░░] 15/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 4.0 min
-- Total execution time: 56 min
+- Total execution time: 60 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [██████████████████░░░] 14/2
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
-| 5. Embeddings & Visualization | 2/4 | 8 min | 4.0 min |
+| 5. Embeddings & Visualization | 3/4 | 12 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (3 min), 04-03 (3 min), 05-01 (5 min), 05-02 (3 min)
+- Last 5 plans: 04-03 (3 min), 05-01 (5 min), 05-02 (3 min), 05-03 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -101,6 +101,10 @@ Recent decisions affecting current work:
 - [05-02]: t-SNE perplexity clamped to min(30, n_samples-1) for small dataset safety
 - [05-02]: PCA initialization for t-SNE (more stable than random init)
 - [05-02]: Cosine metric for t-SNE matching DINOv2 embedding space semantics
+- [05-03]: OrthographicView (not MapView) for abstract 2D embedding scatter plot
+- [05-03]: MutationObserver to detect deck.gl canvas for WebGL context loss listener
+- [05-03]: useEffect for terminal-status monitoring (not inline setState during render)
+- [05-03]: staleTime: Infinity for coordinates (stable until re-reduction)
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-11
-Stopped at: Completed 05-02-PLAN.md (Phase 5, 2/4 plans)
+Last session: 2026-02-12
+Stopped at: Completed 05-03-PLAN.md (Phase 5, 3/4 plans)
 Resume file: None
