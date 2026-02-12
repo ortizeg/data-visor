@@ -43,8 +43,8 @@
 
 ### Intelligence & Agents
 
-- [ ] **AGENT-01**: Pydantic AI agent monitors error distribution and detects patterns
-- [ ] **AGENT-02**: Agent recommends actions based on detected patterns (augmentation, data collection)
+- [x] **AGENT-01**: Pydantic AI agent monitors error distribution and detects patterns
+- [x] **AGENT-02**: Agent recommends actions based on detected patterns (augmentation, data collection)
 - [x] **AGENT-03**: Qdrant-powered similarity search (find visually similar images)
 - [ ] **AGENT-04**: VLM auto-tagging (Moondream2) — tag images as dark, blurry, indoor, etc.
 
@@ -106,10 +106,10 @@
 | EVAL-01 | Phase 4: Predictions & Comparison | Complete |
 | EVAL-02 | Phase 6: Error Analysis & Similarity | Complete |
 | EVAL-03 | Phase 4: Predictions & Comparison | Complete |
-| AGENT-01 | Phase 7: Intelligence & Agents | Pending |
-| AGENT-02 | Phase 7: Intelligence & Agents | Pending |
+| AGENT-01 | Phase 7: Intelligence & Agents | Complete |
+| AGENT-02 | Phase 7: Intelligence & Agents | Complete |
 | AGENT-03 | Phase 6: Error Analysis & Similarity | Complete |
-| AGENT-04 | Phase 7: Intelligence & Agents | Pending |
+| AGENT-04 | Phase 7: Intelligence & Agents | Complete |
 | PLUGIN-01 | Phase 1: Data Foundation | Complete |
 
 **Coverage:**
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 6 completion*
+*Last updated: 2026-02-12 after Phase 7 completion*

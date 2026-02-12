@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Predictions & Comparison** - Import model predictions, GT vs Predictions toggle, dataset statistics
 - [x] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
 - [x] **Phase 6: Error Analysis & Similarity** - Error categorization pipeline and Qdrant-powered similarity search
-- [ ] **Phase 7: Intelligence & Agents** - Pydantic AI agent for pattern detection, action recommendations, VLM auto-tagging
+- [x] **Phase 7: Intelligence & Agents** - Pydantic AI agent for pattern detection, action recommendations, VLM auto-tagging
 
 ## Phase Details
 
@@ -130,9 +130,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- Pydantic AI agent service with DuckDB query tools, agent models, /analyze endpoint, config + infrastructure
-- [ ] 07-02-PLAN.md -- VLM auto-tagging pipeline (Moondream2 via transformers), background task with SSE progress, Auto-Tag button
-- [ ] 07-03-PLAN.md -- Agent analysis frontend: Intelligence sub-tab in Statistics dashboard, pattern + recommendation display
+- [x] 07-01-PLAN.md -- Pydantic AI agent service with DuckDB query tools, agent models, /analyze endpoint, config + infrastructure
+- [x] 07-02-PLAN.md -- VLM auto-tagging pipeline (Moondream2 via transformers), background task with SSE progress, Auto-Tag button
+- [x] 07-03-PLAN.md -- Agent analysis frontend: Intelligence sub-tab in Statistics dashboard, pattern + recommendation display
 
 ## Progress
 
@@ -147,4 +147,4 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 | 4. Predictions & Comparison | 3/3 | Complete | 2026-02-11 |
 | 5. Embeddings & Visualization | 4/4 | Complete | 2026-02-12 |
 | 6. Error Analysis & Similarity | 2/2 | Complete | 2026-02-11 |
-| 7. Intelligence & Agents | 0/3 | Not started | - |
+| 7. Intelligence & Agents | 3/3 | Complete | 2026-02-12 |
