@@ -10,12 +10,14 @@ import { ImageGrid } from "@/components/grid/image-grid";
 import { SampleModal } from "@/components/detail/sample-modal";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { StatsDashboard } from "@/components/stats/stats-dashboard";
+import { EmbeddingPanel } from "@/components/embedding/embedding-panel";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
 
 const TAB_OPTIONS: { value: DatasetTab; label: string }[] = [
   { value: "grid", label: "Grid" },
   { value: "statistics", label: "Statistics" },
+  { value: "embeddings", label: "Embeddings" },
 ];
 
 export default function DatasetPage({
@@ -61,7 +63,7 @@ export default function DatasetPage({
               {dataset.image_count.toLocaleString()} images
             </span>
 
-            {/* Tab switcher: Grid / Statistics */}
+            {/* Tab switcher: Grid / Statistics / Embeddings */}
             <div className="inline-flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
               {TAB_OPTIONS.map((opt) => {
                 const isActive = activeTab === opt.value;
@@ -86,15 +88,19 @@ export default function DatasetPage({
         )}
       </header>
 
-      {activeTab === "grid" ? (
+      {activeTab === "grid" && (
         <div className="flex flex-1 overflow-hidden">
           <FilterSidebar datasetId={datasetId} />
           <div className="flex-1 overflow-hidden">
             <ImageGrid datasetId={datasetId} />
           </div>
         </div>
-      ) : (
+      )}
+      {activeTab === "statistics" && (
         <StatsDashboard datasetId={datasetId} />
+      )}
+      {activeTab === "embeddings" && (
+        <EmbeddingPanel datasetId={datasetId} />
       )}
       <SampleModal datasetId={datasetId} samples={allSamples} />
     </div>

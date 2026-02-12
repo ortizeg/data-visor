@@ -11,7 +11,7 @@ import { create } from "zustand";
 import { DEFAULT_COLUMNS } from "@/lib/constants";
 
 /** Which tab is active on the dataset page. */
-export type DatasetTab = "grid" | "statistics";
+export type DatasetTab = "grid" | "statistics" | "embeddings";
 
 interface UIState {
   /** Currently selected sample ID for the detail modal. */
