@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 8 of 13 (Docker Deployment & Auth)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 08-01-PLAN.md
+Last activity: 2026-02-12 — Completed 08-03-PLAN.md
 
-Progress: [████████░░░░░░░░░░░░] 16% (v1.1: 2/5 plans in phase 8)
+Progress: [████████████░░░░░░░░] 24% (v1.1: 3/5 plans in phase 8)
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Progress: [████████░░░░░░░░░░░░] 16% (v1
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Docker Deployment & Auth | 2/5 | 6 min | 3.0 min |
+| 8. Docker Deployment & Auth | 3/5 | 7 min | 2.3 min |
 | 9. Smart Ingestion | — | — | — |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
@@ -61,6 +61,9 @@ Recent decisions affecting current work:
 - [08-01]: CORS restricted to localhost:3000 in dev, disabled entirely behind proxy (DATAVISOR_BEHIND_PROXY=true)
 - [08-02]: NEXT_PUBLIC_API_URL=/api baked at build time for same-origin API via Caddy
 - [08-02]: Caddy handles all auth at proxy layer -- zero application code changes
+- [08-03]: Directory bind mount ./data:/app/data for DuckDB WAL + Qdrant + thumbnails persistence
+- [08-03]: AUTH_PASSWORD_HASH has no default -- forces explicit auth configuration before deployment
+- [08-03]: Only Caddy exposes ports 80/443 -- backend and frontend are Docker-internal only
 
 ### Pending Todos
 
@@ -74,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-01-PLAN.md (backend Dockerfile + config fixes)
+Stopped at: Completed 08-03-PLAN.md (Docker Compose orchestration + env config)
 Resume file: None
