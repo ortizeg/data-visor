@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 6 in progress. Plan 1 (error analysis) complete. Plan 2 (similarity search) next.
+**Current focus:** Phase 6 complete. Both plans (error categorization, similarity search) delivered. Ready for Phase 7.
 
 ## Current Position
 
 Phase: 6 of 7 (Error Analysis & Similarity)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-12 -- Completed 06-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-12 -- Completed 06-02-PLAN.md
 
-Progress: [█████████████████████░░] 17/21
+Progress: [██████████████████░░░] 18/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 4.1 min
-- Total execution time: 69 min
+- Total execution time: 73 min
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [█████████████████████░░
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 | 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
-| 6. Error Analysis & Similarity | 1/2 | 5 min | 5.0 min |
+| 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (3 min), 05-03 (4 min), 05-04 (4 min), 06-01 (5 min)
+- Last 5 plans: 05-03 (4 min), 05-04 (4 min), 06-01 (5 min), 06-02 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -115,6 +115,11 @@ Recent decisions affecting current work:
 - [06-01]: Error samples capped at 50 per type to avoid large payloads
 - [06-01]: Label Error marks GT as matched (prevents same GT from also being FN)
 - [06-01]: Per-class error counts keyed by predicted class for TP/Hard FP/Label Error, GT class for FN
+- [06-02]: Qdrant local disk mode (no Docker) via QdrantClient(path=) for zero-infra similarity search
+- [06-02]: Lazy collection sync: Qdrant collection created on first similarity query, not at startup
+- [06-02]: Sequential integer IDs for Qdrant points with sample_id in payload (Qdrant requires int/UUID IDs)
+- [06-02]: useSimilarity hook uses enabled flag for on-demand fetching (no auto-fetch on mount)
+- [06-02]: Empty results return 200 with empty list, not 404 (user sees "no similar images found")
 
 ### Pending Todos
 
@@ -127,5 +132,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 06-01-PLAN.md (Phase 6 plan 1 of 2)
+Stopped at: Completed 06-02-PLAN.md (Phase 6 complete, 2/2 plans)
 Resume file: None
