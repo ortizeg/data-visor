@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.1 — Deployment, Workflow & Competitive Parity
+**Current focus:** Phase 8 — Docker Deployment & Auth
 
 ## Current Position
 
-Phase: Not started (researching)
-Plan: —
-Status: Researching competitive landscape for v1.1
-Last activity: 2026-02-12 — Milestone v1.1 scope redefined
+Phase: 8 of 13 (Docker Deployment & Auth)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-12 — Roadmap created for v1.1
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░] 0/? (v1.1)
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (v1.1: 0/TBD plans)
 
 ## Performance Metrics
 
@@ -23,7 +23,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░] 0/? 
 - Average duration: 3.9 min
 - Total execution time: 82 min
 
-**By Phase:**
+**By Phase (v1.0):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -35,11 +35,28 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░] 0/? 
 | 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
 | 7. Intelligence & Agents | 3/3 | 9 min | 3.0 min |
 
+**By Phase (v1.1):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 8. Docker Deployment & Auth | — | — | — |
+| 9. Smart Ingestion | — | — | — |
+| 10. Annotation Editing | — | — | — |
+| 11. Error Triage | — | — | — |
+| 12. Interactive Viz & Discovery | — | — | — |
+| 13. Keyboard Shortcuts | — | — | — |
+
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1 Roadmap]: Keep Qdrant in local mode for Docker (single-user <1M vectors)
+- [v1.1 Roadmap]: Caddy over nginx for reverse proxy (auto-HTTPS, built-in basic_auth)
+- [v1.1 Roadmap]: react-konva for annotation editing in detail modal only (SVG stays for grid)
+- [v1.1 Roadmap]: FastAPI HTTPBasic DI over middleware (testable, composable)
 
 ### Pending Todos
 
@@ -47,10 +64,11 @@ None.
 
 ### Blockers/Concerns
 
-None — v1.0 shipped.
+- [P1] DuckDB WAL files must persist via directory mount (not file mount) in Docker
+- [P5] SVG-to-Canvas coordinate mismatch requires explicit conversion utilities for Phase 10
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: v1.0 milestone complete
+Stopped at: v1.1 roadmap created, ready to plan Phase 8
 Resume file: None

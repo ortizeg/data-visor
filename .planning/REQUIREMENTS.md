@@ -90,38 +90,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEPLOY-01 | — | Pending |
-| DEPLOY-02 | — | Pending |
-| DEPLOY-03 | — | Pending |
-| DEPLOY-04 | — | Pending |
-| DEPLOY-05 | — | Pending |
-| INGEST-01 | — | Pending |
-| INGEST-02 | — | Pending |
-| INGEST-03 | — | Pending |
-| INGEST-04 | — | Pending |
-| INGEST-05 | — | Pending |
-| ANNOT-01 | — | Pending |
-| ANNOT-02 | — | Pending |
-| ANNOT-03 | — | Pending |
-| ANNOT-04 | — | Pending |
-| ANNOT-05 | — | Pending |
-| ANNOT-06 | — | Pending |
-| TRIAGE-01 | — | Pending |
-| TRIAGE-02 | — | Pending |
-| TRIAGE-03 | — | Pending |
-| TRIAGE-04 | — | Pending |
-| TRIAGE-05 | — | Pending |
-| TRIAGE-06 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
-| UX-04 | — | Pending |
+| DEPLOY-01 | Phase 8 | Pending |
+| DEPLOY-02 | Phase 8 | Pending |
+| DEPLOY-03 | Phase 8 | Pending |
+| DEPLOY-04 | Phase 8 | Pending |
+| DEPLOY-05 | Phase 8 | Pending |
+| INGEST-01 | Phase 9 | Pending |
+| INGEST-02 | Phase 9 | Pending |
+| INGEST-03 | Phase 9 | Pending |
+| INGEST-04 | Phase 9 | Pending |
+| INGEST-05 | Phase 9 | Pending |
+| ANNOT-01 | Phase 10 | Pending |
+| ANNOT-02 | Phase 10 | Pending |
+| ANNOT-03 | Phase 10 | Pending |
+| ANNOT-04 | Phase 10 | Pending |
+| ANNOT-05 | Phase 10 | Pending |
+| ANNOT-06 | Phase 12 | Pending |
+| TRIAGE-01 | Phase 11 | Pending |
+| TRIAGE-02 | Phase 11 | Pending |
+| TRIAGE-03 | Phase 11 | Pending |
+| TRIAGE-04 | Phase 12 | Pending |
+| TRIAGE-05 | Phase 12 | Pending |
+| TRIAGE-06 | Phase 12 | Pending |
+| UX-01 | Phase 13 | Pending |
+| UX-02 | Phase 13 | Pending |
+| UX-03 | Phase 13 | Pending |
+| UX-04 | Phase 13 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 — traceability updated after roadmap creation*
