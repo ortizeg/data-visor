@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 5 complete. All 4 plans (embedding generation, t-SNE reduction, scatter plot, lasso selection) delivered. Ready for Phase 6.
+**Current focus:** Phase 6 in progress. Plan 1 (error analysis) complete. Plan 2 (similarity search) next.
 
 ## Current Position
 
-Phase: 5 of 7 (Embeddings & Visualization)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-12 -- Completed 05-04-PLAN.md
+Phase: 6 of 7 (Error Analysis & Similarity)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-12 -- Completed 06-01-PLAN.md
 
-Progress: [████████████████████░] 16/21
+Progress: [█████████████████████░░] 17/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
-- Average duration: 4.0 min
-- Total execution time: 64 min
+- Total plans completed: 17
+- Average duration: 4.1 min
+- Total execution time: 69 min
 
 **By Phase:**
 
@@ -32,9 +32,10 @@ Progress: [████████████████████░] 16/2
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 | 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
+| 6. Error Analysis & Similarity | 1/2 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (5 min), 05-02 (3 min), 05-03 (4 min), 05-04 (4 min)
+- Last 5 plans: 05-02 (3 min), 05-03 (4 min), 05-04 (4 min), 06-01 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -110,6 +111,10 @@ Recent decisions affecting current work:
 - [05-04]: sample_ids cap at 5000 (vs 200 for batch-annotations) for large cluster selection
 - [05-04]: DeckGLRef forwarded via prop for viewport.project() coordinate mapping
 - [05-04]: Cross-filter pattern: separate domain stores combined at query hook level
+- [06-01]: Import _load_detections and _compute_iou_matrix from evaluation.py directly (shared internal helpers)
+- [06-01]: Error samples capped at 50 per type to avoid large payloads
+- [06-01]: Label Error marks GT as matched (prevents same GT from also being FN)
+- [06-01]: Per-class error counts keyed by predicted class for TP/Hard FP/Label Error, GT class for FN
 
 ### Pending Todos
 
@@ -122,5 +127,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-04-PLAN.md (Phase 5 complete, 4/4 plans)
+Stopped at: Completed 06-01-PLAN.md (Phase 6 plan 1 of 2)
 Resume file: None
