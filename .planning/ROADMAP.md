@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Filtering & Search** - Sidebar metadata filters, search/sort, saved views, and tagging
 - [x] **Phase 4: Predictions & Comparison** - Import model predictions, GT vs Predictions toggle, dataset statistics
 - [x] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
-- [ ] **Phase 6: Error Analysis & Similarity** - Error categorization pipeline and Qdrant-powered similarity search
+- [x] **Phase 6: Error Analysis & Similarity** - Error categorization pipeline and Qdrant-powered similarity search
 - [ ] **Phase 7: Intelligence & Agents** - Pydantic AI agent for pattern detection, action recommendations, VLM auto-tagging
 
 ## Phase Details
@@ -115,8 +115,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- Error categorization service (TP/FP/FN/LE matching) + Error Analysis sub-tab in statistics dashboard
-- [ ] 06-02-PLAN.md -- Qdrant similarity service (local mode) + "Find Similar" button in SampleModal
+- [x] 06-01-PLAN.md -- Error categorization service (TP/FP/FN/LE matching) + Error Analysis sub-tab in statistics dashboard
+- [x] 06-02-PLAN.md -- Qdrant similarity service (local mode) + "Find Similar" button in SampleModal
 
 ### Phase 7: Intelligence & Agents
 **Goal**: An AI agent automatically detects patterns in prediction errors and recommends corrective actions, while VLM auto-tagging enriches sample metadata
@@ -146,5 +146,5 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 | 3. Filtering & Search | 2/2 | Complete | 2026-02-11 |
 | 4. Predictions & Comparison | 3/3 | Complete | 2026-02-11 |
 | 5. Embeddings & Visualization | 4/4 | Complete | 2026-02-12 |
-| 6. Error Analysis & Similarity | 0/2 | Not started | - |
+| 6. Error Analysis & Similarity | 2/2 | Complete | 2026-02-11 |
 | 7. Intelligence & Agents | 0/3 | Not started | - |

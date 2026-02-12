@@ -38,14 +38,14 @@
 ### Model Evaluation
 
 - [x] **EVAL-01**: Import pre-computed model predictions (JSON format)
-- [ ] **EVAL-02**: Error categorization: Hard False Positives, Label Errors, False Negatives
+- [x] **EVAL-02**: Error categorization: Hard False Positives, Label Errors, False Negatives
 - [x] **EVAL-03**: Dataset statistics dashboard (class distribution, annotation counts, split breakdown)
 
 ### Intelligence & Agents
 
 - [ ] **AGENT-01**: Pydantic AI agent monitors error distribution and detects patterns
 - [ ] **AGENT-02**: Agent recommends actions based on detected patterns (augmentation, data collection)
-- [ ] **AGENT-03**: Qdrant-powered similarity search (find visually similar images)
+- [x] **AGENT-03**: Qdrant-powered similarity search (find visually similar images)
 - [ ] **AGENT-04**: VLM auto-tagging (Moondream2) — tag images as dark, blurry, indoor, etc.
 
 ### Extensibility
@@ -104,11 +104,11 @@
 | EMBED-03 | Phase 5: Embeddings & Visualization | Complete |
 | EMBED-04 | Phase 5: Embeddings & Visualization | Complete |
 | EVAL-01 | Phase 4: Predictions & Comparison | Complete |
-| EVAL-02 | Phase 6: Error Analysis & Similarity | Pending |
+| EVAL-02 | Phase 6: Error Analysis & Similarity | Complete |
 | EVAL-03 | Phase 4: Predictions & Comparison | Complete |
 | AGENT-01 | Phase 7: Intelligence & Agents | Pending |
 | AGENT-02 | Phase 7: Intelligence & Agents | Pending |
-| AGENT-03 | Phase 6: Error Analysis & Similarity | Pending |
+| AGENT-03 | Phase 6: Error Analysis & Similarity | Complete |
 | AGENT-04 | Phase 7: Intelligence & Agents | Pending |
 | PLUGIN-01 | Phase 1: Data Foundation | Complete |
 
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-12 after Phase 5 completion*
+*Last updated: 2026-02-11 after Phase 6 completion*
