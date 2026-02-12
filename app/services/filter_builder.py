@@ -85,6 +85,14 @@ class SampleFilterBuilder:
                 self.params.append(tag)
         return self
 
+    def add_sample_ids(self, sample_ids: list[str] | None) -> "SampleFilterBuilder":
+        """Filter by explicit sample ID list (for lasso selection). Skipped if None."""
+        if sample_ids is not None and len(sample_ids) > 0:
+            placeholders = ", ".join(["?"] * len(sample_ids))
+            self.conditions.append(f"s.id IN ({placeholders})")
+            self.params.extend(sample_ids)
+        return self
+
     def build_order(
         self, sort_by: str | None, sort_dir: str | None
     ) -> str:

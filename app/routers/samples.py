@@ -35,6 +35,9 @@ def list_samples(
     split: str | None = Query(None, description="Filter by split"),
     search: str | None = Query(None, description="Search by filename"),
     tags: str | None = Query(None, description="Comma-separated tags"),
+    sample_ids: str | None = Query(
+        None, description="Comma-separated sample IDs (for lasso selection, max 5000)"
+    ),
     sort_by: str = Query("id", description="Sort column"),
     sort_dir: Literal["asc", "desc"] = Query("asc", description="Sort direction"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
@@ -49,6 +52,18 @@ def list_samples(
         else None
     )
 
+    # Parse comma-separated sample IDs for lasso selection
+    sample_id_list = (
+        [sid.strip() for sid in sample_ids.split(",") if sid.strip()]
+        if sample_ids
+        else None
+    )
+    if sample_id_list and len(sample_id_list) > 5000:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 5000 sample_ids per request",
+        )
+
     # Build query using SampleFilterBuilder
     builder = SampleFilterBuilder()
     result = (
@@ -58,6 +73,7 @@ def list_samples(
         .add_category(category)
         .add_search(search)
         .add_tags(tag_list)
+        .add_sample_ids(sample_id_list)
         .build(sort_by=sort_by, sort_dir=sort_dir)
     )
 
