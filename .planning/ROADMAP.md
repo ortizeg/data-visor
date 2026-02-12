@@ -50,7 +50,7 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
+- [x] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
 - [ ] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
 - [ ] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
 - [ ] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
@@ -72,11 +72,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- Backend Dockerfile + config fixes (CORS, DuckDB CHECKPOINT)
-- [ ] 08-02-PLAN.md -- Frontend Dockerfile + Caddyfile reverse proxy with auth
-- [ ] 08-03-PLAN.md -- Docker Compose orchestration + .dockerignore + env config
-- [ ] 08-04-PLAN.md -- Local run script + GCP deployment scripts
-- [ ] 08-05-PLAN.md -- Deployment documentation + full stack verification
+- [x] 08-01-PLAN.md -- Backend Dockerfile + config fixes (CORS, DuckDB CHECKPOINT)
+- [x] 08-02-PLAN.md -- Frontend Dockerfile + Caddyfile reverse proxy with auth
+- [x] 08-03-PLAN.md -- Docker Compose orchestration + .dockerignore + env config
+- [x] 08-04-PLAN.md -- Local run script + GCP deployment scripts
+- [x] 08-05-PLAN.md -- Deployment documentation + full stack verification
 
 ### Phase 9: Smart Ingestion
 **Goal**: Users can import datasets from the UI by pointing at a folder, reviewing auto-detected structure, and confirming import -- no CLI or config files needed
@@ -171,7 +171,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 5. Embeddings & Visualization | v1.0 | 4/4 | Complete | 2026-02-11 |
 | 6. Error Analysis & Similarity | v1.0 | 2/2 | Complete | 2026-02-12 |
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
-| 8. Docker Deployment & Auth | v1.1 | 0/5 | Planned | - |
+| 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
 | 9. Smart Ingestion | v1.1 | 0/TBD | Not started | - |
 | 10. Annotation Editing | v1.1 | 0/TBD | Not started | - |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |

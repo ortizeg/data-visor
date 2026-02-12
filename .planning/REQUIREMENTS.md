@@ -9,11 +9,11 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 
 ### Deployment & Infrastructure
 
-- [ ] **DEPLOY-01**: Project runs as a 3-service Docker Compose stack (backend, frontend, Caddy reverse proxy) with persistent volume mounts for DuckDB, Qdrant, and thumbnails
-- [ ] **DEPLOY-02**: Single-user basic auth via Caddy protects all routes with automatic HTTPS via Let's Encrypt
-- [ ] **DEPLOY-03**: GCP VM deployment script provisions Compute Engine instance, persistent disk, firewall rules, and starts services
-- [ ] **DEPLOY-04**: Local run script starts all services with a single command
-- [ ] **DEPLOY-05**: Deployment documentation covers local setup, GCP deployment, and environment configuration
+- [x] **DEPLOY-01**: Project runs as a 3-service Docker Compose stack (backend, frontend, Caddy reverse proxy) with persistent volume mounts for DuckDB, Qdrant, and thumbnails
+- [x] **DEPLOY-02**: Single-user basic auth via Caddy protects all routes with automatic HTTPS via Let's Encrypt
+- [x] **DEPLOY-03**: GCP VM deployment script provisions Compute Engine instance, persistent disk, firewall rules, and starts services
+- [x] **DEPLOY-04**: Local run script starts all services with a single command
+- [x] **DEPLOY-05**: Deployment documentation covers local setup, GCP deployment, and environment configuration
 
 ### Dataset Ingestion
 
@@ -90,11 +90,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEPLOY-01 | Phase 8 | Pending |
-| DEPLOY-02 | Phase 8 | Pending |
-| DEPLOY-03 | Phase 8 | Pending |
-| DEPLOY-04 | Phase 8 | Pending |
-| DEPLOY-05 | Phase 8 | Pending |
+| DEPLOY-01 | Phase 8 | Complete |
+| DEPLOY-02 | Phase 8 | Complete |
+| DEPLOY-03 | Phase 8 | Complete |
+| DEPLOY-04 | Phase 8 | Complete |
+| DEPLOY-05 | Phase 8 | Complete |
 | INGEST-01 | Phase 9 | Pending |
 | INGEST-02 | Phase 9 | Pending |
 | INGEST-03 | Phase 9 | Pending |
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 — traceability updated after roadmap creation*
+*Last updated: 2026-02-12 — Phase 8 requirements marked Complete*
