@@ -85,6 +85,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Shutdown
     plugin_registry.shutdown()
     similarity_service.close()
+    db.connection.execute("CHECKPOINT")  # Flush WAL to disk before container stops
     db.close()
 
 
@@ -95,13 +96,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev -- will restrict later
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# In Docker with Caddy reverse proxy (same origin): no CORS needed.
+# In local dev: allow the Next.js dev server origin.
+settings = get_settings()
+if not settings.behind_proxy:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Router includes
 from app.routers import agent, datasets, embeddings, images, samples, similarity, statistics, views, vlm  # noqa: E402

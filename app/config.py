@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     gcs_credentials_path: str | None = None
     agent_model: str = "openai:gpt-4o"
     vlm_device: str = _detect_device()
+    behind_proxy: bool = False  # Set DATAVISOR_BEHIND_PROXY=true in Docker
 
     model_config = {
         "env_prefix": "DATAVISOR_",
