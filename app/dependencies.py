@@ -11,6 +11,7 @@ from app.repositories.storage import StorageBackend
 from app.services.image_service import ImageService
 from app.services.embedding_service import EmbeddingService
 from app.services.ingestion import IngestionService
+from app.services.reduction_service import ReductionService
 
 
 def get_db(request: Request) -> DuckDBRepo:
@@ -47,6 +48,11 @@ def get_plugin_registry(request: Request) -> PluginRegistry:
 def get_embedding_service(request: Request) -> EmbeddingService:
     """Return the application-wide EmbeddingService stored on app.state."""
     return request.app.state.embedding_service
+
+
+def get_reduction_service(request: Request) -> ReductionService:
+    """Return the application-wide ReductionService stored on app.state."""
+    return request.app.state.reduction_service
 
 
 def get_ingestion_service(

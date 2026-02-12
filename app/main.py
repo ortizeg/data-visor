@@ -14,6 +14,7 @@ from app.repositories.duckdb_repo import DuckDBRepo
 from app.repositories.storage import StorageBackend
 from app.services.embedding_service import EmbeddingService
 from app.services.image_service import ImageService
+from app.services.reduction_service import ReductionService
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     embedding_service = EmbeddingService(db=db, storage=storage)
     embedding_service.load_model()
     app.state.embedding_service = embedding_service
+
+    # Reduction service (t-SNE dimensionality reduction for scatter plot)
+    reduction_service = ReductionService(db=db)
+    app.state.reduction_service = reduction_service
 
     # Plugin registry
     plugin_registry = PluginRegistry()
