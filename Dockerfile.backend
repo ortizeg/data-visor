@@ -13,6 +13,9 @@ RUN uv sync --frozen --no-dev --no-editable
 RUN uv pip install --python /app/.venv/bin/python \
     torch --index-url https://download.pytorch.org/whl/cpu
 
+# Replace opencv-python with headless variant (no X11/GUI libs needed in container)
+RUN uv pip install --python /app/.venv/bin/python opencv-python-headless
+
 # Stage 2: Runtime
 FROM python:3.14-slim AS runner
 
