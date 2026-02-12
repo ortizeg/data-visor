@@ -88,11 +88,11 @@ Plans:
   3. Scanner detects train/val/test split subdirectories and presents them as separate importable splits
   4. User sees the detected structure as a confirmation step and can approve or adjust before import begins
   5. Import progress displays per-split status via real-time SSE updates until completion
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md -- Backend FolderScanner service, scan/import API endpoints, split-aware ingestion pipeline
+- [ ] 09-02-PLAN.md -- Frontend ingestion wizard (path input, scan results, import progress) + landing page link
 
 ### Phase 10: Annotation Editing
 **Goal**: Users can make quick bounding box corrections directly in the sample detail modal without leaving DataVisor
@@ -172,7 +172,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 6. Error Analysis & Similarity | v1.0 | 2/2 | Complete | 2026-02-12 |
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
-| 9. Smart Ingestion | v1.1 | 0/TBD | Not started | - |
+| 9. Smart Ingestion | v1.1 | 0/2 | Not started | - |
 | 10. Annotation Editing | v1.1 | 0/TBD | Not started | - |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
