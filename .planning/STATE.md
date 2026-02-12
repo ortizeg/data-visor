@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 7 in progress. Plan 01 (agent infrastructure) complete. VLM auto-tagging and frontend intelligence UI remain.
+**Current focus:** Phase 7 in progress. Plans 01 (agent infrastructure) and 03 (frontend intelligence UI) complete. VLM auto-tagging (Plan 02) remains.
 
 ## Current Position
 
 Phase: 7 of 7 (Intelligence & Agents)
-Plan: 1 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-12 -- Completed 07-01-PLAN.md
+Plan: 3 of 3 in current phase (wave 2)
+Status: In progress (Plan 02 remaining)
+Last activity: 2026-02-12 -- Completed 07-03-PLAN.md
 
-Progress: [███████████████████░░] 19/21
+Progress: [████████████████████░] 20/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: 3.9 min
-- Total execution time: 76 min
+- Total plans completed: 20
+- Average duration: 3.8 min
+- Total execution time: 78 min
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [███████████████████░░] 19/2
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
 | 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
 | 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
-| 7. Intelligence & Agents | 1/3 | 3 min | 3.0 min |
+| 7. Intelligence & Agents | 2/3 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-04 (4 min), 06-01 (5 min), 06-02 (4 min), 07-01 (3 min)
-- Trend: stable
+- Last 5 plans: 06-01 (5 min), 06-02 (4 min), 07-01 (3 min), 07-03 (2 min)
+- Trend: stable/accelerating
 
 *Updated after each plan completion*
 
@@ -125,6 +125,9 @@ Recent decisions affecting current work:
 - [07-01]: Error samples passed through AnalysisDeps dataclass (in-memory, not materialized to DuckDB table)
 - [07-01]: Confidence distribution computed in-memory from error samples (not DuckDB query)
 - [07-01]: Agent endpoint returns 503 with clear message when API key is missing
+- [07-03]: useMutation (not useQuery) for agent analysis -- on-demand, long-running (10-30s)
+- [07-03]: Purple accent color for Intelligence tab to distinguish from blue evaluation tabs
+- [07-03]: 503 error shows actionable configuration instructions (OPENAI_API_KEY, VISIONLENS_AGENT_MODEL)
 
 ### Pending Todos
 
@@ -137,5 +140,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 07-01-PLAN.md (Phase 7, plan 1/3)
+Stopped at: Completed 07-03-PLAN.md (Phase 7, plan 3/3 -- wave 2)
 Resume file: None
