@@ -30,10 +30,10 @@
 
 ### Embeddings & Visualization
 
-- [ ] **EMBED-01**: Generate image embeddings (SigLIP 2 vs DINOv2 — benchmark during implementation)
-- [ ] **EMBED-02**: UMAP/t-SNE dimensionality reduction with background computation
-- [ ] **EMBED-03**: deck.gl 2D scatter plot with zoom, pan, and hover thumbnails
-- [ ] **EMBED-04**: Lasso selection on embedding map filters grid view to selected samples
+- [x] **EMBED-01**: Generate image embeddings (DINOv2-base, 768-dim CLS token, MPS/CUDA/CPU auto-detect)
+- [x] **EMBED-02**: t-SNE dimensionality reduction with background computation and SSE progress
+- [x] **EMBED-03**: deck.gl 2D scatter plot with zoom, pan, and hover thumbnails
+- [x] **EMBED-04**: Lasso selection on embedding map filters grid view to selected samples
 
 ### Model Evaluation
 
@@ -99,10 +99,10 @@
 | FILT-02 | Phase 3: Filtering & Search | Complete |
 | FILT-03 | Phase 3: Filtering & Search | Complete |
 | FILT-04 | Phase 3: Filtering & Search | Complete |
-| EMBED-01 | Phase 5: Embeddings & Visualization | Pending |
-| EMBED-02 | Phase 5: Embeddings & Visualization | Pending |
-| EMBED-03 | Phase 5: Embeddings & Visualization | Pending |
-| EMBED-04 | Phase 5: Embeddings & Visualization | Pending |
+| EMBED-01 | Phase 5: Embeddings & Visualization | Complete |
+| EMBED-02 | Phase 5: Embeddings & Visualization | Complete |
+| EMBED-03 | Phase 5: Embeddings & Visualization | Complete |
+| EMBED-04 | Phase 5: Embeddings & Visualization | Complete |
 | EVAL-01 | Phase 4: Predictions & Comparison | Complete |
 | EVAL-02 | Phase 6: Error Analysis & Similarity | Pending |
 | EVAL-03 | Phase 4: Predictions & Comparison | Complete |
@@ -119,4 +119,4 @@
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 4 completion*
+*Last updated: 2026-02-12 after Phase 5 completion*

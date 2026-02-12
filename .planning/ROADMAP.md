@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Visual Grid** - Virtualized image grid with annotation overlays and deterministic color hashing
 - [x] **Phase 3: Filtering & Search** - Sidebar metadata filters, search/sort, saved views, and tagging
 - [x] **Phase 4: Predictions & Comparison** - Import model predictions, GT vs Predictions toggle, dataset statistics
-- [ ] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
+- [x] **Phase 5: Embeddings & Visualization** - Embedding generation, deck.gl scatter plot, lasso-to-grid filtering
 - [ ] **Phase 6: Error Analysis & Similarity** - Error categorization pipeline and Qdrant-powered similarity search
 - [ ] **Phase 7: Intelligence & Agents** - Pydantic AI agent for pattern detection, action recommendations, VLM auto-tagging
 
@@ -100,10 +100,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- DINOv2 embedding generation pipeline, DuckDB FLOAT[768] storage, SSE progress, background task
-- [ ] 05-02-PLAN.md -- UMAP dimensionality reduction, 2D coordinate storage, SSE progress, coordinates API
-- [ ] 05-03-PLAN.md -- deck.gl scatter plot (OrthographicView + ScatterplotLayer), hover thumbnails, Embeddings tab
-- [ ] 05-04-PLAN.md -- SVG lasso selection, robust-point-in-polygon hit testing, cross-filter to grid via Zustand
+- [x] 05-01-PLAN.md -- DINOv2 embedding generation pipeline, DuckDB FLOAT[768] storage, SSE progress, background task
+- [x] 05-02-PLAN.md -- t-SNE dimensionality reduction, 2D coordinate storage, SSE progress, coordinates API
+- [x] 05-03-PLAN.md -- deck.gl scatter plot (OrthographicView + ScatterplotLayer), hover thumbnails, Embeddings tab
+- [x] 05-04-PLAN.md -- SVG lasso selection, robust-point-in-polygon hit testing, cross-filter to grid via Zustand
 
 ### Phase 6: Error Analysis & Similarity
 **Goal**: Users can categorize prediction errors and find visually similar images to any sample in the dataset
@@ -145,6 +145,6 @@ Phases execute in numeric order. Phases 4 and 5 may execute in parallel (indepen
 | 2. Visual Grid | 3/3 | Complete | 2026-02-11 |
 | 3. Filtering & Search | 2/2 | Complete | 2026-02-11 |
 | 4. Predictions & Comparison | 3/3 | Complete | 2026-02-11 |
-| 5. Embeddings & Visualization | 0/4 | Not started | - |
+| 5. Embeddings & Visualization | 4/4 | Complete | 2026-02-12 |
 | 6. Error Analysis & Similarity | 0/2 | Not started | - |
 | 7. Intelligence & Agents | 0/3 | Not started | - |
