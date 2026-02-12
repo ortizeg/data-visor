@@ -28,3 +28,7 @@ Thumbs.db
 
 # uv
 uv.lock
+
+# Docker (Caddy named volumes if leaked as local dirs)
+caddy_data/
+caddy_config/
