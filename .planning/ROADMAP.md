@@ -97,13 +97,13 @@ Plans:
   2. Embeddings are reduced to 2D via UMAP or t-SNE and displayed as a deck.gl scatter plot with zoom and pan
   3. User can hover over points in the scatter plot and see image thumbnails
   4. User can lasso-select points in the scatter plot and the grid view filters to show only those selected images
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 05-01: Embedding generation pipeline (SigLIP 2 / DINOv2 benchmark spike), Qdrant storage with named vectors
-- [ ] 05-02: UMAP/t-SNE dimensionality reduction as async background task with WebSocket progress
-- [ ] 05-03: deck.gl ScatterplotLayer with zoom, pan, hover thumbnails, WebGL context loss recovery
-- [ ] 05-04: Lasso selection to grid filtering via Zustand cross-filter state
+- [ ] 05-01-PLAN.md -- DINOv2 embedding generation pipeline, DuckDB FLOAT[768] storage, SSE progress, background task
+- [ ] 05-02-PLAN.md -- UMAP dimensionality reduction, 2D coordinate storage, SSE progress, coordinates API
+- [ ] 05-03-PLAN.md -- deck.gl scatter plot (OrthographicView + ScatterplotLayer), hover thumbnails, Embeddings tab
+- [ ] 05-04-PLAN.md -- SVG lasso selection, robust-point-in-polygon hit testing, cross-filter to grid via Zustand
 
 ### Phase 6: Error Analysis & Similarity
 **Goal**: Users can categorize prediction errors and find visually similar images to any sample in the dataset
