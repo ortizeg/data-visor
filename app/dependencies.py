@@ -13,6 +13,7 @@ from app.services.embedding_service import EmbeddingService
 from app.services.ingestion import IngestionService
 from app.services.reduction_service import ReductionService
 from app.services.similarity_service import SimilarityService
+from app.services.vlm_service import VLMService
 
 
 def get_db(request: Request) -> DuckDBRepo:
@@ -59,6 +60,11 @@ def get_reduction_service(request: Request) -> ReductionService:
 def get_similarity_service(request: Request) -> SimilarityService:
     """Return the application-wide SimilarityService stored on app.state."""
     return request.app.state.similarity_service
+
+
+def get_vlm_service(request: Request) -> VLMService:
+    """Return the application-wide VLMService stored on app.state."""
+    return request.app.state.vlm_service
 
 
 def get_ingestion_service(

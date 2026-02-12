@@ -16,6 +16,7 @@ from app.services.embedding_service import EmbeddingService
 from app.services.image_service import ImageService
 from app.services.reduction_service import ReductionService
 from app.services.similarity_service import SimilarityService
+from app.services.vlm_service import VLMService
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         qdrant_path=settings.qdrant_path, db=db
     )
     app.state.similarity_service = similarity_service
+
+    # VLM service (Moondream2 -- model loaded on-demand, NOT at startup)
+    vlm_service = VLMService(db=db, storage=storage, device=settings.vlm_device)
+    app.state.vlm_service = vlm_service
 
     # Plugin registry
     plugin_registry = PluginRegistry()
