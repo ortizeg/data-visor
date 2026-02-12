@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.0 shipped. Planning next milestone.
+**Current focus:** v1.1 — Evaluation & Format Expansion
 
 ## Current Position
 
-Phase: 7 of 7 (v1.0 complete)
-Plan: All plans delivered
-Status: v1.0 milestone shipped
-Last activity: 2026-02-12 — v1.0 milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-02-12 — Milestone v1.1 started
 
-Progress: [█████████████████████] 21/21 (v1.0)
+Progress: [░░░░░░░░░░░░░░░░░░░░░] 0/? (v1.1)
 
 ## Performance Metrics
 

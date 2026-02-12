@@ -52,6 +52,16 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 - Mobile/tablet interface — desktop browser only
 - Real-time streaming inference — batch-oriented analysis
 
+## Current Milestone: v1.1 Evaluation & Format Expansion
+
+**Goal:** Add quantitative model evaluation tools, support additional annotation formats (YOLO, Pascal VOC), and enable in-tool model inference.
+
+**Target features:**
+- Interactive model evaluation dashboard (PR curves, confusion matrix, per-class AP metrics)
+- YOLO format parser (.txt annotation files with class_id + normalized xywh)
+- Pascal VOC format parser (XML annotation files)
+- Run inference in-tool against loaded models (ONNX/TorchScript)
+
 ## Context
 
 Shipped v1.0 with 12,720 LOC (6,950 Python + 5,770 TypeScript) across 7 phases and 21 plans.
@@ -84,4 +94,4 @@ Architecture: 3 Zustand stores, FastAPI DI, source discriminator for GT/predicti
 | Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x compat | ✓ Good (fragile — monitor updates) |
 
 ---
-*Last updated: 2026-02-12 after v1.0 milestone*
+*Last updated: 2026-02-12 after v1.1 milestone start*
