@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
+import type { DeckGLRef } from "@deck.gl/react";
 import { OrthographicView } from "@deck.gl/core";
 import { ScatterplotLayer } from "@deck.gl/layers";
 
@@ -28,6 +29,10 @@ interface EmbeddingScatterProps {
     screenX: number,
     screenY: number,
   ) => void;
+  /** Sample IDs selected via lasso. null = no selection (default colors). */
+  selectedIds?: string[] | null;
+  /** Ref forwarded to the DeckGL component for lasso coordinate projection. */
+  deckRef?: React.RefObject<DeckGLRef | null>;
 }
 
 const INITIAL_VIEW_STATE = {
@@ -42,9 +47,20 @@ const ORTHO_VIEW = new OrthographicView({
   controller: true,
 });
 
-export function EmbeddingScatter({ points, onHover }: EmbeddingScatterProps) {
+export function EmbeddingScatter({
+  points,
+  onHover,
+  selectedIds = null,
+  deckRef,
+}: EmbeddingScatterProps) {
   const [deckKey, setDeckKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // O(1) lookup set for selected points
+  const selectedSet = useMemo(
+    () => (selectedIds ? new Set(selectedIds) : null),
+    [selectedIds],
+  );
 
   // WebGL context loss recovery (Pitfall 4 from research)
   useEffect(() => {
@@ -105,19 +121,29 @@ export function EmbeddingScatter({ points, onHover }: EmbeddingScatterProps) {
         getRadius: 3,
         radiusMinPixels: 2,
         radiusMaxPixels: 8,
-        getFillColor: [100, 120, 220, 200],
+        getFillColor: (d) =>
+          selectedSet === null
+            ? [100, 120, 220, 200]
+            : selectedSet.has(d.sampleId)
+              ? [99, 102, 241, 230]
+              : [180, 180, 180, 80],
         pickable: true,
         onHover: handleHover,
         autoHighlight: true,
         highlightColor: [255, 200, 0, 200],
+        // Force update when selection changes
+        updateTriggers: {
+          getFillColor: [selectedSet],
+        },
       }),
     ],
-    [points, handleHover],
+    [points, handleHover, selectedSet],
   );
 
   return (
     <div ref={containerRef} className="relative h-full w-full">
       <DeckGL
+        ref={deckRef}
         key={deckKey}
         views={ORTHO_VIEW}
         initialViewState={INITIAL_VIEW_STATE}

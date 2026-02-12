@@ -11,7 +11,9 @@
  * via SSE progress streams.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import type { DeckGLRef } from "@deck.gl/react";
 
 import {
   useEmbeddingCoordinates,
@@ -23,6 +25,8 @@ import { useEmbeddingProgress } from "@/hooks/use-embedding-progress";
 import { thumbnailUrl } from "@/lib/api";
 import { EmbeddingScatter } from "@/components/embedding/embedding-scatter";
 import { HoverThumbnail } from "@/components/embedding/hover-thumbnail";
+import { LassoOverlay } from "@/components/embedding/lasso-overlay";
+import { useEmbeddingStore, useLassoSelectedIds } from "@/stores/embedding-store";
 import type { EmbeddingPoint } from "@/types/embedding";
 
 interface EmbeddingPanelProps {
@@ -54,6 +58,13 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
   const hasReduction = status?.has_reduction ?? false;
   const { data: coordinates, isLoading: coordsLoading } =
     useEmbeddingCoordinates(datasetId, hasReduction && !isReducing);
+
+  // Lasso selection state
+  const [lassoActive, setLassoActive] = useState(false);
+  const lassoSelectedIds = useLassoSelectedIds();
+  const setLassoSelectedIds = useEmbeddingStore((s) => s.setLassoSelectedIds);
+  const clearLasso = useEmbeddingStore((s) => s.clearLasso);
+  const deckRef = useRef<DeckGLRef | null>(null);
 
   // Hover state for thumbnail tooltip
   const [hoveredPoint, setHoveredPoint] = useState<{
@@ -223,6 +234,37 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
         <span className="text-xs text-zinc-500 dark:text-zinc-400">
           {coordinates.length.toLocaleString()} points
         </span>
+
+        {/* Lasso toggle */}
+        <button
+          onClick={() => setLassoActive((v) => !v)}
+          className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+            lassoActive
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+              : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          }`}
+        >
+          Lasso
+        </button>
+
+        {/* Clear selection (visible when lasso has selected points) */}
+        {lassoSelectedIds !== null && (
+          <>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+              {lassoSelectedIds.length.toLocaleString()} selected
+            </span>
+            <button
+              onClick={() => {
+                clearLasso();
+                setLassoActive(false);
+              }}
+              className="rounded px-2 py-1 text-xs text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+            >
+              Clear Selection
+            </button>
+          </>
+        )}
+
         <div className="flex-1" />
         <button
           onClick={handleGenerate}
@@ -240,9 +282,20 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
         </button>
       </div>
 
-      {/* Scatter plot */}
-      <div className="flex-1">
-        <EmbeddingScatter points={coordinates} onHover={handleHover} />
+      {/* Scatter plot with lasso overlay */}
+      <div className="relative flex-1">
+        <EmbeddingScatter
+          points={coordinates}
+          onHover={handleHover}
+          selectedIds={lassoSelectedIds}
+          deckRef={deckRef}
+        />
+        <LassoOverlay
+          points={coordinates}
+          deckRef={deckRef}
+          onSelect={(ids) => setLassoSelectedIds(ids)}
+          active={lassoActive}
+        />
       </div>
 
       {/* Hover thumbnail tooltip */}
