@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     gcs_credentials_path: str | None = None
+    agent_model: str = "openai:gpt-4o"
+    vlm_device: str = "cpu"
 
     model_config = {
         "env_prefix": "VISIONLENS_",

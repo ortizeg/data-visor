@@ -99,7 +99,7 @@ app.add_middleware(
 )
 
 # Router includes
-from app.routers import datasets, embeddings, images, samples, similarity, statistics, views  # noqa: E402
+from app.routers import agent, datasets, embeddings, images, samples, similarity, statistics, views, vlm  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
@@ -108,6 +108,8 @@ app.include_router(views.router)
 app.include_router(statistics.router)
 app.include_router(embeddings.router)
 app.include_router(similarity.router)
+app.include_router(agent.router)
+app.include_router(vlm.router)
 
 
 @app.get("/health")
