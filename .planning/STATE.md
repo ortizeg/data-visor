@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 5 in progress. Plan 03 (scatter plot visualization) complete. Proceeding with lasso selection and cross-filtering.
+**Current focus:** Phase 5 complete. All 4 plans (embedding generation, t-SNE reduction, scatter plot, lasso selection) delivered. Ready for Phase 6.
 
 ## Current Position
 
 Phase: 5 of 7 (Embeddings & Visualization)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-12 -- Completed 05-03-PLAN.md
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-12 -- Completed 05-04-PLAN.md
 
-Progress: [███████████████████░░] 15/21
+Progress: [████████████████████░] 16/21
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 4.0 min
-- Total execution time: 60 min
+- Total execution time: 64 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [███████████████████░░] 15/2
 | 2. Visual Grid | 3/3 | 15 min | 5.0 min |
 | 3. Filtering & Search | 2/2 | 10 min | 5.0 min |
 | 4. Predictions & Comparison | 3/3 | 9 min | 3.0 min |
-| 5. Embeddings & Visualization | 3/4 | 12 min | 4.0 min |
+| 5. Embeddings & Visualization | 4/4 | 16 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (3 min), 05-01 (5 min), 05-02 (3 min), 05-03 (4 min)
+- Last 5 plans: 05-01 (5 min), 05-02 (3 min), 05-03 (4 min), 05-04 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -105,6 +105,11 @@ Recent decisions affecting current work:
 - [05-03]: MutationObserver to detect deck.gl canvas for WebGL context loss listener
 - [05-03]: useEffect for terminal-status monitoring (not inline setState during render)
 - [05-03]: staleTime: Infinity for coordinates (stable until re-reduction)
+- [05-04]: Lasso selection in embedding-store, NOT filter-store -- spatial vs metadata separation
+- [05-04]: useSamples is single integration point reading both filter-store and embedding-store
+- [05-04]: sample_ids cap at 5000 (vs 200 for batch-annotations) for large cluster selection
+- [05-04]: DeckGLRef forwarded via prop for viewport.project() coordinate mapping
+- [05-04]: Cross-filter pattern: separate domain stores combined at query hook level
 
 ### Pending Todos
 
@@ -117,5 +122,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 05-03-PLAN.md (Phase 5, 3/4 plans)
+Stopped at: Completed 05-04-PLAN.md (Phase 5 complete, 4/4 plans)
 Resume file: None
