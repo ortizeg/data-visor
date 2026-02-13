@@ -109,7 +109,7 @@ if not settings.behind_proxy:
     )
 
 # Router includes
-from app.routers import agent, annotations, datasets, embeddings, images, ingestion, samples, similarity, statistics, views, vlm  # noqa: E402
+from app.routers import agent, annotations, datasets, embeddings, images, ingestion, samples, similarity, statistics, triage, views, vlm  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
@@ -122,6 +122,8 @@ app.include_router(agent.router)
 app.include_router(vlm.router)
 app.include_router(ingestion.router)
 app.include_router(annotations.router)
+app.include_router(triage.samples_router)
+app.include_router(triage.datasets_router)
 
 
 @app.get("/health")
