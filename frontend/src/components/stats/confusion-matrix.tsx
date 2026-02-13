@@ -11,6 +11,7 @@
 interface ConfusionMatrixProps {
   matrix: number[][];
   labels: string[];
+  onCellClick?: (actualClass: string, predictedClass: string) => void;
 }
 
 function cellColor(value: number, maxVal: number, isDiagonal: boolean): string {
@@ -22,7 +23,7 @@ function cellColor(value: number, maxVal: number, isDiagonal: boolean): string {
     : `rgba(239, 68, 68, ${alpha})`;  // red for errors
 }
 
-export function ConfusionMatrix({ matrix, labels }: ConfusionMatrixProps) {
+export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrixProps) {
   if (matrix.length === 0) {
     return (
       <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
@@ -100,19 +101,32 @@ export function ConfusionMatrix({ matrix, labels }: ConfusionMatrixProps) {
                     {labels[ri] ?? ""}
                   </td>
                   {/* Data cells */}
-                  {row.map((norm, ci) => (
-                    <td
-                      key={ci}
-                      className="p-1 text-center min-w-[32px] border border-zinc-200 dark:border-zinc-700"
-                      style={{
-                        backgroundColor: cellColor(norm, 1, ri === ci),
-                      }}
-                    >
-                      <span className="text-zinc-800 dark:text-zinc-200">
-                        {norm > 0 ? norm.toFixed(2) : ""}
-                      </span>
-                    </td>
-                  ))}
+                  {row.map((norm, ci) => {
+                    const rawValue = matrix[ri][ci];
+                    const isClickable = rawValue > 0 && !!onCellClick;
+                    return (
+                      <td
+                        key={ci}
+                        className={`p-1 text-center min-w-[32px] border border-zinc-200 dark:border-zinc-700${
+                          isClickable
+                            ? " cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-inset"
+                            : ""
+                        }`}
+                        style={{
+                          backgroundColor: cellColor(norm, 1, ri === ci),
+                        }}
+                        onClick={
+                          isClickable
+                            ? () => onCellClick(labels[ri], labels[ci])
+                            : undefined
+                        }
+                      >
+                        <span className="text-zinc-800 dark:text-zinc-200">
+                          {norm > 0 ? norm.toFixed(2) : ""}
+                        </span>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

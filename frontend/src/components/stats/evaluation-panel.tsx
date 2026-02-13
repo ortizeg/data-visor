@@ -7,10 +7,13 @@
  * and renders MetricsCards, PRCurveChart, ConfusionMatrix, PerClassTable.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useEvaluation } from "@/hooks/use-evaluation";
+import { fetchConfusionCellSamples } from "@/hooks/use-confusion-cell";
+import { useFilterStore } from "@/stores/filter-store";
+import { useUIStore } from "@/stores/ui-store";
 import { MetricsCards } from "@/components/stats/metrics-cards";
 import { PRCurveChart } from "@/components/stats/pr-curve-chart";
 import { ConfusionMatrix } from "@/components/stats/confusion-matrix";
@@ -79,6 +82,27 @@ export function EvaluationPanel({ datasetId, split }: EvaluationPanelProps) {
     debouncedIou,
     debouncedConf,
     split,
+  );
+
+  const handleCellClick = useCallback(
+    async (actualClass: string, predictedClass: string) => {
+      try {
+        const sampleIds = await fetchConfusionCellSamples(
+          datasetId,
+          actualClass,
+          predictedClass,
+          source,
+          debouncedIou,
+          debouncedConf,
+          split,
+        );
+        useFilterStore.getState().setSampleIdFilter(sampleIds);
+        useUIStore.getState().setActiveTab("grid");
+      } catch (err) {
+        console.error("Failed to fetch confusion cell samples:", err);
+      }
+    },
+    [datasetId, source, debouncedIou, debouncedConf, split],
   );
 
   return (
@@ -169,6 +193,7 @@ export function EvaluationPanel({ datasetId, split }: EvaluationPanelProps) {
             <ConfusionMatrix
               matrix={data.confusion_matrix}
               labels={data.confusion_matrix_labels}
+              onCellClick={handleCellClick}
             />
           </>
         )}
