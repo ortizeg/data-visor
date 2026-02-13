@@ -104,12 +104,12 @@ Plans:
   3. User can delete a bounding box and the deletion persists after closing the modal
   4. User can draw a new bounding box and assign it a class label
   5. Only ground truth annotations show edit controls; prediction annotations remain read-only and non-interactive
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
-- [ ] 10-03: TBD
+- [ ] 10-01-PLAN.md -- Backend annotation CRUD endpoints + frontend mutation hooks and types
+- [ ] 10-02-PLAN.md -- Konva building blocks: coord-utils, EditableRect, DrawLayer, ClassPicker
+- [ ] 10-03-PLAN.md -- AnnotationEditor composition, sample modal integration, annotation list delete
 
 ### Phase 11: Error Triage
 **Goal**: Users can systematically review and tag errors with a focused triage workflow that persists decisions and surfaces the worst samples first
@@ -173,7 +173,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
-| 10. Annotation Editing | v1.1 | 0/TBD | Not started | - |
+| 10. Annotation Editing | v1.1 | 0/3 | Not started | - |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |
