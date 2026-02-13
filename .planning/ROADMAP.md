@@ -150,11 +150,11 @@ Plans:
   2. User can quick-tag errors during triage using number keys and toggle highlight mode with h
   3. User can delete annotations and undo edits with keyboard shortcuts while in annotation edit mode
   4. User can press ? to open a shortcut help overlay listing all available keyboard shortcuts
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md -- Foundation (react-hotkeys-hook, shortcut registry, ui-store) + grid keyboard navigation
+- [ ] 13-02-PLAN.md -- Modal shortcuts (navigation, triage, editing, undo) + help overlay
 
 ## Progress
 
@@ -176,4 +176,4 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
-| 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |
+| 13. Keyboard Shortcuts | v1.1 | 0/2 | Not started | - |
