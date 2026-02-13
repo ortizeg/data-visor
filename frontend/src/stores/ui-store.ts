@@ -32,6 +32,10 @@ interface UIState {
   isDrawMode: boolean;
   /** Whether highlight mode is active (dims non-triage-tagged cells). */
   isHighlightMode: boolean;
+  /** Index of the focused grid cell for keyboard navigation. null = no focus. */
+  focusedGridIndex: number | null;
+  /** Whether the keyboard shortcuts help overlay is open. */
+  isHelpOverlayOpen: boolean;
 
   /** Open the detail modal for a given sample. */
   openDetailModal: (sampleId: string) => void;
@@ -53,6 +57,10 @@ interface UIState {
   toggleDrawMode: () => void;
   /** Toggle highlight mode for triage visualization. */
   toggleHighlightMode: () => void;
+  /** Set the focused grid cell index (null to clear focus). */
+  setFocusedGridIndex: (index: number | null) => void;
+  /** Toggle the keyboard shortcuts help overlay. */
+  toggleHelpOverlay: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -65,6 +73,8 @@ export const useUIStore = create<UIState>((set) => ({
   selectedAnnotationId: null,
   isDrawMode: false,
   isHighlightMode: false,
+  focusedGridIndex: null,
+  isHelpOverlayOpen: false,
 
   openDetailModal: (sampleId) =>
     set({ selectedSampleId: sampleId, isDetailModalOpen: true }),
@@ -113,4 +123,7 @@ export const useUIStore = create<UIState>((set) => ({
     })),
   toggleHighlightMode: () =>
     set((state) => ({ isHighlightMode: !state.isHighlightMode })),
+  setFocusedGridIndex: (index) => set({ focusedGridIndex: index }),
+  toggleHelpOverlay: () =>
+    set((state) => ({ isHelpOverlayOpen: !state.isHelpOverlayOpen })),
 }));
