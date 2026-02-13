@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { DeckGLRef } from "@deck.gl/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   useEmbeddingCoordinates,
@@ -34,6 +35,7 @@ interface EmbeddingPanelProps {
 }
 
 export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
+  const queryClient = useQueryClient();
   const { data: status, isLoading: statusLoading } =
     useEmbeddingStatus(datasetId);
 
@@ -99,25 +101,50 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
     });
   };
 
-  // Stop monitoring when generation/reduction reaches terminal status
+  // When generation completes, invalidate status query and wait for it to confirm
   useEffect(() => {
-    if (
-      isGenerating &&
-      (genProgress.status === "complete" || genProgress.status === "error")
-    ) {
+    if (!isGenerating) return;
+    if (genProgress.status === "error") {
+      setIsGenerating(false);
+      return;
+    }
+    if (genProgress.status === "complete") {
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-status", datasetId],
+      });
+    }
+  }, [isGenerating, genProgress.status, datasetId, queryClient]);
+
+  // Turn off generating flag once status confirms embeddings exist
+  useEffect(() => {
+    if (isGenerating && status?.has_embeddings) {
       setIsGenerating(false);
     }
-  }, [isGenerating, genProgress.status]);
+  }, [isGenerating, status?.has_embeddings]);
 
+  // When reduction completes, invalidate status + coordinates and wait for confirmation
   useEffect(() => {
-    if (
-      isReducing &&
-      (reduceProgress.status === "complete" ||
-        reduceProgress.status === "error")
-    ) {
+    if (!isReducing) return;
+    if (reduceProgress.status === "error") {
+      setIsReducing(false);
+      return;
+    }
+    if (reduceProgress.status === "complete") {
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-status", datasetId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-coordinates", datasetId],
+      });
+    }
+  }, [isReducing, reduceProgress.status, datasetId, queryClient]);
+
+  // Turn off reducing flag once status confirms reduction exists
+  useEffect(() => {
+    if (isReducing && status?.has_reduction) {
       setIsReducing(false);
     }
-  }, [isReducing, reduceProgress.status]);
+  }, [isReducing, status?.has_reduction]);
 
   // --- Loading state ---
   if (statusLoading) {
