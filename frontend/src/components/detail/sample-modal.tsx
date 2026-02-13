@@ -31,8 +31,11 @@ import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
 import { TriageTagButtons } from "@/components/triage/triage-tag-buttons";
+import { TriageOverlay } from "./triage-overlay";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
+import { useAnnotationTriage, useSetAnnotationTriage } from "@/hooks/use-annotation-triage";
+import { nextTriageLabel } from "@/types/annotation-triage";
 import { TRIAGE_OPTIONS } from "@/types/triage";
 import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
@@ -116,6 +119,37 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   );
   const predAnnotations = (annotations ?? []).filter(
     (a) => a.source !== "ground_truth",
+  );
+
+  // Determine the active prediction source for IoU matching
+  const predSource = predAnnotations.length > 0
+    ? predAnnotations[0].source
+    : null;
+
+  // Per-annotation triage: only fetch when both GT and predictions exist
+  const hasBothSources = gtAnnotations.length > 0 && predAnnotations.length > 0;
+  const { data: triageMap } = useAnnotationTriage(
+    datasetId,
+    selectedSampleId,
+    predSource ?? "prediction",
+    hasBothSources && !isEditMode, // disable during edit mode (Konva takes over)
+  );
+
+  const setAnnotationTriage = useSetAnnotationTriage();
+
+  // Click handler for cycling per-annotation triage labels
+  const handleTriageClick = useCallback(
+    (annotationId: string, currentLabel: string) => {
+      if (!selectedSampleId) return;
+      const next = nextTriageLabel(currentLabel);
+      setAnnotationTriage.mutate({
+        annotation_id: annotationId,
+        dataset_id: datasetId,
+        sample_id: selectedSampleId,
+        label: next,
+      });
+    },
+    [datasetId, selectedSampleId, setAnnotationTriage],
   );
 
   // Similarity search state -- only fetches when user clicks "Find Similar"
@@ -359,11 +393,21 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                   decoding="async"
                 />
                 {annotations && annotations.length > 0 && (
-                  <AnnotationOverlay
-                    annotations={annotations}
-                    imageWidth={sample.width}
-                    imageHeight={sample.height}
-                  />
+                  triageMap && Object.keys(triageMap).length > 0 ? (
+                    <TriageOverlay
+                      annotations={annotations}
+                      triageMap={triageMap}
+                      imageWidth={sample.width}
+                      imageHeight={sample.height}
+                      onClickAnnotation={handleTriageClick}
+                    />
+                  ) : (
+                    <AnnotationOverlay
+                      annotations={annotations}
+                      imageWidth={sample.width}
+                      imageHeight={sample.height}
+                    />
+                  )
                 )}
               </>
             )}
