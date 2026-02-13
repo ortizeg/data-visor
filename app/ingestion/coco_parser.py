@@ -66,12 +66,16 @@ class COCOParser(BaseParser):
     # ------------------------------------------------------------------
 
     def build_image_batches(
-        self, file_path: Path, dataset_id: str, split: str | None = None
+        self,
+        file_path: Path,
+        dataset_id: str,
+        split: str | None = None,
+        image_dir: str = "",
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of image/sample records.
 
         Column order: ``id, dataset_id, file_name, width, height,
-        thumbnail_path, split, metadata``  (matches ``samples`` table).
+        thumbnail_path, split, metadata, image_dir``  (matches ``samples`` table).
 
         When *split* is provided, sample IDs are prefixed (e.g. ``train_42``)
         to avoid collisions when multiple COCO files share the same internal
@@ -98,6 +102,7 @@ class COCOParser(BaseParser):
                     "thumbnail_path": None,
                     "split": split,
                     "metadata": None,
+                    "image_dir": image_dir,
                 }
             )
             if len(batch) >= self.batch_size:

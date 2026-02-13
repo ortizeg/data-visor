@@ -126,13 +126,15 @@ class IngestionService:
 
         try:
             for batch_df in parser.build_image_batches(
-                Path(annotation_path), dataset_id, split=split
+                Path(annotation_path), dataset_id, split=split, image_dir=image_dir
             ):
                 cursor.execute(
                     "INSERT INTO samples "
                     "(id, dataset_id, file_name, width, height, "
-                    "thumbnail_path, split, metadata) "
-                    "SELECT * FROM batch_df"
+                    "thumbnail_path, split, metadata, image_dir) "
+                    "SELECT id, dataset_id, file_name, width, height, "
+                    "thumbnail_path, split, metadata, image_dir "
+                    "FROM batch_df"
                 )
                 image_count += len(batch_df)
                 yield IngestionProgress(

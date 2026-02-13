@@ -40,14 +40,12 @@ def get_image(
             detail="size must be one of: small, medium, large, original",
         )
 
-    # Look up sample and dataset
+    # Look up sample (image_dir stored per-sample for multi-split support)
     cursor = db.connection.cursor()
     try:
         row = cursor.execute(
-            "SELECT s.file_name, d.image_dir "
-            "FROM samples s "
-            "JOIN datasets d ON s.dataset_id = d.id "
-            "WHERE s.id = ? AND s.dataset_id = ?",
+            "SELECT file_name, image_dir FROM samples "
+            "WHERE id = ? AND dataset_id = ?",
             [sample_id, dataset_id],
         ).fetchone()
     finally:

@@ -122,16 +122,11 @@ class EmbeddingService:
                 "DELETE FROM embeddings WHERE dataset_id = ?", [dataset_id]
             )
 
-            # Get dataset image_dir for resolving image paths
-            image_dir = cursor.execute(
-                "SELECT image_dir FROM datasets WHERE id = ?", [dataset_id]
-            ).fetchone()[0]
-
             # Process in batches
             offset = 0
             while offset < total:
                 rows = cursor.execute(
-                    "SELECT id, file_name FROM samples "
+                    "SELECT id, file_name, image_dir FROM samples "
                     "WHERE dataset_id = ? ORDER BY id LIMIT ? OFFSET ?",
                     [dataset_id, BATCH_SIZE, offset],
                 ).fetchall()
@@ -142,7 +137,7 @@ class EmbeddingService:
                 batch_ids: list[str] = []
                 pil_images: list[Image.Image] = []
 
-                for sample_id, file_name in rows:
+                for sample_id, file_name, image_dir in rows:
                     try:
                         image_path = self.storage.resolve_image_path(
                             image_dir, file_name
