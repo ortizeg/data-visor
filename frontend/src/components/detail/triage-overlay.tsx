@@ -47,7 +47,7 @@ export function TriageOverlay({
 }: TriageOverlayProps) {
   if (annotations.length === 0) return null;
 
-  const strokeWidth = Math.max(imageWidth * 0.003, 2);
+  const strokeWidth = Math.max(imageWidth * 0.004, 3);
   const fontSize = Math.max(imageWidth * 0.015, 10);
 
   return (
@@ -66,7 +66,13 @@ export function TriageOverlay({
         const isPrediction = ann.source !== "ground_truth";
         const dashLen = strokeWidth * 4;
         const gapLen = strokeWidth * 2;
-        const labelText = `${ann.category_name} ${triage.label.toUpperCase()}${triage.is_override ? "*" : ""}`;
+
+        // Labels match the original AnnotationOverlay format:
+        // GT: just category name, predictions: category + confidence%
+        // The box color conveys the triage type (TP/FP/FN)
+        const labelText = isPrediction
+          ? `${ann.category_name}${ann.confidence !== null ? ` ${(ann.confidence * 100).toFixed(0)}%` : ""}`
+          : ann.category_name;
 
         return (
           <g
@@ -80,7 +86,7 @@ export function TriageOverlay({
               y={ann.bbox_y}
               width={ann.bbox_w}
               height={ann.bbox_h}
-              fill="transparent"
+              fill={`${color}18`}
               stroke={color}
               strokeWidth={strokeWidth}
               strokeDasharray={
