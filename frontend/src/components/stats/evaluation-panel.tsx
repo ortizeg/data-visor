@@ -18,6 +18,7 @@ import { PerClassTable } from "@/components/stats/per-class-table";
 
 interface EvaluationPanelProps {
   datasetId: string;
+  split: string | null;
 }
 
 function useDebouncedValue<T>(value: T, delay: number): T {
@@ -46,7 +47,7 @@ function SkeletonChart({ height }: { height: string }) {
   );
 }
 
-export function EvaluationPanel({ datasetId }: EvaluationPanelProps) {
+export function EvaluationPanel({ datasetId, split }: EvaluationPanelProps) {
   const { data: facets } = useFilterFacets(datasetId);
 
   // Available prediction sources (exclude ground_truth)
@@ -77,6 +78,7 @@ export function EvaluationPanel({ datasetId }: EvaluationPanelProps) {
     source,
     debouncedIou,
     debouncedConf,
+    split,
   );
 
   return (

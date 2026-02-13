@@ -5,7 +5,7 @@
  * for a given prediction source at specified IoU and confidence thresholds.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
 import type { ErrorAnalysisResponse } from "@/types/error-analysis";
@@ -15,7 +15,9 @@ export function useErrorAnalysis(
   source: string,
   iouThreshold: number,
   confThreshold: number,
+  split: string | null = null,
 ) {
+  const splitParam = split ? `&split=${encodeURIComponent(split)}` : "";
   return useQuery({
     queryKey: [
       "error-analysis",
@@ -23,12 +25,14 @@ export function useErrorAnalysis(
       source,
       iouThreshold,
       confThreshold,
+      split,
     ],
     queryFn: () =>
       apiFetch<ErrorAnalysisResponse>(
-        `/datasets/${datasetId}/error-analysis?source=${encodeURIComponent(source)}&iou_threshold=${iouThreshold}&conf_threshold=${confThreshold}`,
+        `/datasets/${datasetId}/error-analysis?source=${encodeURIComponent(source)}&iou_threshold=${iouThreshold}&conf_threshold=${confThreshold}${splitParam}`,
       ),
     staleTime: 30_000, // 30s -- results depend on thresholds
+    placeholderData: keepPreviousData,
     enabled: !!datasetId,
   });
 }

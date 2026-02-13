@@ -26,6 +26,7 @@ import { ErrorSamplesGrid } from "@/components/stats/error-samples-grid";
 
 interface ErrorAnalysisPanelProps {
   datasetId: string;
+  split: string | null;
 }
 
 function useDebouncedValue<T>(value: T, delay: number): T {
@@ -62,7 +63,7 @@ const COLORS = {
   fn: "#f97316", // orange-500
 } as const;
 
-export function ErrorAnalysisPanel({ datasetId }: ErrorAnalysisPanelProps) {
+export function ErrorAnalysisPanel({ datasetId, split }: ErrorAnalysisPanelProps) {
   const { data: facets } = useFilterFacets(datasetId);
 
   // Available prediction sources (exclude ground_truth)
@@ -93,6 +94,7 @@ export function ErrorAnalysisPanel({ datasetId }: ErrorAnalysisPanelProps) {
     source,
     debouncedIou,
     debouncedConf,
+    split,
   );
 
   // Compute totals for percentage display

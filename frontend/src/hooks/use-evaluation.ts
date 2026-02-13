@@ -5,7 +5,7 @@
  * for a given prediction source at specified IoU and confidence thresholds.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
 import type { EvaluationResponse } from "@/types/evaluation";
@@ -15,13 +15,23 @@ export function useEvaluation(
   source: string,
   iouThreshold: number,
   confThreshold: number,
+  split: string | null = null,
 ) {
+  const splitParam = split ? `&split=${encodeURIComponent(split)}` : "";
   return useQuery({
-    queryKey: ["evaluation", datasetId, source, iouThreshold, confThreshold],
+    queryKey: [
+      "evaluation",
+      datasetId,
+      source,
+      iouThreshold,
+      confThreshold,
+      split,
+    ],
     queryFn: () =>
       apiFetch<EvaluationResponse>(
-        `/datasets/${datasetId}/evaluation?source=${encodeURIComponent(source)}&iou_threshold=${iouThreshold}&conf_threshold=${confThreshold}`,
+        `/datasets/${datasetId}/evaluation?source=${encodeURIComponent(source)}&iou_threshold=${iouThreshold}&conf_threshold=${confThreshold}${splitParam}`,
       ),
-    staleTime: 10 * 60 * 1000, // 10 min -- each (source, iou, conf) combo cached
+    staleTime: 10 * 60 * 1000, // 10 min -- each (source, iou, conf, split) combo cached
+    placeholderData: keepPreviousData,
   });
 }

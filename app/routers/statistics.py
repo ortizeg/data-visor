@@ -28,7 +28,9 @@ router = APIRouter(prefix="/datasets", tags=["statistics"])
 
 @router.get("/{dataset_id}/statistics", response_model=DatasetStatistics)
 def get_dataset_statistics(
-    dataset_id: str, db: DuckDBRepo = Depends(get_db)
+    dataset_id: str,
+    split: str | None = Query(None),
+    db: DuckDBRepo = Depends(get_db),
 ) -> DatasetStatistics:
     """Return aggregated statistics for a dataset.
 
@@ -47,14 +49,25 @@ def get_dataset_statistics(
             raise HTTPException(status_code=404, detail="Dataset not found")
 
         # Class distribution: GT and prediction counts per category
-        class_rows = cursor.execute(
-            "SELECT category_name, "
-            "COUNT(*) FILTER (WHERE source = 'ground_truth') as gt_count, "
-            "COUNT(*) FILTER (WHERE source != 'ground_truth') as pred_count "
-            "FROM annotations WHERE dataset_id = ? "
-            "GROUP BY category_name ORDER BY gt_count DESC",
-            [dataset_id],
-        ).fetchall()
+        if split is not None:
+            class_rows = cursor.execute(
+                "SELECT a.category_name, "
+                "COUNT(*) FILTER (WHERE a.source = 'ground_truth') as gt_count, "
+                "COUNT(*) FILTER (WHERE a.source != 'ground_truth') as pred_count "
+                "FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                "WHERE a.dataset_id = ? AND s.split = ? "
+                "GROUP BY a.category_name ORDER BY gt_count DESC",
+                [dataset_id, split],
+            ).fetchall()
+        else:
+            class_rows = cursor.execute(
+                "SELECT category_name, "
+                "COUNT(*) FILTER (WHERE source = 'ground_truth') as gt_count, "
+                "COUNT(*) FILTER (WHERE source != 'ground_truth') as pred_count "
+                "FROM annotations WHERE dataset_id = ? "
+                "GROUP BY category_name ORDER BY gt_count DESC",
+                [dataset_id],
+            ).fetchall()
 
         class_distribution = [
             ClassDistribution(
@@ -63,7 +76,7 @@ def get_dataset_statistics(
             for r in class_rows
         ]
 
-        # Split breakdown: sample counts per split
+        # Split breakdown: always show all splits (informational, never filtered)
         split_rows = cursor.execute(
             "SELECT COALESCE(split, 'unassigned') as split_name, "
             "COUNT(*) as count "
@@ -77,14 +90,27 @@ def get_dataset_statistics(
         ]
 
         # Summary counts
-        summary_row = cursor.execute(
-            "SELECT "
-            "(SELECT COUNT(*) FROM samples WHERE dataset_id = ?) as total_images, "
-            "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = 'ground_truth') as gt_annotations, "
-            "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth') as pred_annotations, "
-            "(SELECT COUNT(DISTINCT category_name) FROM annotations WHERE dataset_id = ?) as total_categories",
-            [dataset_id, dataset_id, dataset_id, dataset_id],
-        ).fetchone()
+        if split is not None:
+            summary_row = cursor.execute(
+                "SELECT "
+                "(SELECT COUNT(*) FROM samples WHERE dataset_id = ? AND split = ?) as total_images, "
+                "(SELECT COUNT(*) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                "WHERE a.dataset_id = ? AND a.source = 'ground_truth' AND s.split = ?) as gt_annotations, "
+                "(SELECT COUNT(*) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                "WHERE a.dataset_id = ? AND a.source != 'ground_truth' AND s.split = ?) as pred_annotations, "
+                "(SELECT COUNT(DISTINCT a.category_name) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                "WHERE a.dataset_id = ? AND s.split = ?) as total_categories",
+                [dataset_id, split, dataset_id, split, dataset_id, split, dataset_id, split],
+            ).fetchone()
+        else:
+            summary_row = cursor.execute(
+                "SELECT "
+                "(SELECT COUNT(*) FROM samples WHERE dataset_id = ?) as total_images, "
+                "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = 'ground_truth') as gt_annotations, "
+                "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth') as pred_annotations, "
+                "(SELECT COUNT(DISTINCT category_name) FROM annotations WHERE dataset_id = ?) as total_categories",
+                [dataset_id, dataset_id, dataset_id, dataset_id],
+            ).fetchone()
 
         summary = SummaryStats(
             total_images=summary_row[0],
@@ -109,6 +135,7 @@ def get_evaluation(
     source: str = Query("prediction"),
     iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
     conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
+    split: str | None = Query(None),
     db: DuckDBRepo = Depends(get_db),
 ) -> EvaluationResponse:
     """Return evaluation metrics comparing predictions to ground truth.
@@ -136,7 +163,7 @@ def get_evaluation(
             )
 
         return compute_evaluation(
-            cursor, dataset_id, source, iou_threshold, conf_threshold
+            cursor, dataset_id, source, iou_threshold, conf_threshold, split=split
         )
     finally:
         cursor.close()
@@ -148,6 +175,7 @@ def get_error_analysis(
     source: str = Query("prediction"),
     iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
     conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
+    split: str | None = Query(None),
     db: DuckDBRepo = Depends(get_db),
 ) -> ErrorAnalysisResponse:
     """Return per-detection error categorization comparing predictions to GT.
@@ -175,7 +203,7 @@ def get_error_analysis(
             )
 
         return categorize_errors(
-            cursor, dataset_id, source, iou_threshold, conf_threshold
+            cursor, dataset_id, source, iou_threshold, conf_threshold, split=split
         )
     finally:
         cursor.close()

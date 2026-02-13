@@ -14,6 +14,8 @@
 import { useState } from "react";
 
 import { useStatistics } from "@/hooks/use-statistics";
+import { useFilterFacets } from "@/hooks/use-filter-facets";
+import { useSplit, useFilterStore } from "@/stores/filter-store";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
@@ -45,9 +47,13 @@ function SkeletonChart({ height }: { height: string }) {
 }
 
 export function StatsDashboard({ datasetId }: StatsDashboardProps) {
-  const { data: stats, isLoading, error } = useStatistics(datasetId);
+  const split = useSplit();
+  const setSplit = useFilterStore((s) => s.setSplit);
+  const { data: facets } = useFilterFacets(datasetId);
+  const { data: stats, isLoading, error } = useStatistics(datasetId, split);
   const [activeTab, setActiveTab] = useState<SubTab>("overview");
 
+  const availableSplits = facets?.splits.map((s) => s.name) ?? [];
   const hasPredictions = stats && stats.summary.pred_annotations > 0;
 
   if (error) {
@@ -60,6 +66,38 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
   return (
     <div className="p-6 overflow-y-auto h-full space-y-6">
+      {/* Split selector pill bar */}
+      {availableSplits.length > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mr-1">
+            Split:
+          </span>
+          <button
+            onClick={() => setSplit(null)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              split === null
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            }`}
+          >
+            All
+          </button>
+          {availableSplits.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSplit(s)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                split === s
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Sub-tab navigation */}
       {(hasPredictions || isLoading) && (
         <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
@@ -155,11 +193,11 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
       )}
 
       {activeTab === "evaluation" && hasPredictions && (
-        <EvaluationPanel datasetId={datasetId} />
+        <EvaluationPanel datasetId={datasetId} split={split} />
       )}
 
       {activeTab === "error_analysis" && hasPredictions && (
-        <ErrorAnalysisPanel datasetId={datasetId} />
+        <ErrorAnalysisPanel datasetId={datasetId} split={split} />
       )}
 
       {activeTab === "intelligence" && hasPredictions && (

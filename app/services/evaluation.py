@@ -31,10 +31,11 @@ def compute_evaluation(
     source: str,
     iou_threshold: float,
     conf_threshold: float,
+    split: str | None = None,
 ) -> EvaluationResponse:
     """Compute full evaluation metrics for a dataset's predictions vs GT."""
     gt_by_sample, pred_by_sample, class_names = _load_detections(
-        cursor, dataset_id, source
+        cursor, dataset_id, source, split=split
     )
 
     if not class_names:
@@ -127,19 +128,36 @@ def _load_detections(
     cursor: DuckDBPyConnection,
     dataset_id: str,
     source: str,
+    *,
+    split: str | None = None,
 ) -> tuple[dict[str, list[_BoxRow]], dict[str, list[_BoxRow]], list[str]]:
     """Query GT and prediction annotations, grouped by sample_id."""
-    gt_rows = cursor.execute(
-        "SELECT sample_id, category_name, bbox_x, bbox_y, bbox_w, bbox_h, confidence "
-        "FROM annotations WHERE dataset_id = ? AND source = 'ground_truth'",
-        [dataset_id],
-    ).fetchall()
+    if split is not None:
+        gt_rows = cursor.execute(
+            "SELECT a.sample_id, a.category_name, a.bbox_x, a.bbox_y, a.bbox_w, a.bbox_h, a.confidence "
+            "FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+            "WHERE a.dataset_id = ? AND a.source = 'ground_truth' AND s.split = ?",
+            [dataset_id, split],
+        ).fetchall()
 
-    pred_rows = cursor.execute(
-        "SELECT sample_id, category_name, bbox_x, bbox_y, bbox_w, bbox_h, confidence "
-        "FROM annotations WHERE dataset_id = ? AND source = ?",
-        [dataset_id, source],
-    ).fetchall()
+        pred_rows = cursor.execute(
+            "SELECT a.sample_id, a.category_name, a.bbox_x, a.bbox_y, a.bbox_w, a.bbox_h, a.confidence "
+            "FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+            "WHERE a.dataset_id = ? AND a.source = ? AND s.split = ?",
+            [dataset_id, source, split],
+        ).fetchall()
+    else:
+        gt_rows = cursor.execute(
+            "SELECT sample_id, category_name, bbox_x, bbox_y, bbox_w, bbox_h, confidence "
+            "FROM annotations WHERE dataset_id = ? AND source = 'ground_truth'",
+            [dataset_id],
+        ).fetchall()
+
+        pred_rows = cursor.execute(
+            "SELECT sample_id, category_name, bbox_x, bbox_y, bbox_w, bbox_h, confidence "
+            "FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, source],
+        ).fetchall()
 
     gt_by_sample: dict[str, list[_BoxRow]] = {}
     for row in gt_rows:

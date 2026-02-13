@@ -71,7 +71,7 @@ export function AnnotationEditor({
   onUpdate,
   onCreate,
 }: AnnotationEditorProps) {
-  const [image, imageStatus] = useImage(imageUrl, "anonymous");
+  const [image, imageStatus] = useImage(imageUrl);
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const [containerWidth, setContainerWidth] = useState(800);
