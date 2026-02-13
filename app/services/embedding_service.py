@@ -1,8 +1,8 @@
-"""Embedding generation service using DINOv2 (Hugging Face Transformers).
+"""Embedding generation service using vision models (Hugging Face Transformers).
 
-Loads the model once at app startup, extracts CLS token embeddings in
-batches with torch.no_grad(), stores FLOAT[768] vectors in DuckDB, and
-tracks progress in memory for SSE streaming.
+Supports SigLIP (default) and DINOv2 model families. Loads the model once
+at app startup, extracts embeddings in batches with torch.no_grad(), stores
+FLOAT[768] vectors in DuckDB, and tracks progress in memory for SSE streaming.
 """
 
 from __future__ import annotations
@@ -21,17 +21,20 @@ from app.repositories.storage import StorageBackend
 
 logger = logging.getLogger(__name__)
 
-# Map model short names to HuggingFace model IDs
-MODEL_REGISTRY: dict[str, str] = {
-    "dinov2-base": "facebook/dinov2-base",
-    "dinov2-small": "facebook/dinov2-small",
+# Map model short names to HuggingFace model IDs and extraction family.
+# "siglip" family: use model.get_image_features(pixel_values=...)
+# "dinov2" family: use model(**inputs).last_hidden_state[:, 0, :] (CLS token)
+MODEL_REGISTRY: dict[str, dict[str, str]] = {
+    "siglip-base": {"hf_id": "google/siglip-base-patch16-224", "family": "siglip"},
+    "dinov2-base": {"hf_id": "facebook/dinov2-base", "family": "dinov2"},
+    "dinov2-small": {"hf_id": "facebook/dinov2-small", "family": "dinov2"},
 }
 
 BATCH_SIZE = 32
 
 
 class EmbeddingService:
-    """Manages DINOv2 model lifecycle and batch embedding generation.
+    """Manages vision model lifecycle and batch embedding generation.
 
     The model is loaded once at startup via :meth:`load_model` and kept
     in memory.  Embedding generation runs as a background task, writing
@@ -46,20 +49,24 @@ class EmbeddingService:
         self._processor: AutoImageProcessor | None = None
         self._device: torch.device | None = None
         self._model_name: str = ""
+        self._family: str = ""
         self._tasks: dict[str, EmbeddingProgress] = {}
 
-    def load_model(self, model_name: str = "dinov2-base") -> None:
+    def load_model(self, model_name: str = "siglip-base") -> None:
         """Load a pretrained vision model at startup.
 
         Called from the FastAPI lifespan context manager so the model is
         downloaded and ready before the first request.
         """
-        hf_model_id = MODEL_REGISTRY.get(model_name)
-        if hf_model_id is None:
+        model_info = MODEL_REGISTRY.get(model_name)
+        if model_info is None:
             raise ValueError(
                 f"Unknown model '{model_name}'. "
                 f"Available: {list(MODEL_REGISTRY.keys())}"
             )
+
+        hf_model_id = model_info["hf_id"]
+        self._family = model_info["family"]
 
         logger.info("Loading embedding model: %s (%s)", model_name, hf_model_id)
         self._processor = AutoImageProcessor.from_pretrained(hf_model_id)
@@ -77,7 +84,10 @@ class EmbeddingService:
         self._model.to(self._device)
         self._model_name = model_name
         logger.info(
-            "Embedding model loaded: %s on %s", model_name, self._device
+            "Embedding model loaded: %s (%s) on %s",
+            model_name,
+            self._family,
+            self._device,
         )
 
     def get_progress(self, dataset_id: str) -> EmbeddingProgress:
@@ -154,16 +164,22 @@ class EmbeddingService:
                         )
 
                 if pil_images:
-                    # Preprocess and extract CLS token embeddings
+                    # Preprocess and extract embeddings
                     inputs = self._processor(
                         images=pil_images, return_tensors="pt"
                     ).to(self._device)
 
                     with torch.no_grad():
-                        outputs = self._model(**inputs)
-
-                    # CLS token is first token: shape (batch, seq_len, dim) -> (batch, dim)
-                    cls = outputs.last_hidden_state[:, 0, :].cpu().numpy()
+                        if self._family == "siglip":
+                            # SigLIP: pooler_output from the vision encoder
+                            vision_out = self._model.vision_model(
+                                pixel_values=inputs["pixel_values"]
+                            )
+                            cls = vision_out.pooler_output.cpu().numpy()
+                        else:
+                            # DINOv2: CLS token is first token of last hidden state
+                            outputs = self._model(**inputs)
+                            cls = outputs.last_hidden_state[:, 0, :].cpu().numpy()
 
                     # Build insert rows
                     insert_rows = [

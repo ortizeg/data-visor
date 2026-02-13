@@ -205,7 +205,7 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
             No Embeddings Yet
           </h3>
           <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            Generate image embeddings using DINOv2 to visualize how your
+            Generate image embeddings using SigLIP to visualize how your
             dataset clusters in embedding space.
           </p>
           <button
@@ -230,7 +230,7 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
           </h3>
           <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
             {status.embedding_count.toLocaleString()} embeddings generated
-            with {status.model_name ?? "DINOv2"}. Run dimensionality
+            with {status.model_name ?? "SigLIP"}. Run dimensionality
             reduction to create a 2D scatter plot.
           </p>
           <button

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class EmbeddingGenerateRequest(BaseModel):
     """Request body for triggering embedding generation."""
 
-    model_name: str = "dinov2-base"
+    model_name: str = "siglip-base"
 
 
 class EmbeddingGenerateResponse(BaseModel):
