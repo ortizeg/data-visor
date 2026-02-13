@@ -12,6 +12,7 @@ import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { StatsDashboard } from "@/components/stats/stats-dashboard";
 import { EmbeddingPanel } from "@/components/embedding/embedding-panel";
 import { AutoTagButton } from "@/components/toolbar/auto-tag-button";
+import { ShortcutHelpOverlay } from "@/components/toolbar/shortcut-help-overlay";
 import { PredictionImportDialog } from "@/components/detail/prediction-import-dialog";
 import { DiscoveryFilterChip } from "@/components/grid/discovery-filter-chip";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
@@ -121,6 +122,7 @@ export default function DatasetPage({
         open={showPredImport}
         onClose={() => setShowPredImport(false)}
       />
+      <ShortcutHelpOverlay />
     </div>
   );
 }
