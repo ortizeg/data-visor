@@ -13,6 +13,7 @@ import { StatsDashboard } from "@/components/stats/stats-dashboard";
 import { EmbeddingPanel } from "@/components/embedding/embedding-panel";
 import { AutoTagButton } from "@/components/toolbar/auto-tag-button";
 import { PredictionImportDialog } from "@/components/detail/prediction-import-dialog";
+import { DiscoveryFilterChip } from "@/components/grid/discovery-filter-chip";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
 
@@ -87,6 +88,7 @@ export default function DatasetPage({
               })}
             </div>
 
+            <DiscoveryFilterChip />
             <AutoTagButton datasetId={datasetId} />
 
             <button

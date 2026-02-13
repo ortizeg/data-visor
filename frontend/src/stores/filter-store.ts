@@ -20,6 +20,10 @@ interface FilterState {
   sortBy: string;
   sortDir: "asc" | "desc";
 
+  /** Discovery filter: sample IDs from find-similar, confusion cell, near-dupes.
+   *  null = no filter active. */
+  sampleIdFilter: string[] | null;
+
   /** Selection state for bulk tagging (UI-only, not in query key) */
   selectedSampleIds: Set<string>;
   isSelecting: boolean;
@@ -31,6 +35,8 @@ interface FilterState {
   setTags: (tags: string[]) => void;
   setSortBy: (sortBy: string) => void;
   setSortDir: (sortDir: "asc" | "desc") => void;
+  setSampleIdFilter: (ids: string[] | null) => void;
+  clearSampleIdFilter: () => void;
   clearFilters: () => void;
   applyView: (filters: Partial<FilterState>) => void;
 
@@ -48,6 +54,7 @@ const DEFAULT_FILTERS = {
   tags: [] as string[],
   sortBy: "id",
   sortDir: "asc" as const,
+  sampleIdFilter: null as string[] | null,
   selectedSampleIds: new Set<string>(),
   isSelecting: false,
 };
@@ -61,6 +68,8 @@ export const useFilterStore = create<FilterState>((set) => ({
   setTags: (tags) => set({ tags }),
   setSortBy: (sortBy) => set({ sortBy }),
   setSortDir: (sortDir) => set({ sortDir }),
+  setSampleIdFilter: (ids) => set({ sampleIdFilter: ids }),
+  clearSampleIdFilter: () => set({ sampleIdFilter: null }),
   clearFilters: () =>
     set({
       ...DEFAULT_FILTERS,
@@ -100,6 +109,8 @@ export const useSelectedSampleIds = () =>
   useFilterStore((s) => s.selectedSampleIds);
 export const useIsSelecting = () =>
   useFilterStore((s) => s.isSelecting);
+export const useSampleIdFilter = () =>
+  useFilterStore((s) => s.sampleIdFilter);
 export const useFilterActions = () =>
   useFilterStore((s) => ({
     setSearch: s.setSearch,
@@ -122,5 +133,6 @@ export const useActiveFilterCount = () =>
     if (s.tags.length > 0) count++;
     if (s.sortBy !== "id") count++;
     if (s.sortDir !== "asc") count++;
+    if (s.sampleIdFilter !== null) count++;
     return count;
   });
