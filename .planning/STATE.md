@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 12 in progress -- Interactive Viz & Discovery.
+**Current focus:** Phase 12 complete -- Interactive Viz & Discovery. Ready for Phase 13.
 
 ## Current Position
 
 Phase: 12 of 13 (Interactive Viz & Discovery)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-13 -- Completed 12-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-13 -- Completed 12-03-PLAN.md
 
-Progress: [████████████████████████████████████████████████░░░░░░] 87.5% (v1.1: 35/40 plans complete)
+Progress: [██████████████████████████████████████████████████░░░░] 90% (v1.1: 36/40 plans complete)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [███████████████████████
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
 | 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
-| 12. Interactive Viz & Discovery | 2/3 | 6 min | 3.0 min |
+| 12. Interactive Viz & Discovery | 3/3 | 10 min | 3.3 min |
 | 13. Keyboard Shortcuts | — | — | — |
 
 ## Accumulated Context
@@ -96,6 +96,9 @@ Recent decisions affecting current work:
 - [12-02]: Imperative fetch function (not hook) for one-shot confusion cell sample lookups
 - [12-02]: Greedy IoU matching replayed per sample for consistent CM cell membership
 - [12-02]: getState() pattern for Zustand store writes in async callbacks
+- [12-03]: Tab bar always visible so Near Duplicates is accessible without predictions
+- [12-03]: Union-find with path compression for O(alpha(n)) grouping of pairwise matches
+- [12-03]: Progress updates throttled to every 10 points to avoid excessive state updates
 
 ### Pending Todos
 
@@ -108,5 +111,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 12-02-PLAN.md -- Confusion matrix cell drilldown
+Stopped at: Completed 12-03-PLAN.md -- Near-duplicate detection (Phase 12 complete)
 Resume file: None
