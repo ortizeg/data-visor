@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     embedding_service.load_model()
     app.state.embedding_service = embedding_service
 
-    # Reduction service (t-SNE dimensionality reduction for scatter plot)
+    # Reduction service (UMAP dimensionality reduction for scatter plot)
     reduction_service = ReductionService(db=db)
     app.state.reduction_service = reduction_service
 

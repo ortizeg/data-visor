@@ -42,7 +42,7 @@ class ReductionProgress(BaseModel):
     Statuses:
     - ``idle``: No reduction has been started.
     - ``running``: Loading embeddings from the database.
-    - ``fitting``: t-SNE fit_transform in progress (can take 10-60s).
+    - ``fitting``: UMAP fit_transform in progress (can take 10-60s).
     - ``complete``: Reduction finished, 2D coordinates stored.
     - ``error``: An error occurred during reduction.
     """

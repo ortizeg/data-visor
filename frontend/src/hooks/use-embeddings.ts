@@ -5,7 +5,7 @@
  * - useEmbeddingStatus: Check whether embeddings/reduction exist
  * - useEmbeddingCoordinates: Fetch 2D scatter-plot coordinates
  * - useGenerateEmbeddings: Trigger background embedding generation
- * - useReduceEmbeddings: Trigger background t-SNE reduction
+ * - useReduceEmbeddings: Trigger background UMAP reduction
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,7 +75,7 @@ export function useGenerateEmbeddings(datasetId: string) {
 }
 
 /**
- * Trigger background t-SNE dimensionality reduction for a dataset.
+ * Trigger background UMAP dimensionality reduction for a dataset.
  *
  * On success, invalidates both the status and coordinates queries
  * so the scatter plot refetches fresh 2D coordinates.

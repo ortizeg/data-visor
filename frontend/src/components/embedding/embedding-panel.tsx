@@ -4,7 +4,7 @@
  * Embedding visualization panel managing the full workflow:
  *
  * 1. No embeddings: Empty state with "Generate Embeddings" button
- * 2. Embeddings but no reduction: "Run UMAP" button to trigger t-SNE
+ * 2. Embeddings but no reduction: "Run UMAP" button to trigger UMAP reduction
  * 3. Has reduction: Scatter plot with hover thumbnails
  *
  * Progress bars show real-time feedback during generation and reduction
