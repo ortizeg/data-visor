@@ -14,15 +14,37 @@
  */
 
 import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react";
+import dynamic from "next/dynamic";
 
 import { fullImageUrl } from "@/lib/api";
-import { useAnnotations } from "@/hooks/use-annotations";
+import {
+  useAnnotations,
+  useUpdateAnnotation,
+  useCreateAnnotation,
+  useDeleteAnnotation,
+} from "@/hooks/use-annotations";
+import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
 import type { Sample } from "@/types/sample";
+
+const AnnotationEditor = dynamic(
+  () =>
+    import("./annotation-editor").then((m) => ({
+      default: m.AnnotationEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center">
+        Loading editor...
+      </div>
+    ),
+  },
+);
 
 interface SampleModalProps {
   /** Dataset ID for building image URLs and fetching annotations. */
@@ -45,6 +67,10 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   const selectedSampleId = useUIStore((s) => s.selectedSampleId);
   const isDetailModalOpen = useUIStore((s) => s.isDetailModalOpen);
   const closeDetailModal = useUIStore((s) => s.closeDetailModal);
+  const isEditMode = useUIStore((s) => s.isEditMode);
+  const toggleEditMode = useUIStore((s) => s.toggleEditMode);
+  const isDrawMode = useUIStore((s) => s.isDrawMode);
+  const toggleDrawMode = useUIStore((s) => s.toggleDrawMode);
 
   // Find the selected sample from the flattened samples array
   const sample = selectedSampleId
@@ -53,6 +79,23 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
 
   // Fetch annotations for the selected sample via per-sample endpoint
   const { data: annotations } = useAnnotations(datasetId, selectedSampleId);
+
+  // Mutation hooks for annotation CRUD
+  const updateMutation = useUpdateAnnotation(datasetId, selectedSampleId ?? "");
+  const createMutation = useCreateAnnotation(datasetId, selectedSampleId ?? "");
+  const deleteMutation = useDeleteAnnotation(datasetId, selectedSampleId ?? "");
+
+  // Get categories from filter facets for the class picker
+  const { data: facets } = useFilterFacets(datasetId);
+  const categories = facets?.categories?.map((c) => c.name) ?? [];
+
+  // Split annotations by source for the editor
+  const gtAnnotations = (annotations ?? []).filter(
+    (a) => a.source === "ground_truth",
+  );
+  const predAnnotations = (annotations ?? []).filter(
+    (a) => a.source !== "ground_truth",
+  );
 
   // Similarity search state -- only fetches when user clicks "Find Similar"
   const [showSimilar, setShowSimilar] = useState(false);
@@ -131,20 +174,77 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
             </svg>
           </button>
 
-          {/* Full-resolution image with annotation overlays */}
+          {/* Full-resolution image with annotation overlays or Konva editor */}
           <div className="relative bg-zinc-100 dark:bg-zinc-800">
-            <img
-              src={fullImageUrl(datasetId, sample.id)}
-              alt={sample.file_name}
-              className="h-auto w-full"
-              decoding="async"
-            />
-            {annotations && annotations.length > 0 && (
-              <AnnotationOverlay
-                annotations={annotations}
+            {isEditMode ? (
+              <AnnotationEditor
+                imageUrl={fullImageUrl(datasetId, sample.id)}
+                annotations={gtAnnotations}
+                predictions={predAnnotations}
                 imageWidth={sample.width}
                 imageHeight={sample.height}
+                categories={categories}
+                onUpdate={(id, bbox) =>
+                  updateMutation.mutate({ id, ...bbox })
+                }
+                onCreate={(bbox, categoryName) =>
+                  createMutation.mutate({
+                    dataset_id: datasetId,
+                    sample_id: sample.id,
+                    category_name: categoryName,
+                    ...bbox,
+                  })
+                }
               />
+            ) : (
+              <>
+                <img
+                  src={fullImageUrl(datasetId, sample.id)}
+                  alt={sample.file_name}
+                  className="h-auto w-full"
+                  decoding="async"
+                />
+                {annotations && annotations.length > 0 && (
+                  <AnnotationOverlay
+                    annotations={annotations}
+                    imageWidth={sample.width}
+                    imageHeight={sample.height}
+                  />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Edit toolbar */}
+          <div className="flex items-center gap-2 border-b border-zinc-200 px-5 py-2 dark:border-zinc-700">
+            <button
+              onClick={toggleEditMode}
+              className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                isEditMode
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {isEditMode ? "Done" : "Edit Annotations"}
+            </button>
+            {isEditMode && (
+              <button
+                onClick={toggleDrawMode}
+                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isDrawMode
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {isDrawMode ? "Cancel Draw" : "Draw New Box"}
+              </button>
+            )}
+            {isEditMode && (
+              <span className="ml-auto text-xs text-zinc-400">
+                {isDrawMode
+                  ? "Click and drag to draw a new box"
+                  : "Click a box to select, drag to move, handles to resize"}
+              </span>
             )}
           </div>
 
@@ -207,7 +307,14 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
             <div>
               {annotations ? (
                 annotations.length > 0 ? (
-                  <AnnotationList annotations={annotations} />
+                  <AnnotationList
+                    annotations={annotations}
+                    onDelete={
+                      isEditMode
+                        ? (id) => deleteMutation.mutate(id)
+                        : undefined
+                    }
+                  />
                 ) : (
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     No annotations for this sample.
