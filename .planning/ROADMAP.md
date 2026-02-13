@@ -134,12 +134,12 @@ Plans:
   2. User can view a confusion matrix and click any cell to filter the grid to samples matching that GT/prediction pair
   3. User can trigger near-duplicate detection and browse groups of visually similar images
   4. User can click a bar in any statistics dashboard histogram to filter the grid to samples in that bucket
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
-- [ ] 12-03: TBD
+- [ ] 12-01-PLAN.md -- Discovery filter foundation + Find Similar grid filtering + interactive histogram bars
+- [ ] 12-02-PLAN.md -- Clickable confusion matrix cells with backend sample ID resolution
+- [ ] 12-03-PLAN.md -- Near-duplicate detection via Qdrant pairwise search with SSE progress
 
 ### Phase 13: Keyboard Shortcuts
 **Goal**: Power users can navigate, triage, and edit entirely from the keyboard without reaching for the mouse
@@ -175,5 +175,5 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
-| 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
+| 12. Interactive Viz & Discovery | v1.1 | 0/3 | Not started | - |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |
