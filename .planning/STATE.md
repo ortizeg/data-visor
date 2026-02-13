@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 9 in progress -- Smart Ingestion
+**Current focus:** Phase 9 complete -- Smart Ingestion. Next: Phase 10 (Annotation Editing)
 
 ## Current Position
 
-Phase: 9 of 13 (Smart Ingestion)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-12 -- Completed 09-01-PLAN.md
+Phase: 9 of 13 (Smart Ingestion) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Complete
+Last activity: 2026-02-12 -- Phase 9 verified and complete
 
-Progress: [██████████████████████████████████████████████████████] 96% (v1.1: 27/28 plans complete)
+Progress: [██████████████████████████████████████████████████████] 100% (v1.1: 28/28 plans complete for phases 8-9)
 
 ## Performance Metrics
 
@@ -40,7 +40,7 @@ Progress: [███████████████████████
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
-| 9. Smart Ingestion | 1/2 | 5 min | 5.0 min |
+| 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
 | 10. Annotation Editing | — | — | — |
 | 11. Error Triage | — | — | — |
 | 12. Interactive Viz & Discovery | — | — | — |
@@ -72,6 +72,9 @@ Recent decisions affecting current work:
 - [09-01]: ijson peek at top-level keys for COCO detection (max 10 keys, files >500MB skipped)
 - [09-01]: Optional dataset_id param on ingest_with_progress for multi-split ID sharing
 - [09-01]: INSERT-or-UPDATE pattern for dataset record across multi-split imports
+- [09-02]: POST SSE streaming via fetch + ReadableStream (not EventSource, which is GET-only)
+- [09-02]: FolderScanner refactored to accept StorageBackend for GCS support
+- [09-02]: Split-prefixed IDs for collision avoidance in multi-split import
 
 ### Pending Todos
 
@@ -84,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 09-01-PLAN.md
+Stopped at: Phase 9 complete, verified
 Resume file: None

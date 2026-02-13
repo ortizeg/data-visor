@@ -51,7 +51,7 @@
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
-- [ ] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
+- [x] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
 - [ ] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
 - [ ] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [ ] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
@@ -91,8 +91,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md -- Backend FolderScanner service, scan/import API endpoints, split-aware ingestion pipeline
-- [ ] 09-02-PLAN.md -- Frontend ingestion wizard (path input, scan results, import progress) + landing page link
+- [x] 09-01-PLAN.md -- Backend FolderScanner service, scan/import API endpoints, split-aware ingestion pipeline
+- [x] 09-02-PLAN.md -- Frontend ingestion wizard (path input, scan results, import progress) + landing page link
 
 ### Phase 10: Annotation Editing
 **Goal**: Users can make quick bounding box corrections directly in the sample detail modal without leaving DataVisor
@@ -172,7 +172,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 6. Error Analysis & Similarity | v1.0 | 2/2 | Complete | 2026-02-12 |
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
-| 9. Smart Ingestion | v1.1 | 0/2 | Not started | - |
+| 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 10. Annotation Editing | v1.1 | 0/TBD | Not started | - |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |

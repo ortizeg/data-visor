@@ -17,11 +17,11 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 
 ### Dataset Ingestion
 
-- [ ] **INGEST-01**: User can point at a local folder path from the UI and trigger dataset import
-- [ ] **INGEST-02**: Folder scanner auto-detects COCO format structure (images/ + annotations JSON)
-- [ ] **INGEST-03**: Folder scanner auto-detects train/val/test split subdirectories
-- [ ] **INGEST-04**: User confirms detected structure before import begins (detection is suggestion, not action)
-- [ ] **INGEST-05**: Import progress shown via SSE stream with per-split status
+- [x] **INGEST-01**: User can point at a local folder path from the UI and trigger dataset import
+- [x] **INGEST-02**: Folder scanner auto-detects COCO format structure (images/ + annotations JSON)
+- [x] **INGEST-03**: Folder scanner auto-detects train/val/test split subdirectories
+- [x] **INGEST-04**: User confirms detected structure before import begins (detection is suggestion, not action)
+- [x] **INGEST-05**: Import progress shown via SSE stream with per-split status
 
 ### Annotation Management
 
@@ -95,11 +95,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-03 | Phase 8 | Complete |
 | DEPLOY-04 | Phase 8 | Complete |
 | DEPLOY-05 | Phase 8 | Complete |
-| INGEST-01 | Phase 9 | Pending |
-| INGEST-02 | Phase 9 | Pending |
-| INGEST-03 | Phase 9 | Pending |
-| INGEST-04 | Phase 9 | Pending |
-| INGEST-05 | Phase 9 | Pending |
+| INGEST-01 | Phase 9 | Complete |
+| INGEST-02 | Phase 9 | Complete |
+| INGEST-03 | Phase 9 | Complete |
+| INGEST-04 | Phase 9 | Complete |
+| INGEST-05 | Phase 9 | Complete |
 | ANNOT-01 | Phase 10 | Pending |
 | ANNOT-02 | Phase 10 | Pending |
 | ANNOT-03 | Phase 10 | Pending |
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 — Phase 8 requirements marked Complete*
+*Last updated: 2026-02-12 — Phase 9 requirements marked Complete*
