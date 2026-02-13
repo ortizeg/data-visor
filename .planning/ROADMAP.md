@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 MVP - Phases 1-7 (shipped 2026-02-12)
-- **v1.1 Deployment, Workflow & Competitive Parity** - Phases 8-13 (shipped 2026-02-13)
+- **v1.1 Deployment, Workflow & Competitive Parity** - Phases 8-14
 
 ## Phases
 
@@ -40,7 +40,7 @@
 
 </details>
 
-### v1.1 Deployment, Workflow & Competitive Parity (Shipped 2026-02-13)
+### v1.1 Deployment, Workflow & Competitive Parity
 
 **Milestone Goal:** Make DataVisor deployable (Docker + GCP), secure for cloud access, and close key workflow gaps vs FiftyOne/Encord -- smart ingestion, annotation editing, error triage, interactive visualizations, and keyboard-driven navigation.
 
@@ -56,6 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [x] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
 - [x] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
+- [ ] **Phase 14: Per-Annotation Triage** - Auto-discover TP/FP/FN per bounding box via IoU overlap, color-coded boxes in detail modal, click to override classifications
 
 ## Phase Details
 
@@ -156,10 +157,25 @@ Plans:
 - [x] 13-01-PLAN.md -- Foundation (react-hotkeys-hook, shortcut registry, ui-store) + grid keyboard navigation
 - [x] 13-02-PLAN.md -- Modal shortcuts (navigation, triage, editing, undo) + help overlay
 
+### Phase 14: Per-Annotation Triage
+**Goal**: Users can see auto-discovered TP/FP/FN classifications per bounding box based on IoU overlap, with color-coded visualization in the detail modal and the ability to click individual annotations to override their classification
+**Depends on**: Phase 11 (extends triage system), Phase 6 (error analysis IoU matching)
+**Success Criteria** (what must be TRUE):
+  1. User opens a sample with GT and predictions and sees each bounding box color-coded as TP (green), FP (red), or FN (orange) based on automatic IoU matching
+  2. User can click an individual bounding box to override its auto-assigned classification (e.g. mark an auto-TP as a mistake)
+  3. Per-annotation triage decisions persist across page refreshes and are stored in DuckDB
+  4. Highlight mode dims samples that have no triage annotations, making triaged samples visually prominent
+**Plans**: 3 plans
+
+Plans:
+- [ ] 14-01-PLAN.md -- Backend schema, IoU matching service, and annotation triage API endpoints
+- [ ] 14-02-PLAN.md -- Frontend types, hooks, and clickable TriageOverlay SVG component
+- [ ] 14-03-PLAN.md -- Wire TriageOverlay into sample modal + highlight mode integration
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
+Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
 (Note: Phases 9, 10, 11 are independent after Phase 8. Execution is sequential but no inter-dependency exists between 9/10/11.)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -177,3 +193,4 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
+| 14. Per-Annotation Triage | v1.1 | 0/3 | Planned | -- |
