@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
@@ -12,6 +12,7 @@ import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { StatsDashboard } from "@/components/stats/stats-dashboard";
 import { EmbeddingPanel } from "@/components/embedding/embedding-panel";
 import { AutoTagButton } from "@/components/toolbar/auto-tag-button";
+import { PredictionImportDialog } from "@/components/detail/prediction-import-dialog";
 import { useUIStore, type DatasetTab } from "@/stores/ui-store";
 import type { Dataset } from "@/types/dataset";
 
@@ -28,6 +29,7 @@ export default function DatasetPage({
 }) {
   const { datasetId } = use(params);
 
+  const [showPredImport, setShowPredImport] = useState(false);
   const activeTab = useUIStore((s) => s.activeTab);
   const setActiveTab = useUIStore((s) => s.setActiveTab);
 
@@ -86,6 +88,13 @@ export default function DatasetPage({
             </div>
 
             <AutoTagButton datasetId={datasetId} />
+
+            <button
+              onClick={() => setShowPredImport(true)}
+              className="rounded px-2.5 py-1 text-xs font-medium text-zinc-600 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-zinc-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
+            >
+              Import Predictions
+            </button>
           </div>
         )}
       </header>
@@ -105,6 +114,11 @@ export default function DatasetPage({
         <EmbeddingPanel datasetId={datasetId} />
       )}
       <SampleModal datasetId={datasetId} samples={allSamples} />
+      <PredictionImportDialog
+        datasetId={datasetId}
+        open={showPredImport}
+        onClose={() => setShowPredImport(false)}
+      />
     </div>
   );
 }

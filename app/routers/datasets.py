@@ -27,6 +27,7 @@ from app.models.dataset import (
 )
 from app.models.prediction import PredictionImportRequest, PredictionImportResponse
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.routers._run_name import derive_run_name
 from app.services.image_service import ImageService
 from app.services.ingestion import IngestionService
 from app.services.similarity_service import SimilarityService
@@ -170,14 +171,17 @@ def import_predictions(
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
 
+        prediction_path = Path(request.prediction_path)
+
+        # Derive run_name from file metadata when not explicitly provided
+        run_name = request.run_name or derive_run_name(prediction_path, request.format)
+
         # 2. Delete existing annotations for this run (preserve ground truth & other runs)
         cursor.execute(
             "DELETE FROM annotations "
             "WHERE dataset_id = ? AND source = ?",
-            [dataset_id, request.run_name],
+            [dataset_id, run_name],
         )
-
-        prediction_path = Path(request.prediction_path)
         total_inserted = 0
         total_skipped = 0
 
@@ -203,7 +207,7 @@ def import_predictions(
                 dir_path=prediction_path,
                 sample_lookup=sample_lookup,
                 dataset_id=dataset_id,
-                source=request.run_name,
+                source=run_name,
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"
@@ -241,7 +245,7 @@ def import_predictions(
                 file_path=prediction_path,
                 category_map=category_map,
                 dataset_id=dataset_id,
-                source=request.run_name,
+                source=run_name,
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"
@@ -277,6 +281,7 @@ def import_predictions(
 
     return PredictionImportResponse(
         dataset_id=dataset_id,
+        run_name=run_name,
         prediction_count=total_inserted,
         skipped_count=total_skipped,
         message=message,
