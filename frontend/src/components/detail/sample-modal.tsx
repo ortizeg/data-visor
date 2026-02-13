@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
+import { useHotkeys } from "react-hotkeys-hook";
 
 import { fullImageUrl } from "@/lib/api";
 import {
@@ -25,12 +26,15 @@ import {
 } from "@/hooks/use-annotations";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
+import { useSetTriageTag, useRemoveTriageTag } from "@/hooks/use-triage";
 import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
 import { TriageTagButtons } from "@/components/triage/triage-tag-buttons";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
+import { TRIAGE_OPTIONS } from "@/types/triage";
+import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
 
 const AnnotationEditor = dynamic(
@@ -75,6 +79,13 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   const toggleDrawMode = useUIStore((s) => s.toggleDrawMode);
   const isHighlightMode = useUIStore((s) => s.isHighlightMode);
   const toggleHighlightMode = useUIStore((s) => s.toggleHighlightMode);
+  const selectedAnnotationId = useUIStore((s) => s.selectedAnnotationId);
+  const setSelectedAnnotationId = useUIStore((s) => s.setSelectedAnnotationId);
+  const openDetailModal = useUIStore((s) => s.openDetailModal);
+
+  // Triage mutation hooks (at component level for keyboard shortcuts)
+  const setTriageTag = useSetTriageTag();
+  const removeTriageTag = useRemoveTriageTag();
 
   // Find the selected sample from the flattened samples array
   const sample = selectedSampleId
@@ -114,6 +125,77 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   useEffect(() => {
     setShowSimilar(false);
   }, [selectedSampleId]);
+
+  // -----------------------------------------------------------------------
+  // Keyboard shortcuts (modal-scope)
+  // -----------------------------------------------------------------------
+
+  // Navigate to next sample: j / ArrowRight
+  useHotkeys(
+    "j, ArrowRight",
+    () => {
+      const idx = samples.findIndex((s) => s.id === selectedSampleId);
+      if (idx >= 0 && idx < samples.length - 1) {
+        openDetailModal(samples[idx + 1].id);
+      }
+    },
+    { enabled: isDetailModalOpen, preventDefault: true },
+    [selectedSampleId, samples],
+  );
+
+  // Navigate to previous sample: k / ArrowLeft
+  useHotkeys(
+    "k, ArrowLeft",
+    () => {
+      const idx = samples.findIndex((s) => s.id === selectedSampleId);
+      if (idx > 0) {
+        openDetailModal(samples[idx - 1].id);
+      }
+    },
+    { enabled: isDetailModalOpen, preventDefault: true },
+    [selectedSampleId, samples],
+  );
+
+  // Triage number keys 1-4: set/toggle triage tag
+  useHotkeys(
+    "1, 2, 3, 4",
+    (e) => {
+      if (!sample) return;
+      const idx = parseInt(e.key, 10) - 1;
+      const opt = TRIAGE_OPTIONS[idx];
+      if (!opt) return;
+      const activeTag =
+        sample.tags?.find((t) => t.startsWith("triage:")) ?? null;
+      if (activeTag === opt.tag) {
+        removeTriageTag.mutate({
+          dataset_id: datasetId,
+          sample_id: sample.id,
+        });
+      } else {
+        setTriageTag.mutate({
+          dataset_id: datasetId,
+          sample_id: sample.id,
+          tag: opt.tag,
+        });
+      }
+    },
+    { enabled: isDetailModalOpen && !isEditMode, preventDefault: true },
+    [sample, datasetId],
+  );
+
+  // Highlight toggle: h
+  useHotkeys(
+    "h",
+    () => toggleHighlightMode(),
+    { enabled: isDetailModalOpen },
+  );
+
+  // Edit mode toggle: e
+  useHotkeys(
+    "e",
+    () => toggleEditMode(),
+    { enabled: isDetailModalOpen },
+  );
 
   // Sync dialog open/close with Zustand state
   useEffect(() => {
