@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 12 of 13 (Interactive Viz & Discovery)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-13 -- Completed 12-01-PLAN.md
+Last activity: 2026-02-13 -- Completed 12-02-PLAN.md
 
-Progress: [██████████████████████████████████████████████░░░░░░░░] 85% (v1.1: 34/40 plans complete)
+Progress: [████████████████████████████████████████████████░░░░░░] 87.5% (v1.1: 35/40 plans complete)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [███████████████████████
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
 | 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
-| 12. Interactive Viz & Discovery | 1/3 | 3 min | 3.0 min |
+| 12. Interactive Viz & Discovery | 2/3 | 6 min | 3.0 min |
 | 13. Keyboard Shortcuts | — | — | — |
 
 ## Accumulated Context
@@ -93,6 +93,9 @@ Recent decisions affecting current work:
 - [12-01]: "Show in Grid" button only appears after similarity results load (progressive disclosure)
 - [12-01]: getState() pattern for store access in Recharts onClick handlers (non-reactive)
 - [12-01]: DiscoveryFilterChip in dataset header for cross-tab visibility
+- [12-02]: Imperative fetch function (not hook) for one-shot confusion cell sample lookups
+- [12-02]: Greedy IoU matching replayed per sample for consistent CM cell membership
+- [12-02]: getState() pattern for Zustand store writes in async callbacks
 
 ### Pending Todos
 
@@ -105,5 +108,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 12-01-PLAN.md -- Discovery filter foundation
+Stopped at: Completed 12-02-PLAN.md -- Confusion matrix cell drilldown
 Resume file: None
