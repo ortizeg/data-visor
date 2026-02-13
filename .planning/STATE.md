@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 10 in progress -- Annotation Editing
+**Current focus:** Phase 10 complete -- Annotation Editing. Next: Phase 11 (Error Triage)
 
 ## Current Position
 
-Phase: 10 of 13 (Annotation Editing)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-12 -- Completed 10-02-PLAN.md
+Phase: 10 of 13 (Annotation Editing) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-12 -- Completed 10-03-PLAN.md
 
-Progress: [████████████████████████████████████████░░░░░░░░░░░░░░] 75% (v1.1: 30/40 plans complete)
+Progress: [██████████████████████████████████████████░░░░░░░░░░░░] 78% (v1.1: 31/40 plans complete)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [███████████████████████
 |-------|-------|-------|----------|
 | 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
-| 10. Annotation Editing | 2/3 | 6 min | 3.0 min |
+| 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | — | — | — |
 | 12. Interactive Viz & Discovery | — | — | — |
 | 13. Keyboard Shortcuts | — | — | — |
@@ -80,6 +80,9 @@ Recent decisions affecting current work:
 - [10-01]: Dataset counts refreshed via subquery UPDATE (no race conditions)
 - [10-02]: useDrawLayer hook pattern (handlers + ReactNode) instead of separate component
 - [10-02]: Transformer scale reset to 1 on transformEnd (Konva best practice)
+- [10-03]: AnnotationEditor loaded via next/dynamic with ssr:false (prevents Konva SSR errors)
+- [10-03]: Draw completion shows ClassPicker before creating annotation (requires category selection)
+- [10-03]: Delete buttons only appear on ground_truth rows when edit mode is active
 
 ### Pending Todos
 
@@ -92,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 10-02-PLAN.md
+Stopped at: Completed 10-03-PLAN.md -- Phase 10 complete
 Resume file: None
