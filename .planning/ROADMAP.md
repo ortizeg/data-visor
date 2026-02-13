@@ -54,7 +54,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
 - [x] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
 - [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
-- [ ] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
+- [x] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
 - [ ] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
 
 ## Phase Details
@@ -137,9 +137,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Discovery filter foundation + Find Similar grid filtering + interactive histogram bars
-- [ ] 12-02-PLAN.md -- Clickable confusion matrix cells with backend sample ID resolution
-- [ ] 12-03-PLAN.md -- Near-duplicate detection via Qdrant pairwise search with SSE progress
+- [x] 12-01-PLAN.md -- Discovery filter foundation + Find Similar grid filtering + interactive histogram bars
+- [x] 12-02-PLAN.md -- Clickable confusion matrix cells with backend sample ID resolution
+- [x] 12-03-PLAN.md -- Near-duplicate detection via Qdrant pairwise search with SSE progress
 
 ### Phase 13: Keyboard Shortcuts
 **Goal**: Power users can navigate, triage, and edit entirely from the keyboard without reaching for the mouse
@@ -175,5 +175,5 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
-| 12. Interactive Viz & Discovery | v1.1 | 0/3 | Not started | - |
+| 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |

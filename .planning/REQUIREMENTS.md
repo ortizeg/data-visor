@@ -30,16 +30,16 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 - [x] **ANNOT-03**: User can delete bounding boxes in the sample detail modal
 - [x] **ANNOT-04**: User can draw new bounding boxes in the sample detail modal and assign a class
 - [x] **ANNOT-05**: Only ground truth annotations are editable (predictions are immutable)
-- [ ] **ANNOT-06**: User can click "Find Similar" on any sample to query Qdrant and display nearest neighbors in grid
+- [x] **ANNOT-06**: User can click "Find Similar" on any sample to query Qdrant and display nearest neighbors in grid
 
 ### Error Triage & Quality
 
 - [x] **TRIAGE-01**: User can tag individual samples/annotations as FP, TP, FN, or mistake
 - [x] **TRIAGE-02**: Highlight mode dims non-error samples in the grid, emphasizing errors
 - [x] **TRIAGE-03**: "Worst images" ranking surfaces samples with highest combined error score (error count + confidence spread + uniqueness)
-- [ ] **TRIAGE-04**: Interactive confusion matrix that filters grid when a cell is clicked
-- [ ] **TRIAGE-05**: Near-duplicate detection surfaces visually similar images in the dataset
-- [ ] **TRIAGE-06**: Interactive histograms on the statistics dashboard — clicking a bar filters the grid
+- [x] **TRIAGE-04**: Interactive confusion matrix that filters grid when a cell is clicked
+- [x] **TRIAGE-05**: Near-duplicate detection surfaces visually similar images in the dataset
+- [x] **TRIAGE-06**: Interactive histograms on the statistics dashboard — clicking a bar filters the grid
 
 ### UX
 
@@ -105,13 +105,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANNOT-03 | Phase 10 | Complete |
 | ANNOT-04 | Phase 10 | Complete |
 | ANNOT-05 | Phase 10 | Complete |
-| ANNOT-06 | Phase 12 | Pending |
+| ANNOT-06 | Phase 12 | Complete |
 | TRIAGE-01 | Phase 11 | Complete |
 | TRIAGE-02 | Phase 11 | Complete |
 | TRIAGE-03 | Phase 11 | Complete |
-| TRIAGE-04 | Phase 12 | Pending |
-| TRIAGE-05 | Phase 12 | Pending |
-| TRIAGE-06 | Phase 12 | Pending |
+| TRIAGE-04 | Phase 12 | Complete |
+| TRIAGE-05 | Phase 12 | Complete |
+| TRIAGE-06 | Phase 12 | Complete |
 | UX-01 | Phase 13 | Pending |
 | UX-02 | Phase 13 | Pending |
 | UX-03 | Phase 13 | Pending |
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 — Phase 11 requirements marked Complete*
+*Last updated: 2026-02-13 — Phase 12 requirements marked Complete*
