@@ -14,13 +14,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-50 p-8 dark:bg-zinc-950">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          DataVisor
-        </h1>
-        <p className="mt-1 text-zinc-500 dark:text-zinc-400">
-          Select a dataset to browse
-        </p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            DataVisor
+          </h1>
+          <p className="mt-1 text-zinc-500 dark:text-zinc-400">
+            Select a dataset to browse
+          </p>
+        </div>
+        <Link
+          href="/ingest"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Import Dataset
+        </Link>
       </header>
 
       <main className="mx-auto max-w-4xl">
@@ -40,7 +48,14 @@ export default function Home() {
 
         {data && data.datasets.length === 0 && (
           <p className="text-zinc-500 dark:text-zinc-400">
-            No datasets found. Ingest a dataset via the API first.
+            No datasets found.{" "}
+            <Link
+              href="/ingest"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Import a dataset
+            </Link>{" "}
+            to get started.
           </p>
         )}
 
