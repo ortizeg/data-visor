@@ -72,19 +72,25 @@ class COCOParser(BaseParser):
 
         Column order: ``id, dataset_id, file_name, width, height,
         thumbnail_path, split, metadata``  (matches ``samples`` table).
+
+        When *split* is provided, sample IDs are prefixed (e.g. ``train_42``)
+        to avoid collisions when multiple COCO files share the same internal
+        image-ID namespace.
         """
         batch: list[dict] = []
         for image in self.parse_images_streaming(file_path):
+            raw_id = image["id"]
+            sample_id = f"{split}_{raw_id}" if split else str(raw_id)
             width = image.get("width", 0)
             height = image.get("height", 0)
             if width == 0 or height == 0:
                 logger.warning(
                     "Image %s missing width/height, defaulting to 0",
-                    image.get("id"),
+                    raw_id,
                 )
             batch.append(
                 {
-                    "id": str(image["id"]),
+                    "id": sample_id,
                     "dataset_id": dataset_id,
                     "file_name": image["file_name"],
                     "width": int(width),
@@ -105,15 +111,24 @@ class COCOParser(BaseParser):
         file_path: Path,
         dataset_id: str,
         categories: dict[int, str],
+        split: str | None = None,
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of annotation records.
 
         Column order: ``id, dataset_id, sample_id, category_name, bbox_x,
         bbox_y, bbox_w, bbox_h, area, is_crowd, source, confidence,
         metadata``  (matches ``annotations`` table).
+
+        When *split* is provided, both annotation IDs and sample_id references
+        are prefixed to match the split-prefixed sample IDs from
+        :meth:`build_image_batches`.
         """
         batch: list[dict] = []
         for ann in self.parse_annotations_streaming(file_path):
+            raw_ann_id = ann["id"]
+            raw_image_id = ann["image_id"]
+            ann_id = f"{split}_{raw_ann_id}" if split else str(raw_ann_id)
+            sample_id = f"{split}_{raw_image_id}" if split else str(raw_image_id)
             bbox = ann.get("bbox", [0, 0, 0, 0])
             if len(bbox) < 4:
                 bbox = [0, 0, 0, 0]
@@ -121,9 +136,9 @@ class COCOParser(BaseParser):
             category_name = categories.get(cat_id, "unknown") if cat_id is not None else "unknown"
             batch.append(
                 {
-                    "id": str(ann["id"]),
+                    "id": ann_id,
                     "dataset_id": dataset_id,
-                    "sample_id": str(ann["image_id"]),
+                    "sample_id": sample_id,
                     "category_name": category_name,
                     "bbox_x": float(bbox[0]),
                     "bbox_y": float(bbox[1]),

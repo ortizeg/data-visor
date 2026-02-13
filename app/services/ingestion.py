@@ -144,7 +144,7 @@ class IngestionService:
 
             # -- Step 3: Stream and insert annotations -----------------------
             for batch_df in parser.build_annotation_batches(
-                Path(annotation_path), dataset_id, categories
+                Path(annotation_path), dataset_id, categories, split=split
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"

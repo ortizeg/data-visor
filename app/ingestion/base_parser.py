@@ -57,11 +57,19 @@ class BaseParser(ABC):
         file_path: Path,
         dataset_id: str,
         categories: dict[int, str],
+        split: str | None = None,
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of annotation records in batches.
 
         Column order **must** match the ``annotations`` DuckDB table:
         ``id, dataset_id, sample_id, category_name, bbox_x, bbox_y,
         bbox_w, bbox_h, area, is_crowd, source, confidence, metadata``.
+
+        Parameters
+        ----------
+        split:
+            Optional split name used to prefix annotation and sample IDs,
+            preventing collisions when multiple COCO files are imported
+            under the same dataset.
         """
         ...

@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     model_config = {
         "env_prefix": "DATAVISOR_",
         "env_file": ".env",
+        "extra": "ignore",
     }
 
 
