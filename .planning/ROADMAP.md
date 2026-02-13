@@ -168,7 +168,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 14-01-PLAN.md -- Backend schema, IoU matching service, and annotation triage API endpoints
+- [x] 14-01-PLAN.md -- Backend schema, IoU matching service, and annotation triage API endpoints
 - [ ] 14-02-PLAN.md -- Frontend types, hooks, and clickable TriageOverlay SVG component
 - [ ] 14-03-PLAN.md -- Wire TriageOverlay into sample modal + highlight mode integration
 
@@ -193,4 +193,4 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
-| 14. Per-Annotation Triage | v1.1 | 0/3 | Planned | -- |
+| 14. Per-Annotation Triage | v1.1 | 1/3 | In progress | -- |

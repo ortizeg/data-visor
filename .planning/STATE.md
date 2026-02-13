@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.1 complete. All 13 phases shipped.
+**Current focus:** v1.1 in progress. Phase 14 added for per-annotation triage.
 
 ## Current Position
 
-Phase: 13 of 13 (Keyboard Shortcuts)
-Plan: 2 of 2 in current phase
-Status: Phase complete -- v1.1 roadmap fully implemented
-Last activity: 2026-02-13 -- Completed 13-02-PLAN.md
+Phase: 14 of 14 (Per-Annotation Triage)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-13 -- Completed 14-01-PLAN.md
 
-Progress: [████████████████████████████████████████████████████████] 100% (v1.1: 38/38 plans complete)
+Progress: [█████████████████████████████████████████████████████████░░] v1.1: 39/41 plans complete
 
 ## Performance Metrics
 
@@ -105,6 +105,9 @@ Recent decisions affecting current work:
 - [13-02]: Single-level undo stack via React state for annotation delete undo
 - [13-02]: Triage number keys disabled during edit mode (prevents Konva focus confusion)
 - [13-02]: groupByCategory via reduce instead of Object.groupBy (avoids es2024 lib dep)
+- [14-01]: Reuse _compute_iou_matrix from evaluation.py (no duplicate IoU code)
+- [14-01]: Auto-computed labels ephemeral (computed on GET, not stored); overrides persist in annotation_triage table
+- [14-01]: triage:annotated sample tag bridges per-annotation triage to highlight mode
 
 ### Pending Todos
 
@@ -117,5 +120,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 13-02-PLAN.md -- Modal shortcuts and help overlay (v1.1 complete)
+Stopped at: Completed 14-01-PLAN.md -- Backend infrastructure for per-annotation triage
 Resume file: None
