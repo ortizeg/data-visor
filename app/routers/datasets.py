@@ -17,7 +17,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.dependencies import get_db, get_ingestion_service
+from app.dependencies import get_db, get_image_service, get_ingestion_service, get_similarity_service
 from app.ingestion.detection_annotation_parser import DetectionAnnotationParser
 from app.ingestion.prediction_parser import PredictionParser
 from app.models.dataset import (
@@ -27,7 +27,9 @@ from app.models.dataset import (
 )
 from app.models.prediction import PredictionImportRequest, PredictionImportResponse
 from app.repositories.duckdb_repo import DuckDBRepo
+from app.services.image_service import ImageService
 from app.services.ingestion import IngestionService
+from app.services.similarity_service import SimilarityService
 
 logger = logging.getLogger(__name__)
 
@@ -283,9 +285,12 @@ def import_predictions(
 
 @router.delete("/{dataset_id}", status_code=204)
 def delete_dataset(
-    dataset_id: str, db: DuckDBRepo = Depends(get_db)
+    dataset_id: str,
+    db: DuckDBRepo = Depends(get_db),
+    image_service: ImageService = Depends(get_image_service),
+    similarity_service: SimilarityService = Depends(get_similarity_service),
 ) -> None:
-    """Delete a dataset and all associated samples, annotations, categories."""
+    """Delete a dataset and all associated data (DB rows, thumbnails, vectors)."""
     cursor = db.connection.cursor()
     try:
         # Verify dataset exists
@@ -295,6 +300,12 @@ def delete_dataset(
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
 
+        cursor.execute(
+            "DELETE FROM embeddings WHERE dataset_id = ?", [dataset_id]
+        )
+        cursor.execute(
+            "DELETE FROM saved_views WHERE dataset_id = ?", [dataset_id]
+        )
         cursor.execute(
             "DELETE FROM annotations WHERE dataset_id = ?", [dataset_id]
         )
@@ -307,3 +318,16 @@ def delete_dataset(
         cursor.execute("DELETE FROM datasets WHERE id = ?", [dataset_id])
     finally:
         cursor.close()
+
+    # Clean up thumbnail cache on disk
+    image_service.delete_dataset_thumbnails(dataset_id)
+
+    # Clean up Qdrant collection (may not exist)
+    try:
+        similarity_service.invalidate_collection(dataset_id)
+    except Exception:
+        logger.warning(
+            "Failed to delete Qdrant collection for dataset %s",
+            dataset_id,
+            exc_info=True,
+        )

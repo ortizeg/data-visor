@@ -69,3 +69,33 @@ class ImportRequest(BaseModel):
 
     splits: list[ImportSplit]
     """Splits to import (user may have deselected some from scan results)."""
+
+
+class BrowseRequest(BaseModel):
+    """Request body for the ``POST /ingestion/browse`` endpoint."""
+
+    path: str
+    """Directory path to browse (local or ``gs://...``)."""
+
+
+class BrowseEntry(BaseModel):
+    """A single entry in a directory listing."""
+
+    name: str
+    """Entry name (basename only)."""
+
+    type: str
+    """``"directory"`` or ``"file"``."""
+
+    size: int | None = None
+    """Size in bytes (``None`` for directories)."""
+
+
+class BrowseResponse(BaseModel):
+    """Response from the ``POST /ingestion/browse`` endpoint."""
+
+    path: str
+    """Resolved absolute path that was browsed."""
+
+    entries: list[BrowseEntry]
+    """Directory contents (directories and JSON files only)."""

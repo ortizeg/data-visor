@@ -8,6 +8,7 @@ requests without regeneration.
 from __future__ import annotations
 
 import logging
+import shutil
 from io import BytesIO
 from pathlib import Path
 
@@ -72,6 +73,13 @@ class ImageService:
         # Save
         img.save(cache_path, format="WEBP", quality=WEBP_QUALITY, method=4)
         return cache_path
+
+    def delete_dataset_thumbnails(self, dataset_id: str) -> None:
+        """Remove all cached thumbnails for a dataset."""
+        dataset_cache = self.cache_dir / dataset_id
+        if dataset_cache.exists():
+            shutil.rmtree(dataset_cache)
+            logger.info("Deleted thumbnail cache for dataset %s", dataset_id)
 
     def generate_thumbnails_batch(
         self,

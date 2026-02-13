@@ -19,6 +19,7 @@ from pathlib import Path
 import ijson
 
 from app.models.scan import DetectedSplit, ScanResult
+from app.repositories.storage import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -44,16 +45,44 @@ SPLIT_DIR_NAMES: dict[str, str] = {
 }
 
 
+def _join(base: str, name: str) -> str:
+    """Join a base path with a child name, handling both local and GCS paths."""
+    if base.startswith("gs://"):
+        return f"{base.rstrip('/')}/{name}"
+    return str(Path(base) / name)
+
+
+def _basename(path: str) -> str:
+    """Return the last component of a path."""
+    if path.startswith("gs://"):
+        return path.rstrip("/").split("/")[-1]
+    return Path(path).name
+
+
+def _stem(path: str) -> str:
+    """Return the filename without extension."""
+    name = _basename(path)
+    dot = name.rfind(".")
+    return name[:dot] if dot > 0 else name
+
+
 class FolderScanner:
     """Walk a directory tree and detect importable COCO datasets.
 
+    Supports both local and GCS paths via :class:`StorageBackend`.
+
     Usage::
 
-        scanner = FolderScanner()
+        scanner = FolderScanner(storage)
         result = scanner.scan("/path/to/dataset")
         for split in result.splits:
             print(split.name, split.annotation_path, split.image_count)
     """
+
+    def __init__(self, storage: StorageBackend | None = None) -> None:
+        if storage is None:
+            storage = StorageBackend()
+        self.storage = storage
 
     # ------------------------------------------------------------------
     # Public API
@@ -65,29 +94,207 @@ class FolderScanner:
         Returns a :class:`ScanResult` with all detected splits.  Raises
         :class:`ValueError` if the path is not a directory.
         """
-        root = Path(root_path).resolve()
-        if not root.is_dir():
-            raise ValueError(f"Path is not a directory: {root_path}")
+        is_gcs = root_path.startswith("gs://")
+
+        if is_gcs:
+            if not self.storage.isdir(root_path):
+                raise ValueError(f"Path is not a directory: {root_path}")
+            resolved = root_path.rstrip("/")
+        else:
+            root = Path(root_path).resolve()
+            if not root.is_dir():
+                raise ValueError(f"Path is not a directory: {root_path}")
+            resolved = str(root)
 
         warnings: list[str] = []
 
-        # Try layouts in priority order (most specific first).
-        splits = self._try_layout_b(root, warnings)
-        if not splits:
-            splits = self._try_layout_a(root, warnings)
-        if not splits:
-            splits = self._try_layout_c(root, warnings)
+        if is_gcs:
+            splits = self._scan_gcs(resolved, warnings)
+        else:
+            # Use optimised local-only path (os.scandir is faster).
+            splits = self._try_layout_b(Path(resolved), warnings)
+            if not splits:
+                splits = self._try_layout_a(Path(resolved), warnings)
+            if not splits:
+                splits = self._try_layout_c(Path(resolved), warnings)
 
         return ScanResult(
-            root_path=str(root),
-            dataset_name=root.name,
+            root_path=resolved,
+            dataset_name=_basename(resolved),
             format="coco",
             splits=splits,
             warnings=warnings,
         )
 
     # ------------------------------------------------------------------
-    # Layout detectors
+    # GCS scanner (uses StorageBackend)
+    # ------------------------------------------------------------------
+
+    def _scan_gcs(
+        self, root: str, warnings: list[str]
+    ) -> list[DetectedSplit]:
+        """Detect COCO datasets in a GCS prefix using StorageBackend."""
+        entries = self.storage.list_dir_detail(root)
+        dirs = [e for e in entries if e["type"] == "directory"]
+        jsons = [e for e in entries if e["type"] == "file" and e["name"].lower().endswith(".json")]
+
+        # Try Layout B: split directories
+        split_dirs: dict[str, str] = {}
+        for d in dirs:
+            norm = d["name"].lower()
+            if norm in SPLIT_DIR_NAMES:
+                canonical = SPLIT_DIR_NAMES[norm]
+                if canonical not in split_dirs:
+                    split_dirs[canonical] = _join(root, d["name"])
+
+        if split_dirs:
+            splits: list[DetectedSplit] = []
+            for canonical_name, dir_path in sorted(split_dirs.items()):
+                sub_entries = self.storage.list_dir_detail(dir_path)
+                sub_jsons = sorted(
+                    [e for e in sub_entries if e["type"] == "file" and e["name"].lower().endswith(".json")],
+                    key=lambda e: e["name"],
+                )
+                for jentry in sub_jsons:
+                    jpath = _join(dir_path, jentry["name"])
+                    if self._is_coco_annotation_remote(jpath):
+                        img_count = sum(
+                            1 for e in sub_entries
+                            if e["type"] == "file"
+                            and os.path.splitext(e["name"])[1].lower() in IMAGE_EXTENSIONS
+                        )
+                        if img_count > 0:
+                            splits.append(DetectedSplit(
+                                name=canonical_name,
+                                annotation_path=jpath,
+                                image_dir=dir_path,
+                                image_count=img_count,
+                                annotation_file_size=jentry.get("size") or 0,
+                            ))
+                        break
+                    else:
+                        warnings.append(f"Found JSON but not valid COCO: {jpath}")
+            if splits:
+                return splits
+
+        # Try Layout A: annotations/ dir
+        ann_dir = _join(root, "annotations")
+        if self.storage.isdir(ann_dir):
+            ann_entries = self.storage.list_dir_detail(ann_dir)
+            coco_files: list[tuple[str, int]] = []
+            for e in sorted(ann_entries, key=lambda e: e["name"]):
+                if e["type"] == "file" and e["name"].lower().endswith(".json"):
+                    fpath = _join(ann_dir, e["name"])
+                    if self._is_coco_annotation_remote(fpath):
+                        coco_files.append((fpath, e.get("size") or 0))
+                    else:
+                        warnings.append(f"Found JSON but not valid COCO: {fpath}")
+
+            if coco_files:
+                # Build image dir candidates
+                image_dirs: dict[str, str] = {}
+                images_root = _join(root, "images")
+                if self.storage.isdir(images_root):
+                    for sub in self.storage.list_dir_detail(images_root):
+                        if sub["type"] == "directory":
+                            norm = sub["name"].lower()
+                            if norm in SPLIT_DIR_NAMES:
+                                image_dirs[SPLIT_DIR_NAMES[norm]] = _join(images_root, sub["name"])
+                    if not image_dirs:
+                        image_dirs["_flat"] = images_root
+
+                for d in dirs:
+                    if d["name"].lower() != "annotations":
+                        norm = d["name"].lower()
+                        if norm in SPLIT_DIR_NAMES:
+                            canonical = SPLIT_DIR_NAMES[norm]
+                            if canonical not in image_dirs:
+                                image_dirs[canonical] = _join(root, d["name"])
+
+                splits = []
+                for coco_path, coco_size in coco_files:
+                    stem_lower = _stem(coco_path).lower()
+                    matched_split: str | None = None
+                    matched_dir: str | None = None
+                    for keyword, canonical in SPLIT_DIR_NAMES.items():
+                        if keyword in stem_lower and canonical in image_dirs:
+                            matched_split = canonical
+                            matched_dir = image_dirs[canonical]
+                            break
+                    if matched_split is None and "_flat" in image_dirs:
+                        matched_split = _basename(root)
+                        matched_dir = image_dirs["_flat"]
+                    if matched_split and matched_dir:
+                        img_count = self._count_images_remote(matched_dir)
+                        splits.append(DetectedSplit(
+                            name=matched_split,
+                            annotation_path=coco_path,
+                            image_dir=matched_dir,
+                            image_count=img_count,
+                            annotation_file_size=coco_size,
+                        ))
+                if splits:
+                    return splits
+
+        # Try Layout C: flat JSON at root
+        for jentry in sorted(jsons, key=lambda e: e["name"]):
+            jpath = _join(root, jentry["name"])
+            if self._is_coco_annotation_remote(jpath):
+                images_dir = _join(root, "images")
+                if self.storage.isdir(images_dir):
+                    img_count = self._count_images_remote(images_dir)
+                    img_dir_path = images_dir
+                else:
+                    img_count = self._count_images_remote(root)
+                    img_dir_path = root
+                if img_count > 0:
+                    return [DetectedSplit(
+                        name=_basename(root),
+                        annotation_path=jpath,
+                        image_dir=img_dir_path,
+                        image_count=img_count,
+                        annotation_file_size=jentry.get("size") or 0,
+                    )]
+                else:
+                    warnings.append(
+                        f"COCO annotation found ({jentry['name']}) but no images in {img_dir_path}"
+                    )
+                    return []
+            else:
+                warnings.append(f"Found JSON but not valid COCO: {jpath}")
+
+        return []
+
+    def _is_coco_annotation_remote(self, path: str) -> bool:
+        """Check if a remote file looks like COCO annotation JSON."""
+        try:
+            with self.storage.open(path, "rb") as f:
+                keys_seen = 0
+                for prefix, event, value in ijson.parse(f):
+                    if prefix == "" and event == "map_key":
+                        if value == "images":
+                            return True
+                        keys_seen += 1
+                        if keys_seen >= 10:
+                            return False
+            return False
+        except Exception:
+            return False
+
+    def _count_images_remote(self, path: str) -> int:
+        """Count image files in a remote directory."""
+        try:
+            entries = self.storage.list_dir_detail(path)
+            return sum(
+                1 for e in entries
+                if e["type"] == "file"
+                and os.path.splitext(e["name"])[1].lower() in IMAGE_EXTENSIONS
+            )
+        except Exception:
+            return 0
+
+    # ------------------------------------------------------------------
+    # Layout detectors (local-only, preserved for performance)
     # ------------------------------------------------------------------
 
     def _try_layout_b(
