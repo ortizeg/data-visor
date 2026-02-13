@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 10 of 13 (Annotation Editing)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-12 -- Completed 10-01-PLAN.md
+Last activity: 2026-02-12 -- Completed 10-02-PLAN.md
 
-Progress: [███████████████████████████████████████░░░░░░░░░░░░░░░] 72% (v1.1: 29/40 plans complete)
+Progress: [████████████████████████████████████████░░░░░░░░░░░░░░] 75% (v1.1: 30/40 plans complete)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [███████████████████████
 |-------|-------|-------|----------|
 | 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
-| 10. Annotation Editing | 1/3 | 3 min | 3.0 min |
+| 10. Annotation Editing | 2/3 | 6 min | 3.0 min |
 | 11. Error Triage | — | — | — |
 | 12. Interactive Viz & Discovery | — | — | — |
 | 13. Keyboard Shortcuts | — | — | — |
@@ -78,6 +78,8 @@ Recent decisions affecting current work:
 - [10-01]: get_cursor DI for annotation router (auto-close cursor)
 - [10-01]: source='ground_truth' enforced in SQL WHERE clauses for PUT/DELETE safety
 - [10-01]: Dataset counts refreshed via subquery UPDATE (no race conditions)
+- [10-02]: useDrawLayer hook pattern (handlers + ReactNode) instead of separate component
+- [10-02]: Transformer scale reset to 1 on transformEnd (Konva best practice)
 
 ### Pending Todos
 
@@ -85,10 +87,10 @@ None.
 
 ### Blockers/Concerns
 
-- [P5] SVG-to-Canvas coordinate mismatch requires explicit conversion utilities for Phase 10
+- [RESOLVED] SVG-to-Canvas coordinate mismatch resolved by coord-utils.ts (10-02)
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 10-01-PLAN.md
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
