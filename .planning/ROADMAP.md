@@ -53,7 +53,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
 - [x] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
 - [x] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
-- [ ] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
+- [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [ ] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
 - [ ] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
 
@@ -122,8 +122,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md -- Backend triage endpoints (set-triage-tag, worst-images scoring) + frontend hooks and types
-- [ ] 11-02-PLAN.md -- Triage tag buttons in detail modal, highlight mode grid dimming, worst-images stats panel
+- [x] 11-01-PLAN.md -- Backend triage endpoints (set-triage-tag, worst-images scoring) + frontend hooks and types
+- [x] 11-02-PLAN.md -- Triage tag buttons in detail modal, highlight mode grid dimming, worst-images stats panel
 
 ### Phase 12: Interactive Viz & Discovery
 **Goal**: Users can explore dataset quality interactively -- clicking visualization elements filters the grid, finding similar samples and near-duplicates is one click away
@@ -174,6 +174,6 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
-| 11. Error Triage | v1.1 | 0/2 | Not started | - |
+| 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |

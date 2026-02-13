@@ -34,9 +34,9 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 
 ### Error Triage & Quality
 
-- [ ] **TRIAGE-01**: User can tag individual samples/annotations as FP, TP, FN, or mistake
-- [ ] **TRIAGE-02**: Highlight mode dims non-error samples in the grid, emphasizing errors
-- [ ] **TRIAGE-03**: "Worst images" ranking surfaces samples with highest combined error score (error count + confidence spread + uniqueness)
+- [x] **TRIAGE-01**: User can tag individual samples/annotations as FP, TP, FN, or mistake
+- [x] **TRIAGE-02**: Highlight mode dims non-error samples in the grid, emphasizing errors
+- [x] **TRIAGE-03**: "Worst images" ranking surfaces samples with highest combined error score (error count + confidence spread + uniqueness)
 - [ ] **TRIAGE-04**: Interactive confusion matrix that filters grid when a cell is clicked
 - [ ] **TRIAGE-05**: Near-duplicate detection surfaces visually similar images in the dataset
 - [ ] **TRIAGE-06**: Interactive histograms on the statistics dashboard — clicking a bar filters the grid
@@ -106,9 +106,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANNOT-04 | Phase 10 | Complete |
 | ANNOT-05 | Phase 10 | Complete |
 | ANNOT-06 | Phase 12 | Pending |
-| TRIAGE-01 | Phase 11 | Pending |
-| TRIAGE-02 | Phase 11 | Pending |
-| TRIAGE-03 | Phase 11 | Pending |
+| TRIAGE-01 | Phase 11 | Complete |
+| TRIAGE-02 | Phase 11 | Complete |
+| TRIAGE-03 | Phase 11 | Complete |
 | TRIAGE-04 | Phase 12 | Pending |
 | TRIAGE-05 | Phase 12 | Pending |
 | TRIAGE-06 | Phase 12 | Pending |
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 — Phase 10 requirements marked Complete*
+*Last updated: 2026-02-12 — Phase 11 requirements marked Complete*
