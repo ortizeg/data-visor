@@ -119,11 +119,11 @@ Plans:
   1. User can tag any sample or annotation as FP, TP, FN, or mistake, and the tag persists across page refreshes
   2. User can activate highlight mode to dim non-error samples in the grid, making errors visually prominent
   3. User can view a "worst images" ranking that surfaces samples with the highest combined error score (error count + confidence spread + uniqueness)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md -- Backend triage endpoints (set-triage-tag, worst-images scoring) + frontend hooks and types
+- [ ] 11-02-PLAN.md -- Triage tag buttons in detail modal, highlight mode grid dimming, worst-images stats panel
 
 ### Phase 12: Interactive Viz & Discovery
 **Goal**: Users can explore dataset quality interactively -- clicking visualization elements filters the grid, finding similar samples and near-duplicates is one click away
@@ -174,6 +174,6 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
-| 11. Error Triage | v1.1 | 0/TBD | Not started | - |
+| 11. Error Triage | v1.1 | 0/2 | Not started | - |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |
