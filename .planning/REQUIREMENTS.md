@@ -25,11 +25,11 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 
 ### Annotation Management
 
-- [ ] **ANNOT-01**: User can move bounding boxes by dragging in the sample detail modal
-- [ ] **ANNOT-02**: User can resize bounding boxes via drag handles in the sample detail modal
-- [ ] **ANNOT-03**: User can delete bounding boxes in the sample detail modal
-- [ ] **ANNOT-04**: User can draw new bounding boxes in the sample detail modal and assign a class
-- [ ] **ANNOT-05**: Only ground truth annotations are editable (predictions are immutable)
+- [x] **ANNOT-01**: User can move bounding boxes by dragging in the sample detail modal
+- [x] **ANNOT-02**: User can resize bounding boxes via drag handles in the sample detail modal
+- [x] **ANNOT-03**: User can delete bounding boxes in the sample detail modal
+- [x] **ANNOT-04**: User can draw new bounding boxes in the sample detail modal and assign a class
+- [x] **ANNOT-05**: Only ground truth annotations are editable (predictions are immutable)
 - [ ] **ANNOT-06**: User can click "Find Similar" on any sample to query Qdrant and display nearest neighbors in grid
 
 ### Error Triage & Quality
@@ -100,11 +100,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INGEST-03 | Phase 9 | Complete |
 | INGEST-04 | Phase 9 | Complete |
 | INGEST-05 | Phase 9 | Complete |
-| ANNOT-01 | Phase 10 | Pending |
-| ANNOT-02 | Phase 10 | Pending |
-| ANNOT-03 | Phase 10 | Pending |
-| ANNOT-04 | Phase 10 | Pending |
-| ANNOT-05 | Phase 10 | Pending |
+| ANNOT-01 | Phase 10 | Complete |
+| ANNOT-02 | Phase 10 | Complete |
+| ANNOT-03 | Phase 10 | Complete |
+| ANNOT-04 | Phase 10 | Complete |
+| ANNOT-05 | Phase 10 | Complete |
 | ANNOT-06 | Phase 12 | Pending |
 | TRIAGE-01 | Phase 11 | Pending |
 | TRIAGE-02 | Phase 11 | Pending |
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 — Phase 9 requirements marked Complete*
+*Last updated: 2026-02-12 — Phase 10 requirements marked Complete*

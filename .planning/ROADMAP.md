@@ -52,7 +52,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
 - [x] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
-- [ ] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
+- [x] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
 - [ ] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [ ] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
 - [ ] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
@@ -107,9 +107,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 10-01-PLAN.md -- Backend annotation CRUD endpoints + frontend mutation hooks and types
-- [ ] 10-02-PLAN.md -- Konva building blocks: coord-utils, EditableRect, DrawLayer, ClassPicker
-- [ ] 10-03-PLAN.md -- AnnotationEditor composition, sample modal integration, annotation list delete
+- [x] 10-01-PLAN.md -- Backend annotation CRUD endpoints + frontend mutation hooks and types
+- [x] 10-02-PLAN.md -- Konva building blocks: coord-utils, EditableRect, DrawLayer, ClassPicker
+- [x] 10-03-PLAN.md -- AnnotationEditor composition, sample modal integration, annotation list delete
 
 ### Phase 11: Error Triage
 **Goal**: Users can systematically review and tag errors with a focused triage workflow that persists decisions and surfaces the worst samples first
@@ -173,7 +173,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 7. Intelligence & Agents | v1.0 | 3/3 | Complete | 2026-02-12 |
 | 8. Docker Deployment & Auth | v1.1 | 5/5 | Complete | 2026-02-12 |
 | 9. Smart Ingestion | v1.1 | 2/2 | Complete | 2026-02-12 |
-| 10. Annotation Editing | v1.1 | 0/3 | Not started | - |
+| 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
 | 11. Error Triage | v1.1 | 0/TBD | Not started | - |
 | 12. Interactive Viz & Discovery | v1.1 | 0/TBD | Not started | - |
 | 13. Keyboard Shortcuts | v1.1 | 0/TBD | Not started | - |
