@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 13 in progress -- Keyboard Shortcuts.
+**Current focus:** v1.1 complete. All 13 phases shipped.
 
 ## Current Position
 
 Phase: 13 of 13 (Keyboard Shortcuts)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-13 -- Completed 13-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete -- v1.1 roadmap fully implemented
+Last activity: 2026-02-13 -- Completed 13-02-PLAN.md
 
-Progress: [█████████████████████████████████████████████████████░░] 93% (v1.1: 37/40 plans complete)
+Progress: [████████████████████████████████████████████████████████] 100% (v1.1: 38/38 plans complete)
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [███████████████████████
 | 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
 | 12. Interactive Viz & Discovery | 3/3 | 10 min | 3.3 min |
-| 13. Keyboard Shortcuts | 1/2 | 3 min | 3.0 min |
+| 13. Keyboard Shortcuts | 2/2 | 6 min | 3.0 min |
 
 ## Accumulated Context
 
@@ -101,6 +101,10 @@ Recent decisions affecting current work:
 - [12-03]: Progress updates throttled to every 10 points to avoid excessive state updates
 - [13-01]: isFocused passed as prop from ImageGrid (avoids N store subscriptions per GridCell)
 - [13-01]: Central shortcut registry pattern: all shortcuts as data in lib/shortcuts.ts
+- [13-02]: Single useHotkeys('1, 2, 3, 4') with event.key dispatch (avoids rules-of-hooks violation)
+- [13-02]: Single-level undo stack via React state for annotation delete undo
+- [13-02]: Triage number keys disabled during edit mode (prevents Konva focus confusion)
+- [13-02]: groupByCategory via reduce instead of Object.groupBy (avoids es2024 lib dep)
 
 ### Pending Todos
 
@@ -113,5 +117,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 13-01-PLAN.md -- Grid keyboard navigation with focus ring
+Stopped at: Completed 13-02-PLAN.md -- Modal shortcuts and help overlay (v1.1 complete)
 Resume file: None
