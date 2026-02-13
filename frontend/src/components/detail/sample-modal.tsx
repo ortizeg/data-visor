@@ -52,6 +52,12 @@ const AnnotationEditor = dynamic(
   },
 );
 
+/** Undo action for single-level annotation delete undo. */
+interface UndoAction {
+  type: "delete";
+  annotation: Annotation;
+}
+
 interface SampleModalProps {
   /** Dataset ID for building image URLs and fetching annotations. */
   datasetId: string;
@@ -195,6 +201,68 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
     "e",
     () => toggleEditMode(),
     { enabled: isDetailModalOpen },
+  );
+
+  // -----------------------------------------------------------------------
+  // Undo stack for annotation deletes (single-level)
+  // -----------------------------------------------------------------------
+  const [lastAction, setLastAction] = useState<UndoAction | null>(null);
+
+  // Reset undo state when navigating to a different sample
+  useEffect(() => {
+    setLastAction(null);
+  }, [selectedSampleId]);
+
+  // Delete selected annotation: Delete / Backspace (edit mode only)
+  useHotkeys(
+    "Delete, Backspace",
+    () => {
+      if (selectedAnnotationId) {
+        // Save undo state before deleting
+        const found = (annotations ?? []).find(
+          (a) => a.id === selectedAnnotationId,
+        );
+        if (found) {
+          setLastAction({ type: "delete", annotation: found });
+        }
+        deleteMutation.mutate(selectedAnnotationId);
+        setSelectedAnnotationId(null);
+      }
+    },
+    { enabled: isDetailModalOpen && isEditMode },
+    [selectedAnnotationId, annotations],
+  );
+
+  // Undo last delete: Ctrl+Z / Cmd+Z (edit mode only)
+  useHotkeys(
+    "ctrl+z, meta+z",
+    () => {
+      if (lastAction?.type === "delete") {
+        const a = lastAction.annotation;
+        createMutation.mutate({
+          dataset_id: a.dataset_id,
+          sample_id: a.sample_id,
+          category_name: a.category_name,
+          bbox_x: a.bbox_x,
+          bbox_y: a.bbox_y,
+          bbox_w: a.bbox_w,
+          bbox_h: a.bbox_h,
+        });
+        setLastAction(null);
+      }
+    },
+    {
+      enabled: isDetailModalOpen && isEditMode && lastAction !== null,
+      preventDefault: true,
+    },
+    [lastAction, datasetId, selectedSampleId],
+  );
+
+  // Escape exits edit mode (does NOT close modal -- native dialog handles that)
+  useHotkeys(
+    "Escape",
+    () => toggleEditMode(),
+    { enabled: isDetailModalOpen && isEditMode },
   );
 
   // Sync dialog open/close with Zustand state
