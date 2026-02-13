@@ -126,6 +126,18 @@ class DuckDBRepo:
             )
         """)
 
+        # Phase 14: Per-annotation triage overrides
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS annotation_triage (
+                annotation_id   VARCHAR NOT NULL,
+                dataset_id      VARCHAR NOT NULL,
+                sample_id       VARCHAR NOT NULL,
+                label           VARCHAR NOT NULL,
+                is_override     BOOLEAN DEFAULT true,
+                created_at      TIMESTAMP DEFAULT current_timestamp
+            )
+        """)
+
     def close(self) -> None:
         """Close the underlying DuckDB connection."""
         self.connection.close()
