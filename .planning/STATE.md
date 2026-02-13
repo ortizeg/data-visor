@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 11 complete -- Error Triage. Ready for Phase 12 (Interactive Viz & Discovery).
+**Current focus:** Phase 12 in progress -- Interactive Viz & Discovery.
 
 ## Current Position
 
-Phase: 11 of 13 (Error Triage) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-13 -- Completed 11-02-PLAN.md
+Phase: 12 of 13 (Interactive Viz & Discovery)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-13 -- Completed 12-01-PLAN.md
 
-Progress: [█████████████████████████████████████████████░░░░░░░░░] 83% (v1.1: 33/40 plans complete)
+Progress: [██████████████████████████████████████████████░░░░░░░░] 85% (v1.1: 34/40 plans complete)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [███████████████████████
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
 | 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
-| 12. Interactive Viz & Discovery | — | — | — |
+| 12. Interactive Viz & Discovery | 1/3 | 3 min | 3.0 min |
 | 13. Keyboard Shortcuts | — | — | — |
 
 ## Accumulated Context
@@ -89,6 +89,10 @@ Recent decisions affecting current work:
 - [11-02]: Triage buttons always visible in detail modal (not gated by edit mode)
 - [11-02]: Highlight toggle uses yellow-500 active styling to distinguish from edit buttons
 - [11-02]: Triage tag badges show short label (TP/FP/FN/MISTAKE) instead of full prefix
+- [12-01]: Lasso selection takes priority over discovery filter (effectiveIds = lassoSelectedIds ?? sampleIdFilter)
+- [12-01]: "Show in Grid" button only appears after similarity results load (progressive disclosure)
+- [12-01]: getState() pattern for store access in Recharts onClick handlers (non-reactive)
+- [12-01]: DiscoveryFilterChip in dataset header for cross-tab visibility
 
 ### Pending Todos
 
@@ -101,5 +105,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 11-02-PLAN.md -- Phase 11 complete
+Stopped at: Completed 12-01-PLAN.md -- Discovery filter foundation
 Resume file: None
