@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.1 in progress. Phase 14 added for per-annotation triage.
+**Current focus:** v1.1 complete. All 14 phases delivered.
 
 ## Current Position
 
 Phase: 14 of 14 (Per-Annotation Triage)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-13 -- Completed 14-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-02-13 -- Phase 14 verified and complete
 
-Progress: [██████████████████████████████████████████████████████████░] v1.1: 40/41 plans complete
+Progress: [████████████████████████████████████████████████████████████] v1.1: 41/41 plans complete
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [███████████████████████
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
 | 12. Interactive Viz & Discovery | 3/3 | 10 min | 3.3 min |
 | 13. Keyboard Shortcuts | 2/2 | 6 min | 3.0 min |
+| 14. Per-Annotation Triage | 3/3 | 7 min | 2.3 min |
 
 ## Accumulated Context
 
@@ -111,6 +112,7 @@ Recent decisions affecting current work:
 - [14-02]: TriageOverlay is separate from AnnotationOverlay (interactive vs non-interactive SVG)
 - [14-02]: Click handler delegates to parent via callback (overlay does not manage mutations)
 - [14-02]: Annotations not in triageMap skipped (handles GT-only samples gracefully)
+- [14-03]: GT boxes show category name only, predictions show category + confidence% (color conveys triage type)
 
 ### Pending Todos
 
@@ -123,5 +125,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 14-02-PLAN.md -- Frontend data layer and triage overlay
+Stopped at: Phase 14 complete, v1.1 milestone complete
 Resume file: None

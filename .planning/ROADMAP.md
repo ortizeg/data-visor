@@ -56,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [x] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
 - [x] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
-- [ ] **Phase 14: Per-Annotation Triage** - Auto-discover TP/FP/FN per bounding box via IoU overlap, color-coded boxes in detail modal, click to override classifications
+- [x] **Phase 14: Per-Annotation Triage** - Auto-discover TP/FP/FN per bounding box via IoU overlap, color-coded boxes in detail modal, click to override classifications
 
 ## Phase Details
 
@@ -170,7 +170,7 @@ Plans:
 Plans:
 - [x] 14-01-PLAN.md -- Backend schema, IoU matching service, and annotation triage API endpoints
 - [x] 14-02-PLAN.md -- Frontend types, hooks, and clickable TriageOverlay SVG component
-- [ ] 14-03-PLAN.md -- Wire TriageOverlay into sample modal + highlight mode integration
+- [x] 14-03-PLAN.md -- Wire TriageOverlay into sample modal + highlight mode integration
 
 ## Progress
 
@@ -193,4 +193,4 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
-| 14. Per-Annotation Triage | v1.1 | 2/3 | In progress | -- |
+| 14. Per-Annotation Triage | v1.1 | 3/3 | Complete | 2026-02-13 |
