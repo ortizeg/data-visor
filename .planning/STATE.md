@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 12 complete -- Interactive Viz & Discovery. Ready for Phase 13.
+**Current focus:** Phase 13 in progress -- Keyboard Shortcuts.
 
 ## Current Position
 
-Phase: 12 of 13 (Interactive Viz & Discovery)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-13 -- Completed 12-03-PLAN.md
+Phase: 13 of 13 (Keyboard Shortcuts)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-13 -- Completed 13-01-PLAN.md
 
-Progress: [██████████████████████████████████████████████████░░░░] 90% (v1.1: 36/40 plans complete)
+Progress: [█████████████████████████████████████████████████████░░] 93% (v1.1: 37/40 plans complete)
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [███████████████████████
 | 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
 | 11. Error Triage | 2/2 | 6 min | 3.0 min |
 | 12. Interactive Viz & Discovery | 3/3 | 10 min | 3.3 min |
-| 13. Keyboard Shortcuts | — | — | — |
+| 13. Keyboard Shortcuts | 1/2 | 3 min | 3.0 min |
 
 ## Accumulated Context
 
@@ -99,6 +99,8 @@ Recent decisions affecting current work:
 - [12-03]: Tab bar always visible so Near Duplicates is accessible without predictions
 - [12-03]: Union-find with path compression for O(alpha(n)) grouping of pairwise matches
 - [12-03]: Progress updates throttled to every 10 points to avoid excessive state updates
+- [13-01]: isFocused passed as prop from ImageGrid (avoids N store subscriptions per GridCell)
+- [13-01]: Central shortcut registry pattern: all shortcuts as data in lib/shortcuts.ts
 
 ### Pending Todos
 
@@ -111,5 +113,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 12-03-PLAN.md -- Near-duplicate detection (Phase 12 complete)
+Stopped at: Completed 13-01-PLAN.md -- Grid keyboard navigation with focus ring
 Resume file: None
