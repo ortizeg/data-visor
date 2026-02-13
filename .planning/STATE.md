@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 14 of 14 (Per-Annotation Triage)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-13 -- Completed 14-01-PLAN.md
+Last activity: 2026-02-13 -- Completed 14-02-PLAN.md
 
-Progress: [█████████████████████████████████████████████████████████░░] v1.1: 39/41 plans complete
+Progress: [██████████████████████████████████████████████████████████░] v1.1: 40/41 plans complete
 
 ## Performance Metrics
 
@@ -108,6 +108,9 @@ Recent decisions affecting current work:
 - [14-01]: Reuse _compute_iou_matrix from evaluation.py (no duplicate IoU code)
 - [14-01]: Auto-computed labels ephemeral (computed on GET, not stored); overrides persist in annotation_triage table
 - [14-01]: triage:annotated sample tag bridges per-annotation triage to highlight mode
+- [14-02]: TriageOverlay is separate from AnnotationOverlay (interactive vs non-interactive SVG)
+- [14-02]: Click handler delegates to parent via callback (overlay does not manage mutations)
+- [14-02]: Annotations not in triageMap skipped (handles GT-only samples gracefully)
 
 ### Pending Todos
 
@@ -120,5 +123,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 14-01-PLAN.md -- Backend infrastructure for per-annotation triage
+Stopped at: Completed 14-02-PLAN.md -- Frontend data layer and triage overlay
 Resume file: None
