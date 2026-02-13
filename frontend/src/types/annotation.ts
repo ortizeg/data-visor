@@ -25,3 +25,22 @@ export interface Annotation {
 export interface BatchAnnotationsResponse {
   annotations: Record<string, Annotation[]>;
 }
+
+/** Request body for PUT /annotations/{id} -- update bbox position/size. */
+export interface AnnotationUpdate {
+  bbox_x: number;
+  bbox_y: number;
+  bbox_w: number;
+  bbox_h: number;
+}
+
+/** Request body for POST /annotations -- create a new ground_truth annotation. */
+export interface AnnotationCreate {
+  dataset_id: string;
+  sample_id: string;
+  category_name: string;
+  bbox_x: number;
+  bbox_y: number;
+  bbox_w: number;
+  bbox_h: number;
+}

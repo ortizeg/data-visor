@@ -8,11 +8,16 @@
  * parameter to the backend so only the relevant annotations are fetched.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { apiFetch } from "@/lib/api";
+import { apiDelete, apiFetch, apiPost, apiPut } from "@/lib/api";
 import { useUIStore } from "@/stores/ui-store";
-import type { Annotation, BatchAnnotationsResponse } from "@/types/annotation";
+import type {
+  Annotation,
+  AnnotationCreate,
+  AnnotationUpdate,
+  BatchAnnotationsResponse,
+} from "@/types/annotation";
 
 /**
  * Fetch annotations for multiple samples in a single batch request.
@@ -68,5 +73,67 @@ export function useAnnotations(
       ),
     staleTime: 5 * 60 * 1000, // 5 min -- annotations can change after prediction import
     enabled: !!sampleId,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Mutation hooks for annotation CRUD
+// ---------------------------------------------------------------------------
+
+/**
+ * Mutation hook to update bbox position/size for a ground_truth annotation.
+ *
+ * Invalidates annotation and batch-annotation caches on success.
+ */
+export function useUpdateAnnotation(datasetId: string, sampleId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...bbox
+    }: { id: string } & AnnotationUpdate) =>
+      apiPut<{ updated: string }>(`/annotations/${id}`, bbox),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["annotations", sampleId] });
+      qc.invalidateQueries({ queryKey: ["annotations-batch"] });
+    },
+  });
+}
+
+/**
+ * Mutation hook to create a new ground_truth annotation.
+ *
+ * Invalidates annotation, batch-annotation, and filter-facet caches on success.
+ */
+export function useCreateAnnotation(datasetId: string, sampleId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AnnotationCreate) =>
+      apiPost<{ id: string }>("/annotations", body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["annotations", sampleId] });
+      qc.invalidateQueries({ queryKey: ["annotations-batch"] });
+      qc.invalidateQueries({ queryKey: ["filter-facets", datasetId] });
+    },
+  });
+}
+
+/**
+ * Mutation hook to delete a ground_truth annotation.
+ *
+ * Invalidates annotation, batch-annotation, and filter-facet caches on success.
+ */
+export function useDeleteAnnotation(datasetId: string, sampleId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiDelete(`/annotations/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["annotations", sampleId] });
+      qc.invalidateQueries({ queryKey: ["annotations-batch"] });
+      qc.invalidateQueries({ queryKey: ["filter-facets", datasetId] });
+    },
   });
 }
