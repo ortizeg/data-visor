@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_db
 from app.models.error_analysis import ErrorAnalysisResponse
-from app.models.evaluation import EvaluationResponse
+from app.models.evaluation import ConfusionCellSamplesResponse, EvaluationResponse
 from app.models.statistics import (
     ClassDistribution,
     DatasetStatistics,
@@ -21,7 +21,7 @@ from app.models.statistics import (
 )
 from app.repositories.duckdb_repo import DuckDBRepo
 from app.services.error_analysis import categorize_errors
-from app.services.evaluation import compute_evaluation
+from app.services.evaluation import compute_evaluation, get_confusion_cell_samples
 
 router = APIRouter(prefix="/datasets", tags=["statistics"])
 
@@ -164,6 +164,54 @@ def get_evaluation(
 
         return compute_evaluation(
             cursor, dataset_id, source, iou_threshold, conf_threshold, split=split
+        )
+    finally:
+        cursor.close()
+
+
+@router.get(
+    "/{dataset_id}/confusion-cell-samples",
+    response_model=ConfusionCellSamplesResponse,
+)
+def get_confusion_cell_samples_endpoint(
+    dataset_id: str,
+    actual_class: str = Query(...),
+    predicted_class: str = Query(...),
+    source: str = Query("prediction"),
+    iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
+    conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
+    split: str | None = Query(None),
+    db: DuckDBRepo = Depends(get_db),
+) -> ConfusionCellSamplesResponse:
+    """Return sample IDs that contributed to a specific confusion matrix cell.
+
+    Given an (actual_class, predicted_class) pair from the confusion matrix,
+    re-runs IoU matching to find all samples with detections in that cell.
+    """
+    cursor = db.connection.cursor()
+    try:
+        row = cursor.execute(
+            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+
+        sample_ids = get_confusion_cell_samples(
+            cursor,
+            dataset_id,
+            source,
+            actual_class,
+            predicted_class,
+            iou_threshold,
+            conf_threshold,
+            split=split,
+        )
+
+        return ConfusionCellSamplesResponse(
+            actual_class=actual_class,
+            predicted_class=predicted_class,
+            sample_ids=sample_ids,
+            count=len(sample_ids),
         )
     finally:
         cursor.close()

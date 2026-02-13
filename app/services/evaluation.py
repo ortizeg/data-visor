@@ -25,6 +25,107 @@ from app.models.evaluation import (
 )
 
 
+def get_confusion_cell_samples(
+    cursor: DuckDBPyConnection,
+    dataset_id: str,
+    source: str,
+    actual_class: str,
+    predicted_class: str,
+    iou_threshold: float,
+    conf_threshold: float,
+    split: str | None = None,
+) -> list[str]:
+    """Return sample IDs that contributed to a specific confusion matrix cell.
+
+    Re-runs IoU matching per sample to determine which samples have detections
+    mapping to the given (actual_class, predicted_class) pair.
+
+    Handles the "background" class:
+    - actual_class="background": false positive predictions of predicted_class
+    - predicted_class="background": false negative GTs of actual_class
+    - Both non-background: matched pair where GT=actual_class, pred=predicted_class
+    """
+    gt_by_sample, pred_by_sample, class_names = _load_detections(
+        cursor, dataset_id, source, split=split
+    )
+
+    if not class_names:
+        return []
+
+    class_name_to_id = {name: i for i, name in enumerate(class_names)}
+    sample_ids = sorted(set(gt_by_sample) | set(pred_by_sample))
+    matching_samples: list[str] = []
+
+    for sid in sample_ids:
+        gt_det = _build_detections(gt_by_sample.get(sid, []), class_name_to_id)
+        pred_det = _build_detections(pred_by_sample.get(sid, []), class_name_to_id)
+
+        # Filter predictions by confidence threshold
+        if len(pred_det) > 0 and pred_det.confidence is not None:
+            conf_mask = pred_det.confidence >= conf_threshold
+            pred_det = pred_det[conf_mask]
+
+        # Greedy IoU matching: sort predictions by confidence descending
+        matched_gt_indices: set[int] = set()
+        matched_pred_indices: set[int] = set()
+        # Track (gt_class, pred_class) pairs for this sample
+        match_pairs: list[tuple[str, str]] = []
+
+        if len(pred_det) > 0 and len(gt_det) > 0:
+            conf = (
+                pred_det.confidence
+                if pred_det.confidence is not None
+                else np.ones(len(pred_det))
+            )
+            order = np.argsort(-conf)
+
+            iou_matrix = _compute_iou_matrix(pred_det.xyxy, gt_det.xyxy)
+
+            for pi in order:
+                pi = int(pi)
+                pred_cid = int(pred_det.class_id[pi])
+
+                # Find GT boxes of the same class that haven't been matched
+                best_iou = 0.0
+                best_gi = -1
+                for gi in range(len(gt_det)):
+                    if gi in matched_gt_indices:
+                        continue
+                    if int(gt_det.class_id[gi]) != pred_cid:
+                        continue
+                    if iou_matrix[pi, gi] > best_iou:
+                        best_iou = iou_matrix[pi, gi]
+                        best_gi = gi
+
+                if best_iou >= iou_threshold and best_gi >= 0:
+                    # Matched: GT class -> pred class
+                    matched_gt_indices.add(best_gi)
+                    matched_pred_indices.add(pi)
+                    gt_name = class_names[int(gt_det.class_id[best_gi])]
+                    pred_name = class_names[pred_cid]
+                    match_pairs.append((gt_name, pred_name))
+
+        # Unmatched predictions -> (background, pred_class)  -- false positives
+        if len(pred_det) > 0:
+            for pi in range(len(pred_det)):
+                if pi not in matched_pred_indices:
+                    pred_name = class_names[int(pred_det.class_id[pi])]
+                    match_pairs.append(("background", pred_name))
+
+        # Unmatched GTs -> (gt_class, background)  -- false negatives
+        if len(gt_det) > 0:
+            for gi in range(len(gt_det)):
+                if gi not in matched_gt_indices:
+                    gt_name = class_names[int(gt_det.class_id[gi])]
+                    match_pairs.append((gt_name, "background"))
+
+        # Check if this sample has the requested (actual, predicted) pair
+        if (actual_class, predicted_class) in match_pairs:
+            matching_samples.append(sid)
+
+    return matching_samples
+
+
 def compute_evaluation(
     cursor: DuckDBPyConnection,
     dataset_id: str,

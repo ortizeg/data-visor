@@ -48,3 +48,12 @@ class EvaluationResponse(BaseModel):
     confusion_matrix_labels: list[str]
     iou_threshold: float
     conf_threshold: float
+
+
+class ConfusionCellSamplesResponse(BaseModel):
+    """Response for GET /datasets/{id}/confusion-cell-samples."""
+
+    actual_class: str
+    predicted_class: str
+    sample_ids: list[str]
+    count: int
