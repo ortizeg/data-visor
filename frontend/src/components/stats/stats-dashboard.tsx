@@ -186,7 +186,12 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             {isLoading || !stats ? (
               <SkeletonChart height="h-[300px]" />
             ) : (
-              <ClassDistribution data={stats.class_distribution} />
+              <>
+                <ClassDistribution data={stats.class_distribution} />
+                <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                  Click any bar to filter the grid by category
+                </p>
+              </>
             )}
           </section>
 

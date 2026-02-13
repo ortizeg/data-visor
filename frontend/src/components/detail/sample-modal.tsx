@@ -25,6 +25,7 @@ import {
 } from "@/hooks/use-annotations";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
+import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
 import { TriageTagButtons } from "@/components/triage/triage-tag-buttons";
@@ -318,12 +319,27 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                 </dd>
               </dl>
 
-              <button
-                onClick={() => setShowSimilar(!showSimilar)}
-                className="mt-3 w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-              >
-                {showSimilar ? "Hide Similar" : "Find Similar"}
-              </button>
+              <div className="mt-3 flex flex-col gap-2">
+                <button
+                  onClick={() => setShowSimilar(!showSimilar)}
+                  className="w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                >
+                  {showSimilar ? "Hide Similar" : "Find Similar"}
+                </button>
+                {showSimilar && similarityData && similarityData.results.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const ids = similarityData.results.map((r) => r.sample_id);
+                      useFilterStore.getState().setSampleIdFilter(ids);
+                      useUIStore.getState().setActiveTab("grid");
+                      useUIStore.getState().closeDetailModal();
+                    }}
+                    className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  >
+                    Show in Grid ({similarityData.results.length})
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Right: annotation list table */}
