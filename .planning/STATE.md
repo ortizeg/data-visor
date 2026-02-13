@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 9 complete -- Smart Ingestion. Next: Phase 10 (Annotation Editing)
+**Current focus:** Phase 10 in progress -- Annotation Editing
 
 ## Current Position
 
-Phase: 9 of 13 (Smart Ingestion) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-12 -- Phase 9 verified and complete
+Phase: 10 of 13 (Annotation Editing)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-12 -- Completed 10-01-PLAN.md
 
-Progress: [██████████████████████████████████████████████████████] 100% (v1.1: 28/28 plans complete for phases 8-9)
+Progress: [███████████████████████████████████████░░░░░░░░░░░░░░░] 72% (v1.1: 29/40 plans complete)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [███████████████████████
 |-------|-------|-------|----------|
 | 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
 | 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
-| 10. Annotation Editing | — | — | — |
+| 10. Annotation Editing | 1/3 | 3 min | 3.0 min |
 | 11. Error Triage | — | — | — |
 | 12. Interactive Viz & Discovery | — | — | — |
 | 13. Keyboard Shortcuts | — | — | — |
@@ -75,6 +75,9 @@ Recent decisions affecting current work:
 - [09-02]: POST SSE streaming via fetch + ReadableStream (not EventSource, which is GET-only)
 - [09-02]: FolderScanner refactored to accept StorageBackend for GCS support
 - [09-02]: Split-prefixed IDs for collision avoidance in multi-split import
+- [10-01]: get_cursor DI for annotation router (auto-close cursor)
+- [10-01]: source='ground_truth' enforced in SQL WHERE clauses for PUT/DELETE safety
+- [10-01]: Dataset counts refreshed via subquery UPDATE (no race conditions)
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 9 complete, verified
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
