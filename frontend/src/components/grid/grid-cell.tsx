@@ -40,9 +40,11 @@ interface GridCellProps {
   datasetId: string;
   /** Annotations for this sample (fetched at grid level, not per-cell). */
   annotations: Annotation[];
+  /** Whether this cell has keyboard focus (blue ring indicator). */
+  isFocused?: boolean;
 }
 
-export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
+export function GridCell({ sample, datasetId, annotations, isFocused }: GridCellProps) {
   const openDetailModal = useUIStore((s) => s.openDetailModal);
   const isSelecting = useFilterStore((s) => s.isSelecting);
   const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
@@ -70,7 +72,7 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
     <button
       onClick={handleClick}
       className={`group relative flex flex-col overflow-hidden rounded bg-zinc-100 transition-shadow hover:ring-2 hover:ring-blue-500 dark:bg-zinc-800 ${
-        isSelected
+        isSelected || isFocused
           ? "ring-2 ring-blue-500"
           : ""
       } ${isHighlightMode && !hasTriageTag ? "opacity-20" : ""}`}
