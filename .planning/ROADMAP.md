@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 MVP - Phases 1-7 (shipped 2026-02-12)
-- **v1.1 Deployment, Workflow & Competitive Parity** - Phases 8-13 (in progress)
+- **v1.1 Deployment, Workflow & Competitive Parity** - Phases 8-13 (shipped 2026-02-13)
 
 ## Phases
 
@@ -40,7 +40,7 @@
 
 </details>
 
-### v1.1 Deployment, Workflow & Competitive Parity (In Progress)
+### v1.1 Deployment, Workflow & Competitive Parity (Shipped 2026-02-13)
 
 **Milestone Goal:** Make DataVisor deployable (Docker + GCP), secure for cloud access, and close key workflow gaps vs FiftyOne/Encord -- smart ingestion, annotation editing, error triage, interactive visualizations, and keyboard-driven navigation.
 
@@ -55,7 +55,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
 - [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
 - [x] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
-- [ ] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
+- [x] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
 
 ## Phase Details
 
@@ -153,8 +153,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 13-01-PLAN.md -- Foundation (react-hotkeys-hook, shortcut registry, ui-store) + grid keyboard navigation
-- [ ] 13-02-PLAN.md -- Modal shortcuts (navigation, triage, editing, undo) + help overlay
+- [x] 13-01-PLAN.md -- Foundation (react-hotkeys-hook, shortcut registry, ui-store) + grid keyboard navigation
+- [x] 13-02-PLAN.md -- Modal shortcuts (navigation, triage, editing, undo) + help overlay
 
 ## Progress
 
@@ -176,4 +176,4 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13
 | 10. Annotation Editing | v1.1 | 3/3 | Complete | 2026-02-12 |
 | 11. Error Triage | v1.1 | 2/2 | Complete | 2026-02-12 |
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
-| 13. Keyboard Shortcuts | v1.1 | 0/2 | Not started | - |
+| 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |

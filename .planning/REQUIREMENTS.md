@@ -43,10 +43,10 @@ Requirements for Deployment, Workflow & Competitive Parity milestone.
 
 ### UX
 
-- [ ] **UX-01**: Keyboard shortcuts for sample navigation (arrows, j/k, Enter, Escape)
-- [ ] **UX-02**: Keyboard shortcuts for error triage (number keys for quick-tag, h for highlight toggle)
-- [ ] **UX-03**: Keyboard shortcuts for annotation editing (Delete, Ctrl+Z, e for edit mode)
-- [ ] **UX-04**: Shortcut help overlay triggered by ? key
+- [x] **UX-01**: Keyboard shortcuts for sample navigation (arrows, j/k, Enter, Escape)
+- [x] **UX-02**: Keyboard shortcuts for error triage (number keys for quick-tag, h for highlight toggle)
+- [x] **UX-03**: Keyboard shortcuts for annotation editing (Delete, Ctrl+Z, e for edit mode)
+- [x] **UX-04**: Shortcut help overlay triggered by ? key
 
 ## v1.2 Requirements
 
@@ -112,10 +112,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRIAGE-04 | Phase 12 | Complete |
 | TRIAGE-05 | Phase 12 | Complete |
 | TRIAGE-06 | Phase 12 | Complete |
-| UX-01 | Phase 13 | Pending |
-| UX-02 | Phase 13 | Pending |
-| UX-03 | Phase 13 | Pending |
-| UX-04 | Phase 13 | Pending |
+| UX-01 | Phase 13 | Complete |
+| UX-02 | Phase 13 | Complete |
+| UX-03 | Phase 13 | Complete |
+| UX-04 | Phase 13 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 26 total
@@ -124,4 +124,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-13 — Phase 12 requirements marked Complete*
+*Last updated: 2026-02-13 — Phase 13 requirements marked Complete (v1.1 milestone complete)*
