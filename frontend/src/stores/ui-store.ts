@@ -30,6 +30,8 @@ interface UIState {
   selectedAnnotationId: string | null;
   /** Whether draw-new-box mode is active. */
   isDrawMode: boolean;
+  /** Whether highlight mode is active (dims non-triage-tagged cells). */
+  isHighlightMode: boolean;
 
   /** Open the detail modal for a given sample. */
   openDetailModal: (sampleId: string) => void;
@@ -49,6 +51,8 @@ interface UIState {
   setSelectedAnnotationId: (id: string | null) => void;
   /** Toggle draw-new-box mode. Turning ON deselects any selected annotation. */
   toggleDrawMode: () => void;
+  /** Toggle highlight mode for triage visualization. */
+  toggleHighlightMode: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -60,6 +64,7 @@ export const useUIStore = create<UIState>((set) => ({
   isEditMode: false,
   selectedAnnotationId: null,
   isDrawMode: false,
+  isHighlightMode: false,
 
   openDetailModal: (sampleId) =>
     set({ selectedSampleId: sampleId, isDetailModalOpen: true }),
@@ -106,4 +111,6 @@ export const useUIStore = create<UIState>((set) => ({
       // When turning on draw mode, deselect any selected annotation
       ...(!state.isDrawMode ? { selectedAnnotationId: null } : {}),
     })),
+  toggleHighlightMode: () =>
+    set((state) => ({ isHighlightMode: !state.isHighlightMode })),
 }));

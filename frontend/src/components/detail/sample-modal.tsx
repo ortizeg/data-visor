@@ -27,6 +27,7 @@ import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
+import { TriageTagButtons } from "@/components/triage/triage-tag-buttons";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
 import type { Sample } from "@/types/sample";
@@ -71,6 +72,8 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   const toggleEditMode = useUIStore((s) => s.toggleEditMode);
   const isDrawMode = useUIStore((s) => s.isDrawMode);
   const toggleDrawMode = useUIStore((s) => s.toggleDrawMode);
+  const isHighlightMode = useUIStore((s) => s.isHighlightMode);
+  const toggleHighlightMode = useUIStore((s) => s.toggleHighlightMode);
 
   // Find the selected sample from the flattened samples array
   const sample = selectedSampleId
@@ -239,13 +242,33 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                 {isDrawMode ? "Cancel Draw" : "Draw New Box"}
               </button>
             )}
-            {isEditMode && (
-              <span className="ml-auto text-xs text-zinc-400">
-                {isDrawMode
-                  ? "Click and drag to draw a new box"
-                  : "Click a box to select, drag to move, handles to resize"}
-              </span>
-            )}
+            {/* Triage tag buttons (always visible, not gated by edit mode) */}
+            <TriageTagButtons
+              datasetId={datasetId}
+              sampleId={sample.id}
+              currentTags={sample.tags ?? []}
+            />
+
+            {/* Spacer + highlight toggle + edit hint pushed right */}
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={toggleHighlightMode}
+                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isHighlightMode
+                    ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }`}
+              >
+                Highlight
+              </button>
+              {isEditMode && (
+                <span className="text-xs text-zinc-400">
+                  {isDrawMode
+                    ? "Click and drag to draw a new box"
+                    : "Click a box to select, drag to move, handles to resize"}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Metadata and annotations section */}

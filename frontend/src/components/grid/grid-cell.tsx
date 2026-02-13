@@ -19,6 +19,22 @@ import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
 import { AnnotationOverlay } from "./annotation-overlay";
 
+/** Color map for triage tag badges; non-triage tags use default blue. */
+function triageTagStyle(tag: string): string {
+  switch (tag) {
+    case "triage:tp":
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    case "triage:fp":
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    case "triage:fn":
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    case "triage:mistake":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
+    default:
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+  }
+}
+
 interface GridCellProps {
   sample: Sample;
   datasetId: string;
@@ -34,8 +50,11 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
     (s) => s.toggleSampleSelection,
   );
 
+  const isHighlightMode = useUIStore((s) => s.isHighlightMode);
+
   const isSelected = selectedSampleIds.has(sample.id);
   const tags = sample.tags ?? [];
+  const hasTriageTag = tags.some((t) => t.startsWith("triage:"));
   const visibleTags = tags.slice(0, 3);
   const extraTagCount = tags.length - 3;
 
@@ -54,7 +73,7 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
         isSelected
           ? "ring-2 ring-blue-500"
           : ""
-      }`}
+      } ${isHighlightMode && !hasTriageTag ? "opacity-20" : ""}`}
     >
       <div className="relative aspect-square overflow-hidden">
         <img
@@ -106,9 +125,9 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
           {visibleTags.map((tag) => (
             <span
               key={tag}
-              className="rounded bg-blue-100 px-1 py-0.5 text-[10px] text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+              className={`rounded px-1 py-0.5 text-[10px] ${triageTagStyle(tag)}`}
             >
-              {tag}
+              {tag.startsWith("triage:") ? tag.slice(7).toUpperCase() : tag}
             </span>
           ))}
           {extraTagCount > 0 && (
