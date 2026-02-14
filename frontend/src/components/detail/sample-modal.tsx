@@ -26,17 +26,15 @@ import {
 } from "@/hooks/use-annotations";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
-import { useSetTriageTag, useRemoveTriageTag } from "@/hooks/use-triage";
 import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
-import { TriageTagButtons } from "@/components/triage/triage-tag-buttons";
+import { TriageFilterButtons } from "@/components/triage/triage-tag-buttons";
 import { TriageOverlay } from "./triage-overlay";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
 import { useAnnotationTriage, useSetAnnotationTriage } from "@/hooks/use-annotation-triage";
 import { nextTriageLabel } from "@/types/annotation-triage";
-import { TRIAGE_OPTIONS } from "@/types/triage";
 import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
 
@@ -86,15 +84,12 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   const toggleEditMode = useUIStore((s) => s.toggleEditMode);
   const isDrawMode = useUIStore((s) => s.isDrawMode);
   const toggleDrawMode = useUIStore((s) => s.toggleDrawMode);
-  const isHighlightMode = useUIStore((s) => s.isHighlightMode);
-  const toggleHighlightMode = useUIStore((s) => s.toggleHighlightMode);
   const selectedAnnotationId = useUIStore((s) => s.selectedAnnotationId);
   const setSelectedAnnotationId = useUIStore((s) => s.setSelectedAnnotationId);
   const openDetailModal = useUIStore((s) => s.openDetailModal);
 
-  // Triage mutation hooks (at component level for keyboard shortcuts)
-  const setTriageTag = useSetTriageTag();
-  const removeTriageTag = useRemoveTriageTag();
+  // Annotation triage filter state
+  const [triageFilter, setTriageFilter] = useState<string | null>(null);
 
   // Find the selected sample from the flattened samples array
   const sample = selectedSampleId
@@ -161,9 +156,10 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
     showSimilar,
   );
 
-  // Reset showSimilar when the selected sample changes
+  // Reset showSimilar and triage filter when the selected sample changes
   useEffect(() => {
     setShowSimilar(false);
+    setTriageFilter(null);
   }, [selectedSampleId]);
 
   // -----------------------------------------------------------------------
@@ -196,38 +192,15 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
     [selectedSampleId, samples],
   );
 
-  // Triage number keys 1-4: set/toggle triage tag
+  // Triage filter keys 1-4: toggle annotation filter
   useHotkeys(
     "1, 2, 3, 4",
     (e) => {
-      if (!sample) return;
-      const idx = parseInt(e.key, 10) - 1;
-      const opt = TRIAGE_OPTIONS[idx];
-      if (!opt) return;
-      const activeTag =
-        sample.tags?.find((t) => t.startsWith("triage:")) ?? null;
-      if (activeTag === opt.tag) {
-        removeTriageTag.mutate({
-          dataset_id: datasetId,
-          sample_id: sample.id,
-        });
-      } else {
-        setTriageTag.mutate({
-          dataset_id: datasetId,
-          sample_id: sample.id,
-          tag: opt.tag,
-        });
-      }
+      const labels = ["tp", "fp", "fn", "mistake"];
+      const label = labels[parseInt(e.key, 10) - 1];
+      setTriageFilter((prev) => (prev === label ? null : label));
     },
     { enabled: isDetailModalOpen && !isEditMode, preventDefault: true },
-    [sample, datasetId],
-  );
-
-  // Highlight toggle: h
-  useHotkeys(
-    "h",
-    () => toggleHighlightMode(),
-    { enabled: isDetailModalOpen },
   );
 
   // Edit mode toggle: e
@@ -392,11 +365,20 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                   className="h-auto w-full"
                   decoding="async"
                 />
-                {annotations && annotations.length > 0 && (
-                  triageMap && Object.keys(triageMap).length > 0 ? (
+                {annotations && annotations.length > 0 && (() => {
+                  const filteredTriageMap = triageFilter && triageMap
+                    ? Object.fromEntries(
+                        Object.entries(triageMap).filter(([, v]) => v.label === triageFilter)
+                      )
+                    : triageMap;
+                  // If a filter is active but no annotations match, show nothing
+                  if (triageFilter && (!filteredTriageMap || Object.keys(filteredTriageMap).length === 0)) {
+                    return null;
+                  }
+                  return filteredTriageMap && Object.keys(filteredTriageMap).length > 0 ? (
                     <TriageOverlay
                       annotations={annotations}
-                      triageMap={triageMap}
+                      triageMap={filteredTriageMap}
                       imageWidth={sample.width}
                       imageHeight={sample.height}
                       onClickAnnotation={handleTriageClick}
@@ -407,8 +389,8 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                       imageWidth={sample.width}
                       imageHeight={sample.height}
                     />
-                  )
-                )}
+                  );
+                })()}
               </>
             )}
           </div>
@@ -437,33 +419,20 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                 {isDrawMode ? "Cancel Draw" : "Draw New Box"}
               </button>
             )}
-            {/* Triage tag buttons (always visible, not gated by edit mode) */}
-            <TriageTagButtons
-              datasetId={datasetId}
-              sampleId={sample.id}
-              currentTags={sample.tags ?? []}
+            {/* Triage filter buttons (always visible, not gated by edit mode) */}
+            <TriageFilterButtons
+              activeFilter={triageFilter}
+              onFilterChange={setTriageFilter}
             />
 
-            {/* Spacer + highlight toggle + edit hint pushed right */}
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={toggleHighlightMode}
-                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isHighlightMode
-                    ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                }`}
-              >
-                Highlight
-              </button>
-              {isEditMode && (
-                <span className="text-xs text-zinc-400">
-                  {isDrawMode
-                    ? "Click and drag to draw a new box"
-                    : "Click a box to select, drag to move, handles to resize"}
-                </span>
-              )}
-            </div>
+            {/* Spacer + edit hint pushed right */}
+            {isEditMode && (
+              <span className="ml-auto text-xs text-zinc-400">
+                {isDrawMode
+                  ? "Click and drag to draw a new box"
+                  : "Click a box to select, drag to move, handles to resize"}
+              </span>
+            )}
           </div>
 
           {/* Metadata and annotations section */}

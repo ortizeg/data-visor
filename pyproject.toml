@@ -24,6 +24,8 @@ dependencies = [
     "torch>=2.10.0",
     "transformers>=5.1.0",
     "uvicorn[standard]>=0.40.0",
+    "pyvips>=3.1.1",
+    "google-genai>=1.63.0",
 ]
 
 [dependency-groups]

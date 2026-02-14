@@ -31,7 +31,7 @@ def get_annotation_triage(
     sample_id: str,
     dataset_id: str = Query(..., description="Dataset ID"),
     source: str = Query("prediction", description="Prediction source name"),
-    iou_threshold: float = Query(0.5, ge=0.1, le=1.0),
+    iou_threshold: float = Query(0.45, ge=0.1, le=1.0),
     conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
     db: DuckDBRepo = Depends(get_db),
 ) -> AnnotationTriageResponse:

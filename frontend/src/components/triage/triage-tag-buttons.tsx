@@ -1,64 +1,73 @@
 "use client";
 
 /**
- * Quick-tag buttons for error triage in the detail modal.
+ * Annotation triage filter buttons for the detail modal.
  *
- * Renders a row of TP / FP / FN / Mistake buttons that set or remove
- * triage tags on the current sample. Clicking the already-active tag
- * removes it; clicking a different tag replaces atomically.
+ * Renders a row of All / TP / FP / FN / Mistake buttons that filter
+ * which triage-classified annotation boxes are visible in the overlay.
+ * Clicking the already-active filter clears it (shows all).
  */
 
-import { TRIAGE_OPTIONS } from "@/types/triage";
-import { useSetTriageTag, useRemoveTriageTag } from "@/hooks/use-triage";
+import { ANNOTATION_TRIAGE_COLORS } from "@/types/annotation-triage";
 
-interface TriageTagButtonsProps {
-  datasetId: string;
-  sampleId: string;
-  /** The sample's current tags array (may include non-triage tags). */
-  currentTags: string[];
+const FILTER_OPTIONS = [
+  { label: "All", value: null },
+  { label: "TP", value: "tp" },
+  { label: "FP", value: "fp" },
+  { label: "FN", value: "fn" },
+  { label: "Mistake", value: "mistake" },
+] as const;
+
+interface TriageFilterButtonsProps {
+  activeFilter: string | null;
+  onFilterChange: (label: string | null) => void;
 }
 
-export function TriageTagButtons({
-  datasetId,
-  sampleId,
-  currentTags,
-}: TriageTagButtonsProps) {
-  const setTriageTag = useSetTriageTag();
-  const removeTriageTag = useRemoveTriageTag();
-
-  const activeTriageTag =
-    currentTags.find((t) => t.startsWith("triage:")) ?? null;
-
-  function handleClick(tag: string) {
-    if (tag === activeTriageTag) {
-      // Toggle off -- remove the triage tag
-      removeTriageTag.mutate({ dataset_id: datasetId, sample_id: sampleId });
-    } else {
-      // Set or replace the triage tag
-      setTriageTag.mutate({
-        dataset_id: datasetId,
-        sample_id: sampleId,
-        tag,
-      });
-    }
-  }
-
+export function TriageFilterButtons({
+  activeFilter,
+  onFilterChange,
+}: TriageFilterButtonsProps) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-zinc-500">Triage:</span>
+      <span className="text-xs font-medium text-zinc-500">Filter:</span>
       <div className="flex items-center gap-1">
-        {TRIAGE_OPTIONS.map((opt) => {
-          const isActive = activeTriageTag === opt.tag;
+        {FILTER_OPTIONS.map((opt) => {
+          const isActive =
+            opt.value === null ? activeFilter === null : activeFilter === opt.value;
+          const color = opt.value ? ANNOTATION_TRIAGE_COLORS[opt.value] : undefined;
           return (
             <button
-              key={opt.tag}
-              onClick={() => handleClick(opt.tag)}
-              className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+              key={opt.label}
+              onClick={() =>
+                onFilterChange(
+                  opt.value === null
+                    ? null
+                    : activeFilter === opt.value
+                      ? null
+                      : opt.value,
+                )
+              }
+              className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                 isActive
-                  ? `${opt.colorClass} text-white`
+                  ? "text-white"
                   : "border border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
               }`}
+              style={
+                isActive && color
+                  ? { backgroundColor: color }
+                  : isActive
+                    ? { backgroundColor: "#71717a" }
+                    : undefined
+              }
             >
+              {color && (
+                <span
+                  className={isActive ? "opacity-70" : ""}
+                  style={{ color }}
+                >
+                  ●
+                </span>
+              )}
               {opt.label}
             </button>
           );

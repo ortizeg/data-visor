@@ -64,16 +64,18 @@ def analyze_errors(
             conf_threshold=request.conf_threshold,
         )
     except ValueError as exc:
+        # Auth / config errors (missing API key)
         raise HTTPException(
             status_code=503,
             detail=(
                 f"{exc}. Configure DATAVISOR_AGENT_MODEL and the "
-                f"corresponding API key (e.g., OPENAI_API_KEY)."
+                f"corresponding API key (e.g., GEMINI_API_KEY)."
             ),
         ) from exc
     except HTTPException:
         raise
     except Exception as exc:
+        # Runtime errors (rate limits, model errors, etc.)
         logger.exception("Agent analysis failed for dataset %s", dataset_id)
         raise HTTPException(
             status_code=500,

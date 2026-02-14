@@ -5,7 +5,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+# Load .env into process environment so third-party libs (google-genai, etc.)
+# can read their API keys (e.g. GEMINI_API_KEY).
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings

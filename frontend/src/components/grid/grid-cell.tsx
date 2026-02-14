@@ -19,17 +19,12 @@ import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
 import { AnnotationOverlay } from "./annotation-overlay";
 
-/** Color map for triage tag badges; non-triage tags use default blue. */
-function triageTagStyle(tag: string): string {
+/** Old sample-level triage tags that are no longer displayed. */
+const OBSOLETE_TRIAGE_TAGS = new Set(["triage:tp", "triage:fp", "triage:fn", "triage:mistake"]);
+
+/** Color map for tag badges. */
+function tagStyle(tag: string): string {
   switch (tag) {
-    case "triage:tp":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "triage:fp":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    case "triage:fn":
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-    case "triage:mistake":
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
     case "triage:annotated":
       return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
     default:
@@ -57,7 +52,8 @@ export function GridCell({ sample, datasetId, annotations, isFocused }: GridCell
   const isHighlightMode = useUIStore((s) => s.isHighlightMode);
 
   const isSelected = selectedSampleIds.has(sample.id);
-  const tags = sample.tags ?? [];
+  const allTags = sample.tags ?? [];
+  const tags = allTags.filter((t) => !OBSOLETE_TRIAGE_TAGS.has(t));
   const hasTriageTag = tags.some((t) => t.startsWith("triage:"));
   const visibleTags = tags.slice(0, 3);
   const extraTagCount = tags.length - 3;
@@ -129,7 +125,7 @@ export function GridCell({ sample, datasetId, annotations, isFocused }: GridCell
           {visibleTags.map((tag) => (
             <span
               key={tag}
-              className={`rounded px-1 py-0.5 text-[10px] ${triageTagStyle(tag)}`}
+              className={`rounded px-1 py-0.5 text-[10px] ${tagStyle(tag)}`}
             >
               {tag.startsWith("triage:") ? tag.slice(7).toUpperCase() : tag}
             </span>

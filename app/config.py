@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     gcs_credentials_path: str | None = None
-    agent_model: str = "openai:gpt-4o"
+    agent_model: str = "google-gla:gemini-2.0-flash"
     vlm_device: str = _detect_device()
     behind_proxy: bool = False  # Set DATAVISOR_BEHIND_PROXY=true in Docker
 

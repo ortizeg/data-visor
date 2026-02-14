@@ -20,7 +20,7 @@ def match_sample_annotations(
     dataset_id: str,
     sample_id: str,
     source: str,
-    iou_threshold: float = 0.5,
+    iou_threshold: float = 0.45,
     conf_threshold: float = 0.25,
 ) -> dict[str, dict]:
     """Compute per-annotation TP/FP/FN classifications for a single sample.
