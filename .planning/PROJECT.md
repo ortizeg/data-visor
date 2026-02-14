@@ -8,80 +8,45 @@ DataVisor is an open-source dataset introspection tool for computer vision — a
 
 A single tool that replaces scattered one-off scripts: load any CV dataset, visually browse with annotation overlays, compare ground truth against predictions, cluster via embeddings, and surface mistakes — all in one workflow.
 
+## Current State
+
+**Shipped:** v1.1 (2026-02-13)
+**Codebase:** ~32K LOC (16,256 Python + 15,924 TypeScript) across 14 phases
+**Architecture:** FastAPI + DuckDB + Qdrant (backend), Next.js + Tailwind + deck.gl + Recharts (frontend), Pydantic AI (agents), Moondream2 (VLM)
+
 ## Requirements
 
 ### Validated
 
-- ✓ Multi-format ingestion (COCO) with streaming parser architecture — v1.0
-- ✓ DuckDB-backed metadata storage for fast analytical queries over 100K+ samples — v1.0
-- ✓ Virtualized infinite-scroll grid view with overlaid bounding box annotations — v1.0
-- ✓ Ground Truth vs Model Predictions comparison toggle (solid vs dashed lines) — v1.0
-- ✓ Deterministic class-to-color hashing (same class = same color across sessions) — v1.0
-- ✓ t-SNE embedding generation from images (DINOv2-base) — v1.0
-- ✓ deck.gl-powered 2D embedding scatterplot with zoom, pan, and lasso selection — v1.0
-- ✓ Lasso-to-grid filtering (select cluster points → filter grid to those images) — v1.0
-- ✓ Hover thumbnails on embedding map points — v1.0
-- ✓ Qdrant vector storage for embedding similarity search — v1.0
-- ✓ Error categorization: Hard False Positives, Label Errors, False Negatives — v1.0
-- ✓ Pydantic AI agent that monitors error distribution and recommends actions — v1.0
-- ✓ Pattern detection (e.g., "90% of False Negatives occur in low-light images") — v1.0
-- ✓ Import pre-computed predictions (JSON) — v1.0
-- ✓ BasePlugin class for Python extensibility — v1.0
-- ✓ Local disk and GCS image source support — v1.0
-- ✓ Dynamic metadata filtering (sidebar filters on any metadata field) — v1.0
-- ✓ VLM auto-tagging (Moondream2) for scene attribute tags — v1.0
-- ✓ Search by filename and sort by metadata — v1.0
-- ✓ Save and load filter configurations (saved views) — v1.0
-- ✓ Add/remove tags (individual + bulk) — v1.0
-- ✓ Sample detail modal with full-resolution image — v1.0
-- ✓ Dataset statistics dashboard (class distribution, annotation counts) — v1.0
-
-### Active
-
-- [ ] Dockerized deployment with single-user auth for secure cloud VM access
-- [ ] GCP deployment script + local run script with setup instructions
-- [ ] Smart dataset ingestion UI (point at folder → auto-detect train/val/test splits → import)
-- [ ] Annotation editing in the UI (move, resize, delete bounding boxes — depth TBD)
-- [ ] Error triage workflow (tag FP/TP/FN/mistake, highlight errors, dim non-errors)
-- [ ] Smart "worst images" ranking (combined score: errors + confidence + uniqueness)
-- [ ] Keyboard shortcuts for navigation
-- [ ] Competitive feature parity with FiftyOne/Encord (gaps TBD after research)
+- Streaming COCO ingestion with ijson at 100K+ scale, local + GCS sources — v1.0
+- DuckDB metadata storage with fast analytical queries — v1.0
+- Virtualized grid with SVG annotation overlays, deterministic color hashing — v1.0
+- GT vs Predictions comparison toggle — v1.0
+- t-SNE embeddings with deck.gl scatter plot, lasso-to-grid filtering — v1.0
+- Error categorization (TP/FP/FN/Label Error) + Qdrant similarity search — v1.0
+- Pydantic AI agent for error patterns + Moondream2 VLM auto-tagging — v1.0
+- Metadata filtering, search, saved views, bulk tagging — v1.0
+- Docker 3-service stack with Caddy auth, GCP deployment scripts — v1.1
+- Smart ingestion UI with auto-detection of COCO layouts and multi-split support — v1.1
+- Annotation editing via react-konva (move, resize, draw, delete) — v1.1
+- Error triage: sample tagging, per-annotation TP/FP/FN via IoU, worst-images ranking, highlight mode — v1.1
+- Interactive discovery: confusion matrix, near-duplicates, histogram filtering, find-similar — v1.1
+- Keyboard shortcuts: 16 shortcuts across grid, modal, triage, editing — v1.1
 
 ### Out of Scope
 
-- Multi-user collaboration — personal tool, single-user auth only for VM security
-- Video annotation support — image-only for now
-- Training pipeline integration — DataVisor inspects data, doesn't train models
+- Multi-user collaboration — personal tool, single-user auth only
+- Video annotation support — image-only
+- Training pipeline integration — DataVisor inspects data, doesn't train
 - Mobile/tablet interface — desktop browser only
-- Real-time streaming inference — batch-oriented analysis
-- Full annotation editor (draw new boxes, complex labeling workflows) — quick corrections only, not CVAT replacement
-
-## Current Milestone: v1.1 Deployment, Workflow & Competitive Parity
-
-**Goal:** Make DataVisor deployable (Docker + GCP), secure for cloud access, and close key workflow gaps vs FiftyOne/Encord — smart ingestion, error triage, annotation corrections, and keyboard-driven navigation.
-
-**Target features:**
-- Dockerized project with single-user auth (basic auth for cloud VM security)
-- GCP deployment script + local run script
-- Smart dataset ingestion UI (auto-detect folder structure, train/val/test splits)
-- Annotation management (organize + quick edit: move/resize/delete bboxes)
-- Error triage & data curation workflow (tag, highlight, rank worst images)
-- Keyboard shortcuts for navigation
-- Competitive gaps from FiftyOne/Encord analysis
-
-## Context
-
-Shipped v1.0 with 12,720 LOC (6,950 Python + 5,770 TypeScript) across 7 phases and 21 plans.
-Tech stack: FastAPI + DuckDB + Qdrant (backend), Next.js + Tailwind + deck.gl + Recharts (frontend), Pydantic AI (agents), Moondream2 (VLM).
-59 backend tests passing. TypeScript compiles with 0 errors.
-Architecture: 3 Zustand stores, FastAPI DI, source discriminator for GT/prediction separation, 4 SSE progress streams, lazy model loading.
+- Full annotation editor (polygons, segmentation) — bounding box only
 
 ## Constraints
 
 - **Tech Stack**: FastAPI + DuckDB + Qdrant (backend), Next.js + Tailwind + deck.gl (frontend), Pydantic AI (agents) — established
 - **Performance**: Must handle 100K+ images without UI lag; DuckDB for metadata queries, deck.gl for WebGL rendering, virtualized scrolling
 - **Storage**: Supports both local filesystem and GCS bucket sources
-- **GPU**: VLM inference (Moondream2) supports MPS/CUDA/CPU auto-detection; DINOv2 embeddings likewise
+- **GPU**: VLM inference (Moondream2) supports MPS/CUDA/CPU auto-detection; SigLIP embeddings likewise
 - **Extensibility**: BasePlugin architecture exists; hooks system ready for expansion
 - **Python**: 3.14+ (numba/umap-learn incompatible; using scikit-learn t-SNE)
 
@@ -89,16 +54,18 @@ Architecture: 3 Zustand stores, FastAPI DI, source discriminator for GT/predicti
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| DuckDB over SQLite | Analytical queries on metadata at scale; columnar storage for filtering 100K+ rows | ✓ Good |
-| Qdrant over FAISS | Payload filtering support; Rust-based performance; local deployment | ✓ Good |
-| deck.gl for embedding viz | WebGL-powered; handles millions of points; lasso/interaction built-in | ✓ Good |
-| Pydantic AI for agents | Type-safe agent definitions; native FastAPI/Pydantic integration | ✓ Good |
-| Deterministic color hashing | Class names hash to consistent colors across sessions; no manual palette | ✓ Good |
-| Plugin hooks over monolith | Ingestion/UI/transformation hooks enable domain-specific extensions without forking | ✓ Good |
-| Source discriminator column | Clean GT/prediction separation in annotations table via source field | ✓ Good |
-| Lazy model loading | VLM and Qdrant loaded on-demand, not at startup, to avoid memory pressure | ✓ Good |
-| t-SNE over UMAP | umap-learn blocked by Python 3.14 numba incompatibility; t-SNE via scikit-learn | ⚠️ Revisit when numba supports 3.14 |
-| Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x compat | ✓ Good (fragile — monitor updates) |
+| DuckDB over SQLite | Analytical queries on metadata at scale; columnar storage for filtering 100K+ rows | Good |
+| Qdrant over FAISS | Payload filtering support; Rust-based performance; local deployment | Good |
+| deck.gl for embedding viz | WebGL-powered; handles millions of points; lasso/interaction built-in | Good |
+| Pydantic AI for agents | Type-safe agent definitions; native FastAPI/Pydantic integration | Good |
+| Deterministic color hashing | Class names hash to consistent colors across sessions; no manual palette | Good |
+| Source discriminator column | Clean GT/prediction separation in annotations table via source field | Good |
+| Caddy over nginx | Auto-HTTPS, built-in basic_auth, simpler config | Good |
+| react-konva for editing | Canvas-based editing in modal; SVG stays for grid overlays | Good |
+| Gemini 2.0 Flash for agent | Fast, cheap, good structured output; replaced GPT-4o | Good |
+| Pre-computed agent prompt | All data in prompt, no tool calls; avoids Pydantic AI request_limit issues | Good |
+| t-SNE over UMAP | umap-learn blocked by Python 3.14 numba incompatibility | Revisit when numba supports 3.14 |
+| Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x | Fragile — monitor updates |
 
 ---
-*Last updated: 2026-02-12 after v1.1 scope redefinition*
+*Last updated: 2026-02-13 after v1.1 milestone completion*

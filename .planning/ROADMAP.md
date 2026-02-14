@@ -2,8 +2,8 @@
 
 ## Milestones
 
-- v1.0 MVP - Phases 1-7 (shipped 2026-02-12)
-- **v1.1 Deployment, Workflow & Competitive Parity** - Phases 8-14
+- v1.0 MVP - Phases 1-7 (shipped 2026-02-12) — [archive](.planning/milestones/v1.0-ROADMAP.md)
+- v1.1 Deployment, Workflow & Competitive Parity - Phases 8-14 (shipped 2026-02-13) — [archive](.planning/milestones/v1.1-ROADMAP.md)
 
 ## Phases
 
@@ -40,143 +40,40 @@
 
 </details>
 
-### v1.1 Deployment, Workflow & Competitive Parity
-
-**Milestone Goal:** Make DataVisor deployable (Docker + GCP), secure for cloud access, and close key workflow gaps vs FiftyOne/Encord -- smart ingestion, annotation editing, error triage, interactive visualizations, and keyboard-driven navigation.
-
-**Phase Numbering:**
-- Integer phases (8, 9, 10, ...): Planned milestone work
-- Decimal phases (9.1, 9.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
-
-- [x] **Phase 8: Docker Deployment & Auth** - Dockerized 3-service stack with Caddy reverse proxy, basic auth, and deployment scripts
-- [x] **Phase 9: Smart Ingestion** - No-code dataset import from folder path with auto-detection and confirmation
-- [x] **Phase 10: Annotation Editing** - Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
-- [x] **Phase 11: Error Triage** - Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
-- [x] **Phase 12: Interactive Viz & Discovery** - Confusion matrix, near-duplicates, interactive histograms, and find-similar
-- [x] **Phase 13: Keyboard Shortcuts** - Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
-- [x] **Phase 14: Per-Annotation Triage** - Auto-discover TP/FP/FN per bounding box via IoU overlap, color-coded boxes in detail modal, click to override classifications
-
-## Phase Details
+<details>
+<summary>v1.1 Deployment, Workflow & Competitive Parity (Phases 8-14) - SHIPPED 2026-02-13</summary>
 
 ### Phase 8: Docker Deployment & Auth
-**Goal**: DataVisor runs as a deployable Docker stack with single-user auth, accessible securely on a cloud VM or locally with a single command
-**Depends on**: Phase 7 (v1.0 complete)
-**Requirements**: DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, DEPLOY-05
-**Success Criteria** (what must be TRUE):
-  1. User can run `docker compose up` and access DataVisor at `http://localhost` with all features working (grid, embeddings, error analysis)
-  2. User is prompted for username/password before accessing any page or API endpoint, and unauthenticated requests are rejected
-  3. User can run a deployment script that provisions a GCP VM with persistent disk and starts DataVisor accessible at a public IP with HTTPS
-  4. User can follow deployment documentation to configure environment variables, deploy to GCP, and set up a custom domain
-  5. DuckDB data, Qdrant vectors, and thumbnail cache persist across container restarts without data loss
-**Plans**: 5 plans
-
-Plans:
-- [x] 08-01-PLAN.md -- Backend Dockerfile + config fixes (CORS, DuckDB CHECKPOINT)
-- [x] 08-02-PLAN.md -- Frontend Dockerfile + Caddyfile reverse proxy with auth
-- [x] 08-03-PLAN.md -- Docker Compose orchestration + .dockerignore + env config
-- [x] 08-04-PLAN.md -- Local run script + GCP deployment scripts
-- [x] 08-05-PLAN.md -- Deployment documentation + full stack verification
+**Goal**: Deployable Docker stack with single-user auth, accessible on cloud VM or locally
+**Plans**: 5 plans (complete)
 
 ### Phase 9: Smart Ingestion
-**Goal**: Users can import datasets from the UI by pointing at a folder, reviewing auto-detected structure, and confirming import -- no CLI or config files needed
-**Depends on**: Phase 8 (auth protects new endpoints)
-**Requirements**: INGEST-01, INGEST-02, INGEST-03, INGEST-04, INGEST-05
-**Success Criteria** (what must be TRUE):
-  1. User can enter a folder path in the UI and trigger a scan that returns detected dataset structure
-  2. Scanner correctly identifies COCO annotation files and image directories within the folder
-  3. Scanner detects train/val/test split subdirectories and presents them as separate importable splits
-  4. User sees the detected structure as a confirmation step and can approve or adjust before import begins
-  5. Import progress displays per-split status via real-time SSE updates until completion
-**Plans**: 2 plans
-
-Plans:
-- [x] 09-01-PLAN.md -- Backend FolderScanner service, scan/import API endpoints, split-aware ingestion pipeline
-- [x] 09-02-PLAN.md -- Frontend ingestion wizard (path input, scan results, import progress) + landing page link
+**Goal**: No-code dataset import from folder path with auto-detection and confirmation
+**Plans**: 2 plans (complete)
 
 ### Phase 10: Annotation Editing
-**Goal**: Users can make quick bounding box corrections directly in the sample detail modal without leaving DataVisor
-**Depends on**: Phase 8 (auth protects mutation endpoints)
-**Requirements**: ANNOT-01, ANNOT-02, ANNOT-03, ANNOT-04, ANNOT-05
-**Success Criteria** (what must be TRUE):
-  1. User can enter edit mode in the sample detail modal and drag a bounding box to a new position
-  2. User can grab resize handles on a bounding box and change its dimensions
-  3. User can delete a bounding box and the deletion persists after closing the modal
-  4. User can draw a new bounding box and assign it a class label
-  5. Only ground truth annotations show edit controls; prediction annotations remain read-only and non-interactive
-**Plans**: 3 plans
-
-Plans:
-- [x] 10-01-PLAN.md -- Backend annotation CRUD endpoints + frontend mutation hooks and types
-- [x] 10-02-PLAN.md -- Konva building blocks: coord-utils, EditableRect, DrawLayer, ClassPicker
-- [x] 10-03-PLAN.md -- AnnotationEditor composition, sample modal integration, annotation list delete
+**Goal**: Move, resize, delete, and draw bounding boxes via react-konva in sample detail modal
+**Plans**: 3 plans (complete)
 
 ### Phase 11: Error Triage
-**Goal**: Users can systematically review and tag errors with a focused triage workflow that persists decisions and surfaces the worst samples first
-**Depends on**: Phase 8 (extends v1.0 error analysis)
-**Requirements**: TRIAGE-01, TRIAGE-02, TRIAGE-03
-**Success Criteria** (what must be TRUE):
-  1. User can tag any sample or annotation as FP, TP, FN, or mistake, and the tag persists across page refreshes
-  2. User can activate highlight mode to dim non-error samples in the grid, making errors visually prominent
-  3. User can view a "worst images" ranking that surfaces samples with the highest combined error score (error count + confidence spread + uniqueness)
-**Plans**: 2 plans
-
-Plans:
-- [x] 11-01-PLAN.md -- Backend triage endpoints (set-triage-tag, worst-images scoring) + frontend hooks and types
-- [x] 11-02-PLAN.md -- Triage tag buttons in detail modal, highlight mode grid dimming, worst-images stats panel
+**Goal**: Tag errors, highlight mode, and worst-images ranking with DuckDB persistence
+**Plans**: 2 plans (complete)
 
 ### Phase 12: Interactive Viz & Discovery
-**Goal**: Users can explore dataset quality interactively -- clicking visualization elements filters the grid, finding similar samples and near-duplicates is one click away
-**Depends on**: Phase 11 (triage data informs confusion matrix), Phase 8 (auth protects endpoints)
-**Requirements**: ANNOT-06, TRIAGE-04, TRIAGE-05, TRIAGE-06
-**Success Criteria** (what must be TRUE):
-  1. User can click "Find Similar" on any sample to see nearest neighbors from Qdrant displayed in the grid
-  2. User can view a confusion matrix and click any cell to filter the grid to samples matching that GT/prediction pair
-  3. User can trigger near-duplicate detection and browse groups of visually similar images
-  4. User can click a bar in any statistics dashboard histogram to filter the grid to samples in that bucket
-**Plans**: 3 plans
-
-Plans:
-- [x] 12-01-PLAN.md -- Discovery filter foundation + Find Similar grid filtering + interactive histogram bars
-- [x] 12-02-PLAN.md -- Clickable confusion matrix cells with backend sample ID resolution
-- [x] 12-03-PLAN.md -- Near-duplicate detection via Qdrant pairwise search with SSE progress
+**Goal**: Confusion matrix, near-duplicates, interactive histograms, and find-similar
+**Plans**: 3 plans (complete)
 
 ### Phase 13: Keyboard Shortcuts
-**Goal**: Power users can navigate, triage, and edit entirely from the keyboard without reaching for the mouse
-**Depends on**: Phase 10 (annotation edit shortcuts), Phase 11 (triage shortcuts), Phase 12 (all UI features exist)
-**Requirements**: UX-01, UX-02, UX-03, UX-04
-**Success Criteria** (what must be TRUE):
-  1. User can navigate between samples in the grid and modal using arrow keys, j/k, Enter, and Escape
-  2. User can quick-tag errors during triage using number keys and toggle highlight mode with h
-  3. User can delete annotations and undo edits with keyboard shortcuts while in annotation edit mode
-  4. User can press ? to open a shortcut help overlay listing all available keyboard shortcuts
-**Plans**: 2 plans
-
-Plans:
-- [x] 13-01-PLAN.md -- Foundation (react-hotkeys-hook, shortcut registry, ui-store) + grid keyboard navigation
-- [x] 13-02-PLAN.md -- Modal shortcuts (navigation, triage, editing, undo) + help overlay
+**Goal**: Keyboard navigation, triage hotkeys, edit shortcuts, and help overlay
+**Plans**: 2 plans (complete)
 
 ### Phase 14: Per-Annotation Triage
-**Goal**: Users can see auto-discovered TP/FP/FN classifications per bounding box based on IoU overlap, with color-coded visualization in the detail modal and the ability to click individual annotations to override their classification
-**Depends on**: Phase 11 (extends triage system), Phase 6 (error analysis IoU matching)
-**Success Criteria** (what must be TRUE):
-  1. User opens a sample with GT and predictions and sees each bounding box color-coded as TP (green), FP (red), or FN (orange) based on automatic IoU matching
-  2. User can click an individual bounding box to override its auto-assigned classification (e.g. mark an auto-TP as a mistake)
-  3. Per-annotation triage decisions persist across page refreshes and are stored in DuckDB
-  4. Highlight mode dims samples that have no triage annotations, making triaged samples visually prominent
-**Plans**: 3 plans
+**Goal**: Auto-discover TP/FP/FN per bounding box via IoU overlap, color-coded boxes in detail modal, click to override classifications
+**Plans**: 3 plans (complete)
 
-Plans:
-- [x] 14-01-PLAN.md -- Backend schema, IoU matching service, and annotation triage API endpoints
-- [x] 14-02-PLAN.md -- Frontend types, hooks, and clickable TriageOverlay SVG component
-- [x] 14-03-PLAN.md -- Wire TriageOverlay into sample modal + highlight mode integration
+</details>
 
 ## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
-(Note: Phases 9, 10, 11 are independent after Phase 8. Execution is sequential but no inter-dependency exists between 9/10/11.)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
