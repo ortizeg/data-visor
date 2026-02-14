@@ -4,7 +4,7 @@
  * Embedding visualization panel managing the full workflow:
  *
  * 1. No embeddings: Empty state with "Generate Embeddings" button
- * 2. Embeddings but no reduction: "Run UMAP" button to trigger t-SNE
+ * 2. Embeddings but no reduction: "Run UMAP" button to trigger UMAP reduction
  * 3. Has reduction: Scatter plot with hover thumbnails
  *
  * Progress bars show real-time feedback during generation and reduction
@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { DeckGLRef } from "@deck.gl/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   useEmbeddingCoordinates,
@@ -34,6 +35,7 @@ interface EmbeddingPanelProps {
 }
 
 export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
+  const queryClient = useQueryClient();
   const { data: status, isLoading: statusLoading } =
     useEmbeddingStatus(datasetId);
 
@@ -99,25 +101,50 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
     });
   };
 
-  // Stop monitoring when generation/reduction reaches terminal status
+  // When generation completes, invalidate status query and wait for it to confirm
   useEffect(() => {
-    if (
-      isGenerating &&
-      (genProgress.status === "complete" || genProgress.status === "error")
-    ) {
+    if (!isGenerating) return;
+    if (genProgress.status === "error") {
+      setIsGenerating(false);
+      return;
+    }
+    if (genProgress.status === "complete") {
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-status", datasetId],
+      });
+    }
+  }, [isGenerating, genProgress.status, datasetId, queryClient]);
+
+  // Turn off generating flag once status confirms embeddings exist
+  useEffect(() => {
+    if (isGenerating && status?.has_embeddings) {
       setIsGenerating(false);
     }
-  }, [isGenerating, genProgress.status]);
+  }, [isGenerating, status?.has_embeddings]);
 
+  // When reduction completes, invalidate status + coordinates and wait for confirmation
   useEffect(() => {
-    if (
-      isReducing &&
-      (reduceProgress.status === "complete" ||
-        reduceProgress.status === "error")
-    ) {
+    if (!isReducing) return;
+    if (reduceProgress.status === "error") {
+      setIsReducing(false);
+      return;
+    }
+    if (reduceProgress.status === "complete") {
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-status", datasetId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["embedding-coordinates", datasetId],
+      });
+    }
+  }, [isReducing, reduceProgress.status, datasetId, queryClient]);
+
+  // Turn off reducing flag once status confirms reduction exists
+  useEffect(() => {
+    if (isReducing && status?.has_reduction) {
       setIsReducing(false);
     }
-  }, [isReducing, reduceProgress.status]);
+  }, [isReducing, status?.has_reduction]);
 
   // --- Loading state ---
   if (statusLoading) {
@@ -178,7 +205,7 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
             No Embeddings Yet
           </h3>
           <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            Generate image embeddings using DINOv2 to visualize how your
+            Generate image embeddings using SigLIP to visualize how your
             dataset clusters in embedding space.
           </p>
           <button
@@ -203,7 +230,7 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
           </h3>
           <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
             {status.embedding_count.toLocaleString()} embeddings generated
-            with {status.model_name ?? "DINOv2"}. Run dimensionality
+            with {status.model_name ?? "SigLIP"}. Run dimensionality
             reduction to create a 2D scatter plot.
           </p>
           <button

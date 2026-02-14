@@ -16,6 +16,7 @@ import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { useAnnotationsBatch } from "@/hooks/use-annotations";
+import { useGridNavigation } from "@/hooks/use-grid-navigation";
 import { useSamples } from "@/hooks/use-samples";
 import { useUIStore } from "@/stores/ui-store";
 import { useFilterStore } from "@/stores/filter-store";
@@ -32,6 +33,7 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
 
   const columnsPerRow = useUIStore((s) => s.columnsPerRow);
   const setColumnsPerRow = useUIStore((s) => s.setColumnsPerRow);
+  const focusedGridIndex = useUIStore((s) => s.focusedGridIndex);
 
   const isSelecting = useFilterStore((s) => s.isSelecting);
   const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
@@ -74,6 +76,13 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
     estimateSize: estimateCellHeight,
     overscan: 3,
   });
+
+  // Keyboard navigation: scroll virtualizer to the row containing the focused cell
+  const scrollToRow = useCallback(
+    (rowIndex: number) => rowVirtualizer.scrollToIndex(rowIndex),
+    [rowVirtualizer],
+  );
+  useGridNavigation(allSamples, columnsPerRow, scrollToRow);
 
   // Fetch next page when scrolling near the end
   useEffect(() => {
@@ -205,6 +214,7 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
                     sample={sample}
                     datasetId={datasetId}
                     annotations={annotationMap?.[sample.id] ?? []}
+                    isFocused={focusedGridIndex === sampleIdx}
                   />
                 );
               })}

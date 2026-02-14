@@ -19,14 +19,29 @@ import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
 import { AnnotationOverlay } from "./annotation-overlay";
 
+/** Old sample-level triage tags that are no longer displayed. */
+const OBSOLETE_TRIAGE_TAGS = new Set(["triage:tp", "triage:fp", "triage:fn", "triage:mistake"]);
+
+/** Color map for tag badges. */
+function tagStyle(tag: string): string {
+  switch (tag) {
+    case "triage:annotated":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
+    default:
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+  }
+}
+
 interface GridCellProps {
   sample: Sample;
   datasetId: string;
   /** Annotations for this sample (fetched at grid level, not per-cell). */
   annotations: Annotation[];
+  /** Whether this cell has keyboard focus (blue ring indicator). */
+  isFocused?: boolean;
 }
 
-export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
+export function GridCell({ sample, datasetId, annotations, isFocused }: GridCellProps) {
   const openDetailModal = useUIStore((s) => s.openDetailModal);
   const isSelecting = useFilterStore((s) => s.isSelecting);
   const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
@@ -34,8 +49,12 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
     (s) => s.toggleSampleSelection,
   );
 
+  const isHighlightMode = useUIStore((s) => s.isHighlightMode);
+
   const isSelected = selectedSampleIds.has(sample.id);
-  const tags = sample.tags ?? [];
+  const allTags = sample.tags ?? [];
+  const tags = allTags.filter((t) => !OBSOLETE_TRIAGE_TAGS.has(t));
+  const hasTriageTag = tags.some((t) => t.startsWith("triage:"));
   const visibleTags = tags.slice(0, 3);
   const extraTagCount = tags.length - 3;
 
@@ -51,10 +70,10 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
     <button
       onClick={handleClick}
       className={`group relative flex flex-col overflow-hidden rounded bg-zinc-100 transition-shadow hover:ring-2 hover:ring-blue-500 dark:bg-zinc-800 ${
-        isSelected
+        isSelected || isFocused
           ? "ring-2 ring-blue-500"
           : ""
-      }`}
+      } ${isHighlightMode && !hasTriageTag ? "opacity-20" : ""}`}
     >
       <div className="relative aspect-square overflow-hidden">
         <img
@@ -106,9 +125,9 @@ export function GridCell({ sample, datasetId, annotations }: GridCellProps) {
           {visibleTags.map((tag) => (
             <span
               key={tag}
-              className="rounded bg-blue-100 px-1 py-0.5 text-[10px] text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+              className={`rounded px-1 py-0.5 text-[10px] ${tagStyle(tag)}`}
             >
-              {tag}
+              {tag.startsWith("triage:") ? tag.slice(7).toUpperCase() : tag}
             </span>
           ))}
           {extraTagCount > 0 && (

@@ -13,6 +13,7 @@ from app.repositories.duckdb_repo import DuckDBRepo
 from app.repositories.storage import StorageBackend
 from app.routers import datasets, images, samples
 from app.services.image_service import ImageService
+from app.services.similarity_service import SimilarityService
 
 
 @pytest.fixture()
@@ -108,6 +109,13 @@ def full_app_client(
         storage=test_app.state.storage,
     )
     test_app.state.plugin_registry = PluginRegistry()
+
+    qdrant_dir = tmp_path / "qdrant"
+    qdrant_dir.mkdir()
+    test_app.state.similarity_service = SimilarityService(
+        qdrant_path=qdrant_dir,
+        db=db,
+    )
 
     # Include routers
     test_app.include_router(datasets.router)

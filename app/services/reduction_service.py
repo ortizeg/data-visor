@@ -1,12 +1,11 @@
-"""Dimensionality reduction service using scikit-learn t-SNE.
+"""Dimensionality reduction service using UMAP.
 
-Loads 768-dim embeddings from DuckDB, runs t-SNE to produce 2D (x, y)
+Loads 768-dim embeddings from DuckDB, runs UMAP to produce 2D (x, y)
 coordinates, and writes them back to the embeddings table for scatter-plot
 visualization.
 
-Note: The original plan called for umap-learn, but numba/llvmlite are
-incompatible with Python 3.14.  scikit-learn's t-SNE provides the same
-fit_transform API and produces high-quality 2D layouts for CV embeddings.
+UMAP preserves global structure better than t-SNE, scales linearly,
+and supports transform() for projecting new points into existing space.
 """
 
 from __future__ import annotations
@@ -15,7 +14,7 @@ import logging
 import traceback
 
 import numpy as np
-from sklearn.manifold import TSNE
+from umap import UMAP
 
 from app.models.embedding import ReductionProgress
 from app.repositories.duckdb_repo import DuckDBRepo
@@ -49,12 +48,13 @@ class ReductionService:
     def reduce_embeddings(
         self,
         dataset_id: str,
-        perplexity: float = 30.0,
+        n_neighbors: int = 15,
+        min_dist: float = 0.1,
     ) -> None:
-        """Background task: reduce embeddings to 2D via t-SNE.
+        """Background task: reduce embeddings to 2D via UMAP.
 
         1. Load all 768-dim vectors from the embeddings table.
-        2. Run t-SNE with ``random_state=42`` for reproducible layouts.
+        2. Run UMAP with ``random_state=42`` for reproducible layouts.
         3. UPDATE each row's x, y columns with the 2D coordinates.
 
         Re-running overwrites previous coordinates (no duplicates).
@@ -83,20 +83,20 @@ class ReductionService:
             vectors = np.array([row[1] for row in results])
 
             n_samples = len(vectors)
-            # t-SNE perplexity must be < n_samples; clamp to safe value
-            effective_perplexity = min(perplexity, max(1.0, n_samples - 1))
+            # UMAP n_neighbors must be < n_samples
+            effective_neighbors = min(n_neighbors, max(2, n_samples - 1))
 
             self._tasks[dataset_id] = ReductionProgress(
                 status="fitting",
-                message=f"Running t-SNE on {n_samples} embeddings...",
+                message=f"Running UMAP on {n_samples} embeddings...",
             )
 
-            reducer = TSNE(
+            reducer = UMAP(
                 n_components=2,
-                perplexity=effective_perplexity,
+                n_neighbors=effective_neighbors,
+                min_dist=min_dist,
                 metric="cosine",
                 random_state=42,
-                init="pca",
             )
             coords_2d = reducer.fit_transform(vectors)  # shape: (N, 2)
 

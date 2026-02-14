@@ -14,6 +14,8 @@ import type { Annotation } from "@/types/annotation";
 interface AnnotationListProps {
   /** Annotations to display in the table. */
   annotations: Annotation[];
+  /** Optional callback to delete a ground_truth annotation. Shows delete buttons when provided. */
+  onDelete?: (annotationId: string) => void;
 }
 
 /**
@@ -22,7 +24,7 @@ interface AnnotationListProps {
  * Each row shows: colored class dot, class name, bbox coordinates,
  * area, source, and confidence (if available).
  */
-export function AnnotationList({ annotations }: AnnotationListProps) {
+export function AnnotationList({ annotations, onDelete }: AnnotationListProps) {
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -48,6 +50,11 @@ export function AnnotationList({ annotations }: AnnotationListProps) {
               <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 text-right">
                 Confidence
               </th>
+              {onDelete && (
+                <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 text-center">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -90,6 +97,33 @@ export function AnnotationList({ annotations }: AnnotationListProps) {
                       ? `${(ann.confidence * 100).toFixed(1)}%`
                       : "\u2014"}
                   </td>
+                  {onDelete && (
+                    <td className="px-2 py-1.5 text-center">
+                      {ann.source === "ground_truth" ? (
+                        <button
+                          onClick={() => onDelete(ann.id)}
+                          title="Delete annotation"
+                          className="inline-flex items-center justify-center rounded p-0.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          >
+                            <path d="M4 4l8 8M12 4l-8 8" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <span className="text-zinc-300 dark:text-zinc-600">
+                          {"\u2014"}
+                        </span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

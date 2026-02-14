@@ -178,11 +178,6 @@ class VLMService:
                 self._tasks[dataset_id].message = "No samples to tag"
                 return
 
-            # Get dataset image_dir for resolving image paths
-            image_dir = cursor.execute(
-                "SELECT image_dir FROM datasets WHERE id = ?", [dataset_id]
-            ).fetchone()[0]
-
             # Process each sample individually (VLM inference is per-image)
             offset = 0
             batch_size = 50  # fetch rows in batches for DB efficiency
@@ -190,7 +185,7 @@ class VLMService:
 
             while offset < total:
                 rows = cursor.execute(
-                    "SELECT id, file_name FROM samples "
+                    "SELECT id, file_name, image_dir FROM samples "
                     "WHERE dataset_id = ? ORDER BY id LIMIT ? OFFSET ?",
                     [dataset_id, batch_size, offset],
                 ).fetchall()
@@ -198,7 +193,7 @@ class VLMService:
                 if not rows:
                     break
 
-                for sample_id, file_name in rows:
+                for sample_id, file_name, image_dir in rows:
                     try:
                         image_path = self.storage.resolve_image_path(
                             image_dir, file_name

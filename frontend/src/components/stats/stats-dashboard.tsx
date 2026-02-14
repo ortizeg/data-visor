@@ -14,18 +14,22 @@
 import { useState } from "react";
 
 import { useStatistics } from "@/hooks/use-statistics";
+import { useFilterFacets } from "@/hooks/use-filter-facets";
+import { useSplit, useFilterStore } from "@/stores/filter-store";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
 import { EvaluationPanel } from "@/components/stats/evaluation-panel";
 import { ErrorAnalysisPanel } from "@/components/stats/error-analysis-panel";
+import { WorstImagesPanel } from "@/components/triage/worst-images-panel";
+import { NearDuplicatesPanel } from "@/components/stats/near-duplicates-panel";
 import { IntelligencePanel } from "@/components/stats/intelligence-panel";
 
 interface StatsDashboardProps {
   datasetId: string;
 }
 
-type SubTab = "overview" | "evaluation" | "error_analysis" | "intelligence";
+type SubTab = "overview" | "evaluation" | "error_analysis" | "worst_images" | "near_duplicates" | "intelligence";
 
 function SkeletonCard() {
   return (
@@ -45,9 +49,13 @@ function SkeletonChart({ height }: { height: string }) {
 }
 
 export function StatsDashboard({ datasetId }: StatsDashboardProps) {
-  const { data: stats, isLoading, error } = useStatistics(datasetId);
+  const split = useSplit();
+  const setSplit = useFilterStore((s) => s.setSplit);
+  const { data: facets } = useFilterFacets(datasetId);
+  const { data: stats, isLoading, error } = useStatistics(datasetId, split);
   const [activeTab, setActiveTab] = useState<SubTab>("overview");
 
+  const availableSplits = facets?.splits.map((s) => s.name) ?? [];
   const hasPredictions = stats && stats.summary.pred_annotations > 0;
 
   if (error) {
@@ -60,54 +68,105 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
   return (
     <div className="p-6 overflow-y-auto h-full space-y-6">
-      {/* Sub-tab navigation */}
-      {(hasPredictions || isLoading) && (
-        <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+      {/* Split selector pill bar */}
+      {availableSplits.length > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mr-1">
+            Split:
+          </span>
           <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "overview"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            onClick={() => setSplit(null)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              split === null
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
             }`}
           >
-            Overview
+            All
           </button>
-          <button
-            onClick={() => setActiveTab("evaluation")}
-            disabled={!hasPredictions}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "evaluation"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            Evaluation
-          </button>
-          <button
-            onClick={() => setActiveTab("error_analysis")}
-            disabled={!hasPredictions}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "error_analysis"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            Error Analysis
-          </button>
-          <button
-            onClick={() => setActiveTab("intelligence")}
-            disabled={!hasPredictions}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "intelligence"
-                ? "border-purple-500 text-purple-600 dark:text-purple-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            Intelligence
-          </button>
+          {availableSplits.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSplit(s)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                split === s
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
         </div>
       )}
+
+      {/* Sub-tab navigation (always visible -- Near Duplicates works without predictions) */}
+      <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "overview"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab("evaluation")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "evaluation"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Evaluation
+        </button>
+        <button
+          onClick={() => setActiveTab("error_analysis")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "error_analysis"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Error Analysis
+        </button>
+        <button
+          onClick={() => setActiveTab("worst_images")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "worst_images"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Worst Images
+        </button>
+        <button
+          onClick={() => setActiveTab("near_duplicates")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "near_duplicates"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          Near Duplicates
+        </button>
+        <button
+          onClick={() => setActiveTab("intelligence")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "intelligence"
+              ? "border-purple-500 text-purple-600 dark:text-purple-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Intelligence
+        </button>
+      </div>
 
       {activeTab === "overview" && (
         <>
@@ -136,7 +195,12 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             {isLoading || !stats ? (
               <SkeletonChart height="h-[300px]" />
             ) : (
-              <ClassDistribution data={stats.class_distribution} />
+              <>
+                <ClassDistribution data={stats.class_distribution} />
+                <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                  Click any bar to filter the grid by category
+                </p>
+              </>
             )}
           </section>
 
@@ -155,11 +219,19 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
       )}
 
       {activeTab === "evaluation" && hasPredictions && (
-        <EvaluationPanel datasetId={datasetId} />
+        <EvaluationPanel datasetId={datasetId} split={split} />
       )}
 
       {activeTab === "error_analysis" && hasPredictions && (
-        <ErrorAnalysisPanel datasetId={datasetId} />
+        <ErrorAnalysisPanel datasetId={datasetId} split={split} />
+      )}
+
+      {activeTab === "worst_images" && hasPredictions && (
+        <WorstImagesPanel datasetId={datasetId} split={split} />
+      )}
+
+      {activeTab === "near_duplicates" && (
+        <NearDuplicatesPanel datasetId={datasetId} />
       )}
 
       {activeTab === "intelligence" && hasPredictions && (

@@ -14,15 +14,50 @@
  */
 
 import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react";
+import dynamic from "next/dynamic";
+import { useHotkeys } from "react-hotkeys-hook";
 
 import { fullImageUrl } from "@/lib/api";
-import { useAnnotations } from "@/hooks/use-annotations";
+import {
+  useAnnotations,
+  useUpdateAnnotation,
+  useCreateAnnotation,
+  useDeleteAnnotation,
+} from "@/hooks/use-annotations";
+import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSimilarity } from "@/hooks/use-similarity";
+import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnnotationOverlay } from "@/components/grid/annotation-overlay";
+import { TriageFilterButtons } from "@/components/triage/triage-tag-buttons";
+import { TriageOverlay } from "./triage-overlay";
 import { AnnotationList } from "./annotation-list";
 import { SimilarityPanel } from "./similarity-panel";
+import { useAnnotationTriage, useSetAnnotationTriage } from "@/hooks/use-annotation-triage";
+import { nextTriageLabel } from "@/types/annotation-triage";
+import type { Annotation } from "@/types/annotation";
 import type { Sample } from "@/types/sample";
+
+const AnnotationEditor = dynamic(
+  () =>
+    import("./annotation-editor").then((m) => ({
+      default: m.AnnotationEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center">
+        Loading editor...
+      </div>
+    ),
+  },
+);
+
+/** Undo action for single-level annotation delete undo. */
+interface UndoAction {
+  type: "delete";
+  annotation: Annotation;
+}
 
 interface SampleModalProps {
   /** Dataset ID for building image URLs and fetching annotations. */
@@ -45,6 +80,16 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
   const selectedSampleId = useUIStore((s) => s.selectedSampleId);
   const isDetailModalOpen = useUIStore((s) => s.isDetailModalOpen);
   const closeDetailModal = useUIStore((s) => s.closeDetailModal);
+  const isEditMode = useUIStore((s) => s.isEditMode);
+  const toggleEditMode = useUIStore((s) => s.toggleEditMode);
+  const isDrawMode = useUIStore((s) => s.isDrawMode);
+  const toggleDrawMode = useUIStore((s) => s.toggleDrawMode);
+  const selectedAnnotationId = useUIStore((s) => s.selectedAnnotationId);
+  const setSelectedAnnotationId = useUIStore((s) => s.setSelectedAnnotationId);
+  const openDetailModal = useUIStore((s) => s.openDetailModal);
+
+  // Annotation triage filter state
+  const [triageFilter, setTriageFilter] = useState<string | null>(null);
 
   // Find the selected sample from the flattened samples array
   const sample = selectedSampleId
@@ -53,6 +98,54 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
 
   // Fetch annotations for the selected sample via per-sample endpoint
   const { data: annotations } = useAnnotations(datasetId, selectedSampleId);
+
+  // Mutation hooks for annotation CRUD
+  const updateMutation = useUpdateAnnotation(datasetId, selectedSampleId ?? "");
+  const createMutation = useCreateAnnotation(datasetId, selectedSampleId ?? "");
+  const deleteMutation = useDeleteAnnotation(datasetId, selectedSampleId ?? "");
+
+  // Get categories from filter facets for the class picker
+  const { data: facets } = useFilterFacets(datasetId);
+  const categories = facets?.categories?.map((c) => c.name) ?? [];
+
+  // Split annotations by source for the editor
+  const gtAnnotations = (annotations ?? []).filter(
+    (a) => a.source === "ground_truth",
+  );
+  const predAnnotations = (annotations ?? []).filter(
+    (a) => a.source !== "ground_truth",
+  );
+
+  // Determine the active prediction source for IoU matching
+  const predSource = predAnnotations.length > 0
+    ? predAnnotations[0].source
+    : null;
+
+  // Per-annotation triage: only fetch when both GT and predictions exist
+  const hasBothSources = gtAnnotations.length > 0 && predAnnotations.length > 0;
+  const { data: triageMap } = useAnnotationTriage(
+    datasetId,
+    selectedSampleId,
+    predSource ?? "prediction",
+    hasBothSources && !isEditMode, // disable during edit mode (Konva takes over)
+  );
+
+  const setAnnotationTriage = useSetAnnotationTriage();
+
+  // Click handler for cycling per-annotation triage labels
+  const handleTriageClick = useCallback(
+    (annotationId: string, currentLabel: string) => {
+      if (!selectedSampleId) return;
+      const next = nextTriageLabel(currentLabel);
+      setAnnotationTriage.mutate({
+        annotation_id: annotationId,
+        dataset_id: datasetId,
+        sample_id: selectedSampleId,
+        label: next,
+      });
+    },
+    [datasetId, selectedSampleId, setAnnotationTriage],
+  );
 
   // Similarity search state -- only fetches when user clicks "Find Similar"
   const [showSimilar, setShowSimilar] = useState(false);
@@ -63,10 +156,121 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
     showSimilar,
   );
 
-  // Reset showSimilar when the selected sample changes
+  // Reset showSimilar and triage filter when the selected sample changes
   useEffect(() => {
     setShowSimilar(false);
+    setTriageFilter(null);
   }, [selectedSampleId]);
+
+  // -----------------------------------------------------------------------
+  // Keyboard shortcuts (modal-scope)
+  // -----------------------------------------------------------------------
+
+  // Navigate to next sample: j / ArrowRight
+  useHotkeys(
+    "j, ArrowRight",
+    () => {
+      const idx = samples.findIndex((s) => s.id === selectedSampleId);
+      if (idx >= 0 && idx < samples.length - 1) {
+        openDetailModal(samples[idx + 1].id);
+      }
+    },
+    { enabled: isDetailModalOpen, preventDefault: true },
+    [selectedSampleId, samples],
+  );
+
+  // Navigate to previous sample: k / ArrowLeft
+  useHotkeys(
+    "k, ArrowLeft",
+    () => {
+      const idx = samples.findIndex((s) => s.id === selectedSampleId);
+      if (idx > 0) {
+        openDetailModal(samples[idx - 1].id);
+      }
+    },
+    { enabled: isDetailModalOpen, preventDefault: true },
+    [selectedSampleId, samples],
+  );
+
+  // Triage filter keys 1-4: toggle annotation filter
+  useHotkeys(
+    "1, 2, 3, 4",
+    (e) => {
+      const labels = ["tp", "fp", "fn", "mistake"];
+      const label = labels[parseInt(e.key, 10) - 1];
+      setTriageFilter((prev) => (prev === label ? null : label));
+    },
+    { enabled: isDetailModalOpen && !isEditMode, preventDefault: true },
+  );
+
+  // Edit mode toggle: e
+  useHotkeys(
+    "e",
+    () => toggleEditMode(),
+    { enabled: isDetailModalOpen },
+  );
+
+  // -----------------------------------------------------------------------
+  // Undo stack for annotation deletes (single-level)
+  // -----------------------------------------------------------------------
+  const [lastAction, setLastAction] = useState<UndoAction | null>(null);
+
+  // Reset undo state when navigating to a different sample
+  useEffect(() => {
+    setLastAction(null);
+  }, [selectedSampleId]);
+
+  // Delete selected annotation: Delete / Backspace (edit mode only)
+  useHotkeys(
+    "Delete, Backspace",
+    () => {
+      if (selectedAnnotationId) {
+        // Save undo state before deleting
+        const found = (annotations ?? []).find(
+          (a) => a.id === selectedAnnotationId,
+        );
+        if (found) {
+          setLastAction({ type: "delete", annotation: found });
+        }
+        deleteMutation.mutate(selectedAnnotationId);
+        setSelectedAnnotationId(null);
+      }
+    },
+    { enabled: isDetailModalOpen && isEditMode },
+    [selectedAnnotationId, annotations],
+  );
+
+  // Undo last delete: Ctrl+Z / Cmd+Z (edit mode only)
+  useHotkeys(
+    "ctrl+z, meta+z",
+    () => {
+      if (lastAction?.type === "delete") {
+        const a = lastAction.annotation;
+        createMutation.mutate({
+          dataset_id: a.dataset_id,
+          sample_id: a.sample_id,
+          category_name: a.category_name,
+          bbox_x: a.bbox_x,
+          bbox_y: a.bbox_y,
+          bbox_w: a.bbox_w,
+          bbox_h: a.bbox_h,
+        });
+        setLastAction(null);
+      }
+    },
+    {
+      enabled: isDetailModalOpen && isEditMode && lastAction !== null,
+      preventDefault: true,
+    },
+    [lastAction, datasetId, selectedSampleId],
+  );
+
+  // Escape exits edit mode (does NOT close modal -- native dialog handles that)
+  useHotkeys(
+    "Escape",
+    () => toggleEditMode(),
+    { enabled: isDetailModalOpen && isEditMode },
+  );
 
   // Sync dialog open/close with Zustand state
   useEffect(() => {
@@ -131,20 +335,103 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
             </svg>
           </button>
 
-          {/* Full-resolution image with annotation overlays */}
+          {/* Full-resolution image with annotation overlays or Konva editor */}
           <div className="relative bg-zinc-100 dark:bg-zinc-800">
-            <img
-              src={fullImageUrl(datasetId, sample.id)}
-              alt={sample.file_name}
-              className="h-auto w-full"
-              decoding="async"
-            />
-            {annotations && annotations.length > 0 && (
-              <AnnotationOverlay
-                annotations={annotations}
+            {isEditMode ? (
+              <AnnotationEditor
+                imageUrl={fullImageUrl(datasetId, sample.id)}
+                annotations={gtAnnotations}
+                predictions={predAnnotations}
                 imageWidth={sample.width}
                 imageHeight={sample.height}
+                categories={categories}
+                onUpdate={(id, bbox) =>
+                  updateMutation.mutate({ id, ...bbox })
+                }
+                onCreate={(bbox, categoryName) =>
+                  createMutation.mutate({
+                    dataset_id: datasetId,
+                    sample_id: sample.id,
+                    category_name: categoryName,
+                    ...bbox,
+                  })
+                }
               />
+            ) : (
+              <>
+                <img
+                  src={fullImageUrl(datasetId, sample.id)}
+                  alt={sample.file_name}
+                  className="h-auto w-full"
+                  decoding="async"
+                />
+                {annotations && annotations.length > 0 && (() => {
+                  const filteredTriageMap = triageFilter && triageMap
+                    ? Object.fromEntries(
+                        Object.entries(triageMap).filter(([, v]) => v.label === triageFilter)
+                      )
+                    : triageMap;
+                  // If a filter is active but no annotations match, show nothing
+                  if (triageFilter && (!filteredTriageMap || Object.keys(filteredTriageMap).length === 0)) {
+                    return null;
+                  }
+                  return filteredTriageMap && Object.keys(filteredTriageMap).length > 0 ? (
+                    <TriageOverlay
+                      annotations={annotations}
+                      triageMap={filteredTriageMap}
+                      imageWidth={sample.width}
+                      imageHeight={sample.height}
+                      onClickAnnotation={handleTriageClick}
+                    />
+                  ) : (
+                    <AnnotationOverlay
+                      annotations={annotations}
+                      imageWidth={sample.width}
+                      imageHeight={sample.height}
+                    />
+                  );
+                })()}
+              </>
+            )}
+          </div>
+
+          {/* Edit toolbar */}
+          <div className="flex items-center gap-2 border-b border-zinc-200 px-5 py-2 dark:border-zinc-700">
+            <button
+              onClick={toggleEditMode}
+              className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                isEditMode
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {isEditMode ? "Done" : "Edit Annotations"}
+            </button>
+            {isEditMode && (
+              <button
+                onClick={toggleDrawMode}
+                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isDrawMode
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {isDrawMode ? "Cancel Draw" : "Draw New Box"}
+              </button>
+            )}
+            {/* Triage filter buttons (always visible, not gated by edit mode) */}
+            <TriageFilterButtons
+              activeFilter={triageFilter}
+              onFilterChange={setTriageFilter}
+            />
+
+            {/* Spacer + edit hint pushed right */}
+            {isEditMode && (
+              <span className="ml-auto text-xs text-zinc-400">
+                {isDrawMode
+                  ? "Click and drag to draw a new box"
+                  : "Click a box to select, drag to move, handles to resize"}
+              </span>
             )}
           </div>
 
@@ -195,19 +482,41 @@ export function SampleModal({ datasetId, samples }: SampleModalProps) {
                 </dd>
               </dl>
 
-              <button
-                onClick={() => setShowSimilar(!showSimilar)}
-                className="mt-3 w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-              >
-                {showSimilar ? "Hide Similar" : "Find Similar"}
-              </button>
+              <div className="mt-3 flex flex-col gap-2">
+                <button
+                  onClick={() => setShowSimilar(!showSimilar)}
+                  className="w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                >
+                  {showSimilar ? "Hide Similar" : "Find Similar"}
+                </button>
+                {showSimilar && similarityData && similarityData.results.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const ids = similarityData.results.map((r) => r.sample_id);
+                      useFilterStore.getState().setSampleIdFilter(ids);
+                      useUIStore.getState().setActiveTab("grid");
+                      useUIStore.getState().closeDetailModal();
+                    }}
+                    className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  >
+                    Show in Grid ({similarityData.results.length})
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Right: annotation list table */}
             <div>
               {annotations ? (
                 annotations.length > 0 ? (
-                  <AnnotationList annotations={annotations} />
+                  <AnnotationList
+                    annotations={annotations}
+                    onDelete={
+                      isEditMode
+                        ? (id) => deleteMutation.mutate(id)
+                        : undefined
+                    }
+                  />
                 ) : (
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     No annotations for this sample.

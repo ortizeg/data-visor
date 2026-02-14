@@ -14,7 +14,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
 import { PAGE_SIZE } from "@/lib/constants";
-import { useFilterStore } from "@/stores/filter-store";
+import { useFilterStore, useSampleIdFilter } from "@/stores/filter-store";
 import { useLassoSelectedIds } from "@/stores/embedding-store";
 import type { PaginatedSamples } from "@/types/sample";
 
@@ -33,6 +33,12 @@ export function useSamples(datasetId: string) {
   // Read lasso selection from embedding store (cross-filter)
   const lassoSelectedIds = useLassoSelectedIds();
 
+  // Read discovery filter from filter store (find-similar, confusion cell, etc.)
+  const sampleIdFilter = useSampleIdFilter();
+
+  // Merge: lasso takes priority when both are active
+  const effectiveIds = lassoSelectedIds ?? sampleIdFilter;
+
   // Sort tags for structural stability in query key
   const filters = {
     search,
@@ -44,8 +50,8 @@ export function useSamples(datasetId: string) {
   };
 
   return useInfiniteQuery({
-    // Filter state + lasso selection in key = automatic refetch on change
-    queryKey: ["samples", datasetId, filters, lassoSelectedIds],
+    // Filter state + effective IDs (lasso or discovery) in key = automatic refetch on change
+    queryKey: ["samples", datasetId, filters, effectiveIds],
     queryFn: ({ pageParam }) => {
       const params = new URLSearchParams({
         dataset_id: datasetId,
@@ -59,12 +65,12 @@ export function useSamples(datasetId: string) {
       if (split) params.set("split", split);
       if (tags.length > 0) params.set("tags", tags.join(","));
 
-      // Lasso cross-filter: pass selected sample IDs to backend
-      if (lassoSelectedIds !== null && lassoSelectedIds.length > 0) {
+      // Cross-filter: pass effective sample IDs (lasso or discovery) to backend
+      if (effectiveIds !== null && effectiveIds.length > 0) {
         const ids =
-          lassoSelectedIds.length > MAX_LASSO_IDS
-            ? lassoSelectedIds.slice(0, MAX_LASSO_IDS)
-            : lassoSelectedIds;
+          effectiveIds.length > MAX_LASSO_IDS
+            ? effectiveIds.slice(0, MAX_LASSO_IDS)
+            : effectiveIds;
         params.set("sample_ids", ids.join(","));
       }
 

@@ -12,7 +12,11 @@ import { useState, useEffect, useMemo } from "react";
 
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useAgentAnalysis } from "@/hooks/use-agent-analysis";
+import type { AnalysisReport } from "@/types/agent";
 import type { PatternInsight, Recommendation } from "@/types/agent";
+
+/** Module-level cache so results survive tab switches (component unmount). */
+const resultCache = new Map<string, AnalysisReport>();
 
 interface IntelligencePanelProps {
   datasetId: string;
@@ -169,6 +173,22 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
   const { data: facets } = useFilterFacets(datasetId);
   const mutation = useAgentAnalysis();
 
+  // Restore cached result on mount
+  const [cachedResult, setCachedResult] = useState<AnalysisReport | null>(
+    () => resultCache.get(datasetId) ?? null,
+  );
+
+  // Cache new results when mutation succeeds
+  useEffect(() => {
+    if (mutation.data) {
+      resultCache.set(datasetId, mutation.data);
+      setCachedResult(mutation.data);
+    }
+  }, [mutation.data, datasetId]);
+
+  // The report to display: fresh mutation data or cached
+  const report = mutation.data ?? cachedResult;
+
   // Available prediction sources (exclude ground_truth)
   const predSources = useMemo(
     () =>
@@ -300,15 +320,19 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
                 AI Agent Not Configured
               </p>
               <p className="text-xs text-red-600 dark:text-red-400">
-                The AI analysis agent requires an LLM API key. Set the{" "}
+                The AI analysis agent requires an LLM API key. Set{" "}
                 <code className="px-1 py-0.5 rounded bg-red-100 dark:bg-red-900/60 font-mono">
-                  OPENAI_API_KEY
+                  GEMINI_API_KEY
                 </code>{" "}
-                environment variable and configure{" "}
+                in your{" "}
+                <code className="px-1 py-0.5 rounded bg-red-100 dark:bg-red-900/60 font-mono">
+                  .env
+                </code>{" "}
+                file. Override the model with{" "}
                 <code className="px-1 py-0.5 rounded bg-red-100 dark:bg-red-900/60 font-mono">
                   DATAVISOR_AGENT_MODEL
                 </code>{" "}
-                (defaults to openai:gpt-4o).
+                (defaults to google-gla:gemini-2.0-flash).
               </p>
             </div>
           ) : (
@@ -319,8 +343,8 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
         </div>
       )}
 
-      {/* Results */}
-      {mutation.isSuccess && mutation.data && (
+      {/* Results (from fresh mutation or cache) */}
+      {report && !mutation.isPending && (
         <>
           {/* Summary card */}
           <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 p-4">
@@ -328,22 +352,22 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
               Summary
             </h3>
             <p className="text-sm text-purple-600 dark:text-purple-400">
-              {mutation.data.summary}
+              {report.summary}
             </p>
           </div>
 
           {/* Patterns section */}
           <section>
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-              Detected Patterns ({mutation.data.patterns.length})
+              Detected Patterns ({report.patterns.length})
             </h2>
-            {mutation.data.patterns.length === 0 ? (
+            {report.patterns.length === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4 text-center">
                 No error patterns detected.
               </p>
             ) : (
               <div className="space-y-3">
-                {mutation.data.patterns.map((p, i) => (
+                {report.patterns.map((p, i) => (
                   <PatternCard key={i} insight={p} />
                 ))}
               </div>
@@ -353,15 +377,15 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
           {/* Recommendations section */}
           <section>
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-              Recommendations ({mutation.data.recommendations.length})
+              Recommendations ({report.recommendations.length})
             </h2>
-            {mutation.data.recommendations.length === 0 ? (
+            {report.recommendations.length === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4 text-center">
                 No recommendations generated.
               </p>
             ) : (
               <div className="space-y-3">
-                {mutation.data.recommendations.map((r, i) => (
+                {report.recommendations.map((r, i) => (
                   <RecommendationCard key={i} rec={r} />
                 ))}
               </div>
@@ -370,8 +394,8 @@ export function IntelligencePanel({ datasetId }: IntelligencePanelProps) {
         </>
       )}
 
-      {/* Empty state before first run */}
-      {mutation.isIdle && (
+      {/* Empty state before first run (only if no cached result) */}
+      {mutation.isIdle && !report && (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
             <svg

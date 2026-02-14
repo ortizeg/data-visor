@@ -1,0 +1,15 @@
+.git
+.venv
+__pycache__
+data/
+*.pyc
+.planning/
+tests/
+.env
+.env.*
+node_modules/
+.next/
+frontend/
+.DS_Store
+.pytest_cache/
+*.egg-info/

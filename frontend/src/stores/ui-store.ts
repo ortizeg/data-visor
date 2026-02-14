@@ -24,6 +24,18 @@ interface UIState {
   activeSources: string[] | null;
   /** Which tab is active on the dataset page (grid or statistics). */
   activeTab: DatasetTab;
+  /** Whether annotation editing is active in the detail modal. */
+  isEditMode: boolean;
+  /** Which annotation is currently selected for resize/move. */
+  selectedAnnotationId: string | null;
+  /** Whether draw-new-box mode is active. */
+  isDrawMode: boolean;
+  /** Whether highlight mode is active (dims non-triage-tagged cells). */
+  isHighlightMode: boolean;
+  /** Index of the focused grid cell for keyboard navigation. null = no focus. */
+  focusedGridIndex: number | null;
+  /** Whether the keyboard shortcuts help overlay is open. */
+  isHelpOverlayOpen: boolean;
 
   /** Open the detail modal for a given sample. */
   openDetailModal: (sampleId: string) => void;
@@ -37,6 +49,18 @@ interface UIState {
   toggleSource: (source: string, allSources: string[]) => void;
   /** Set the active tab on the dataset page. */
   setActiveTab: (tab: DatasetTab) => void;
+  /** Toggle annotation edit mode. Turning OFF resets selection and draw mode. */
+  toggleEditMode: () => void;
+  /** Set the currently selected annotation ID. */
+  setSelectedAnnotationId: (id: string | null) => void;
+  /** Toggle draw-new-box mode. Turning ON deselects any selected annotation. */
+  toggleDrawMode: () => void;
+  /** Toggle highlight mode for triage visualization. */
+  toggleHighlightMode: () => void;
+  /** Set the focused grid cell index (null to clear focus). */
+  setFocusedGridIndex: (index: number | null) => void;
+  /** Toggle the keyboard shortcuts help overlay. */
+  toggleHelpOverlay: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -45,11 +69,23 @@ export const useUIStore = create<UIState>((set) => ({
   columnsPerRow: DEFAULT_COLUMNS,
   activeSources: null,
   activeTab: "grid",
+  isEditMode: false,
+  selectedAnnotationId: null,
+  isDrawMode: false,
+  isHighlightMode: false,
+  focusedGridIndex: null,
+  isHelpOverlayOpen: false,
 
   openDetailModal: (sampleId) =>
     set({ selectedSampleId: sampleId, isDetailModalOpen: true }),
   closeDetailModal: () =>
-    set({ selectedSampleId: null, isDetailModalOpen: false }),
+    set({
+      selectedSampleId: null,
+      isDetailModalOpen: false,
+      isEditMode: false,
+      selectedAnnotationId: null,
+      isDrawMode: false,
+    }),
   setColumnsPerRow: (cols) => set({ columnsPerRow: cols }),
   setActiveSources: (sources) => set({ activeSources: sources }),
   toggleSource: (source, allSources) =>
@@ -70,4 +106,24 @@ export const useUIStore = create<UIState>((set) => ({
       return { activeSources: next.length === 0 ? null : next };
     }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  toggleEditMode: () =>
+    set((state) => ({
+      isEditMode: !state.isEditMode,
+      // When turning off, reset selection and draw mode
+      ...(!state.isEditMode
+        ? {}
+        : { selectedAnnotationId: null, isDrawMode: false }),
+    })),
+  setSelectedAnnotationId: (id) => set({ selectedAnnotationId: id }),
+  toggleDrawMode: () =>
+    set((state) => ({
+      isDrawMode: !state.isDrawMode,
+      // When turning on draw mode, deselect any selected annotation
+      ...(!state.isDrawMode ? { selectedAnnotationId: null } : {}),
+    })),
+  toggleHighlightMode: () =>
+    set((state) => ({ isHighlightMode: !state.isHighlightMode })),
+  setFocusedGridIndex: (index) => set({ focusedGridIndex: index }),
+  toggleHelpOverlay: () =>
+    set((state) => ({ isHelpOverlayOpen: !state.isHelpOverlayOpen })),
 }));

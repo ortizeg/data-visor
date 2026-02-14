@@ -90,6 +90,18 @@ class DuckDBRepo:
             "ALTER TABLE samples ADD COLUMN IF NOT EXISTS tags VARCHAR[] DEFAULT []"
         )
 
+        # Per-sample image_dir so each split resolves its own image directory
+        self.connection.execute(
+            "ALTER TABLE samples ADD COLUMN IF NOT EXISTS image_dir VARCHAR DEFAULT ''"
+        )
+        # Backfill existing samples that lack image_dir from their dataset
+        self.connection.execute(
+            "UPDATE samples SET image_dir = d.image_dir "
+            "FROM datasets d "
+            "WHERE samples.dataset_id = d.id "
+            "AND (samples.image_dir IS NULL OR samples.image_dir = '')"
+        )
+
         # Phase 3: Saved views table for persisted filter configurations
         self.connection.execute("""
             CREATE TABLE IF NOT EXISTS saved_views (
@@ -111,6 +123,18 @@ class DuckDBRepo:
                 vector          FLOAT[768],
                 x               DOUBLE,
                 y               DOUBLE
+            )
+        """)
+
+        # Phase 14: Per-annotation triage overrides
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS annotation_triage (
+                annotation_id   VARCHAR NOT NULL,
+                dataset_id      VARCHAR NOT NULL,
+                sample_id       VARCHAR NOT NULL,
+                label           VARCHAR NOT NULL,
+                is_override     BOOLEAN DEFAULT true,
+                created_at      TIMESTAMP DEFAULT current_timestamp
             )
         """)
 

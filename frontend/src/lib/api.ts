@@ -45,6 +45,20 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 }
 
 /**
+ * PUT JSON to the backend API.
+ * Returns parsed JSON response. Throws on non-OK responses.
+ */
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+/**
  * DELETE a resource via the backend API.
  * Throws on non-OK responses.
  */

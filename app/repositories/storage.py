@@ -48,10 +48,39 @@ class StorageBackend:
         fs, norm_path = self._get_fs(path)
         return fs.open(norm_path, mode)
 
+    def isdir(self, path: str) -> bool:
+        """Return ``True`` if *path* is a directory."""
+        fs, norm_path = self._get_fs(path)
+        return fs.isdir(norm_path)
+
     def list_dir(self, path: str) -> list[str]:
         """List entries in *path*."""
         fs, norm_path = self._get_fs(path)
         return fs.ls(norm_path)
+
+    def list_dir_detail(self, path: str) -> list[dict]:
+        """List entries in *path* with type and size metadata.
+
+        Returns a list of dicts with ``name``, ``type`` (``"file"`` or
+        ``"directory"``), and ``size`` (bytes, ``None`` for directories).
+        """
+        fs, norm_path = self._get_fs(path)
+        entries = fs.ls(norm_path, detail=True)
+        result = []
+        for entry in entries:
+            full_name = entry["name"]
+            # For local paths, use as-is; for GCS, reconstruct gs:// prefix.
+            if path.startswith("gs://"):
+                display_name = full_name.split("/")[-1]
+            else:
+                display_name = Path(full_name).name
+            entry_type = entry.get("type", "file")
+            result.append({
+                "name": display_name,
+                "type": "directory" if entry_type == "directory" else "file",
+                "size": entry.get("size") if entry_type != "directory" else None,
+            })
+        return result
 
     def resolve_image_path(self, base_path: str, file_name: str) -> str:
         """Construct a full image path from a dataset base directory and filename."""

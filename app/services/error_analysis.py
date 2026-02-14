@@ -33,6 +33,7 @@ def categorize_errors(
     source: str,
     iou_threshold: float,
     conf_threshold: float,
+    split: str | None = None,
 ) -> ErrorAnalysisResponse:
     """Categorize all detections into error types.
 
@@ -46,7 +47,7 @@ def categorize_errors(
     4. Unmatched GT boxes after all predictions processed => False Negatives
     """
     gt_by_sample, pred_by_sample, class_names = _load_detections(
-        cursor, dataset_id, source
+        cursor, dataset_id, source, split=split
     )
 
     if not class_names and not gt_by_sample and not pred_by_sample:

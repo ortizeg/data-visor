@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.0 shipped. Planning next milestone.
+**Current focus:** v1.1 complete. All 14 phases delivered.
 
 ## Current Position
 
-Phase: 7 of 7 (v1.0 complete)
-Plan: All plans delivered
-Status: v1.0 milestone shipped
-Last activity: 2026-02-12 — v1.0 milestone complete
+Phase: 14 of 14 (Per-Annotation Triage)
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-02-13 -- Phase 14 verified and complete
 
-Progress: [█████████████████████] 21/21 (v1.0)
+Progress: [████████████████████████████████████████████████████████████] v1.1: 41/41 plans complete
 
 ## Performance Metrics
 
@@ -23,7 +23,7 @@ Progress: [█████████████████████] 21/2
 - Average duration: 3.9 min
 - Total execution time: 82 min
 
-**By Phase:**
+**By Phase (v1.0):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -35,11 +35,84 @@ Progress: [█████████████████████] 21/2
 | 6. Error Analysis & Similarity | 2/2 | 9 min | 4.5 min |
 | 7. Intelligence & Agents | 3/3 | 9 min | 3.0 min |
 
+**By Phase (v1.1):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 8. Docker Deployment & Auth | 5/5 | 25 min | 5.0 min |
+| 9. Smart Ingestion | 2/2 | 10 min | 5.0 min |
+| 10. Annotation Editing | 3/3 | 9 min | 3.0 min |
+| 11. Error Triage | 2/2 | 6 min | 3.0 min |
+| 12. Interactive Viz & Discovery | 3/3 | 10 min | 3.3 min |
+| 13. Keyboard Shortcuts | 2/2 | 6 min | 3.0 min |
+| 14. Per-Annotation Triage | 3/3 | 7 min | 2.3 min |
+
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1 Roadmap]: Keep Qdrant in local mode for Docker (single-user <1M vectors)
+- [v1.1 Roadmap]: Caddy over nginx for reverse proxy (auto-HTTPS, built-in basic_auth)
+- [v1.1 Roadmap]: react-konva for annotation editing in detail modal only (SVG stays for grid)
+- [v1.1 Roadmap]: FastAPI HTTPBasic DI over middleware (testable, composable)
+- [08-01]: CPU-only PyTorch via post-sync replacement in Dockerfile (uv sync then uv pip install from CPU index)
+- [08-01]: CORS restricted to localhost:3000 in dev, disabled entirely behind proxy (DATAVISOR_BEHIND_PROXY=true)
+- [08-02]: NEXT_PUBLIC_API_URL=/api baked at build time for same-origin API via Caddy
+- [08-02]: Caddy handles all auth at proxy layer -- zero application code changes
+- [08-03]: Directory bind mount ./data:/app/data for DuckDB WAL + Qdrant + thumbnails persistence
+- [08-03]: AUTH_PASSWORD_HASH has no default -- forces explicit auth configuration before deployment
+- [08-03]: Only Caddy exposes ports 80/443 -- backend and frontend are Docker-internal only
+- [08-04]: VM startup script does NOT auto-start docker compose -- requires manual .env setup first
+- [08-04]: GCP config via env vars with defaults (only GCP_PROJECT_ID required)
+- [08-05]: 10-section deployment docs covering local Docker, GCP, custom domain HTTPS, data persistence, troubleshooting
+- [08-05]: opencv-python-headless replaces opencv-python in Docker builder stage (no X11/GUI libs in slim images)
+- [09-01]: Three-layout priority detection: Roboflow > Standard COCO > Flat
+- [09-01]: ijson peek at top-level keys for COCO detection (max 10 keys, files >500MB skipped)
+- [09-01]: Optional dataset_id param on ingest_with_progress for multi-split ID sharing
+- [09-01]: INSERT-or-UPDATE pattern for dataset record across multi-split imports
+- [09-02]: POST SSE streaming via fetch + ReadableStream (not EventSource, which is GET-only)
+- [09-02]: FolderScanner refactored to accept StorageBackend for GCS support
+- [09-02]: Split-prefixed IDs for collision avoidance in multi-split import
+- [10-01]: get_cursor DI for annotation router (auto-close cursor)
+- [10-01]: source='ground_truth' enforced in SQL WHERE clauses for PUT/DELETE safety
+- [10-01]: Dataset counts refreshed via subquery UPDATE (no race conditions)
+- [10-02]: useDrawLayer hook pattern (handlers + ReactNode) instead of separate component
+- [10-02]: Transformer scale reset to 1 on transformEnd (Konva best practice)
+- [10-03]: AnnotationEditor loaded via next/dynamic with ssr:false (prevents Konva SSR errors)
+- [10-03]: Draw completion shows ClassPicker before creating annotation (requires category selection)
+- [10-03]: Delete buttons only appear on ground_truth rows when edit mode is active
+- [11-01]: Dual router pattern (samples_router + datasets_router) from single triage module
+- [11-01]: Atomic triage tag replacement via list_filter + list_append single SQL
+- [11-01]: get_db DI pattern for triage router (matching statistics.py style)
+- [11-02]: Triage buttons always visible in detail modal (not gated by edit mode)
+- [11-02]: Highlight toggle uses yellow-500 active styling to distinguish from edit buttons
+- [11-02]: Triage tag badges show short label (TP/FP/FN/MISTAKE) instead of full prefix
+- [12-01]: Lasso selection takes priority over discovery filter (effectiveIds = lassoSelectedIds ?? sampleIdFilter)
+- [12-01]: "Show in Grid" button only appears after similarity results load (progressive disclosure)
+- [12-01]: getState() pattern for store access in Recharts onClick handlers (non-reactive)
+- [12-01]: DiscoveryFilterChip in dataset header for cross-tab visibility
+- [12-02]: Imperative fetch function (not hook) for one-shot confusion cell sample lookups
+- [12-02]: Greedy IoU matching replayed per sample for consistent CM cell membership
+- [12-02]: getState() pattern for Zustand store writes in async callbacks
+- [12-03]: Tab bar always visible so Near Duplicates is accessible without predictions
+- [12-03]: Union-find with path compression for O(alpha(n)) grouping of pairwise matches
+- [12-03]: Progress updates throttled to every 10 points to avoid excessive state updates
+- [13-01]: isFocused passed as prop from ImageGrid (avoids N store subscriptions per GridCell)
+- [13-01]: Central shortcut registry pattern: all shortcuts as data in lib/shortcuts.ts
+- [13-02]: Single useHotkeys('1, 2, 3, 4') with event.key dispatch (avoids rules-of-hooks violation)
+- [13-02]: Single-level undo stack via React state for annotation delete undo
+- [13-02]: Triage number keys disabled during edit mode (prevents Konva focus confusion)
+- [13-02]: groupByCategory via reduce instead of Object.groupBy (avoids es2024 lib dep)
+- [14-01]: Reuse _compute_iou_matrix from evaluation.py (no duplicate IoU code)
+- [14-01]: Auto-computed labels ephemeral (computed on GET, not stored); overrides persist in annotation_triage table
+- [14-01]: triage:annotated sample tag bridges per-annotation triage to highlight mode
+- [14-02]: TriageOverlay is separate from AnnotationOverlay (interactive vs non-interactive SVG)
+- [14-02]: Click handler delegates to parent via callback (overlay does not manage mutations)
+- [14-02]: Annotations not in triageMap skipped (handles GT-only samples gracefully)
+- [14-03]: GT boxes show category name only, predictions show category + confidence% (color conveys triage type)
 
 ### Pending Todos
 
@@ -47,10 +120,10 @@ None.
 
 ### Blockers/Concerns
 
-None — v1.0 shipped.
+- [RESOLVED] SVG-to-Canvas coordinate mismatch resolved by coord-utils.ts (10-02)
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: v1.0 milestone complete
+Last session: 2026-02-13
+Stopped at: Phase 14 complete, v1.1 milestone complete
 Resume file: None

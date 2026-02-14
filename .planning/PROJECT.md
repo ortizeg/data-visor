@@ -38,19 +38,36 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 
 ### Active
 
-- [ ] Interactive model evaluation dashboard (PR curves, confusion matrix, per-class AP)
-- [ ] YOLO format parser (.txt annotation files)
-- [ ] Pascal VOC format parser (XML annotation files)
-- [ ] Run inference in-tool against loaded models
-- [ ] Plugin ingestion/UI/transformation hooks
+- [ ] Dockerized deployment with single-user auth for secure cloud VM access
+- [ ] GCP deployment script + local run script with setup instructions
+- [ ] Smart dataset ingestion UI (point at folder → auto-detect train/val/test splits → import)
+- [ ] Annotation editing in the UI (move, resize, delete bounding boxes — depth TBD)
+- [ ] Error triage workflow (tag FP/TP/FN/mistake, highlight errors, dim non-errors)
+- [ ] Smart "worst images" ranking (combined score: errors + confidence + uniqueness)
+- [ ] Keyboard shortcuts for navigation
+- [ ] Competitive feature parity with FiftyOne/Encord (gaps TBD after research)
 
 ### Out of Scope
 
-- Multi-user collaboration / auth — personal tool, not a platform
+- Multi-user collaboration — personal tool, single-user auth only for VM security
 - Video annotation support — image-only for now
 - Training pipeline integration — DataVisor inspects data, doesn't train models
 - Mobile/tablet interface — desktop browser only
 - Real-time streaming inference — batch-oriented analysis
+- Full annotation editor (draw new boxes, complex labeling workflows) — quick corrections only, not CVAT replacement
+
+## Current Milestone: v1.1 Deployment, Workflow & Competitive Parity
+
+**Goal:** Make DataVisor deployable (Docker + GCP), secure for cloud access, and close key workflow gaps vs FiftyOne/Encord — smart ingestion, error triage, annotation corrections, and keyboard-driven navigation.
+
+**Target features:**
+- Dockerized project with single-user auth (basic auth for cloud VM security)
+- GCP deployment script + local run script
+- Smart dataset ingestion UI (auto-detect folder structure, train/val/test splits)
+- Annotation management (organize + quick edit: move/resize/delete bboxes)
+- Error triage & data curation workflow (tag, highlight, rank worst images)
+- Keyboard shortcuts for navigation
+- Competitive gaps from FiftyOne/Encord analysis
 
 ## Context
 
@@ -84,4 +101,4 @@ Architecture: 3 Zustand stores, FastAPI DI, source discriminator for GT/predicti
 | Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x compat | ✓ Good (fragile — monitor updates) |
 
 ---
-*Last updated: 2026-02-12 after v1.0 milestone*
+*Last updated: 2026-02-12 after v1.1 scope redefinition*

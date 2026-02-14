@@ -64,28 +64,44 @@ class IngestionService:
         self.image_service = image_service
         self.plugins = plugin_registry
 
+    # ------------------------------------------------------------------
+    # Single-split ingestion
+    # ------------------------------------------------------------------
+
     def ingest_with_progress(
         self,
         annotation_path: str,
         image_dir: str,
         dataset_name: str | None = None,
         format: str = "coco",
+        split: str | None = None,
+        dataset_id: str | None = None,
     ) -> Iterator[IngestionProgress]:
         """Ingest a COCO dataset, yielding progress events.
 
         This is a **synchronous** generator -- FastAPI wraps it in a
         :class:`StreamingResponse` for SSE delivery.
 
+        Parameters
+        ----------
+        split:
+            Optional split name (``"train"``, ``"val"``, ``"test"``) to
+            populate the ``samples.split`` column.
+        dataset_id:
+            Optional pre-generated dataset ID.  When ``None`` a new UUID
+            is created.  Pass the same ID across multiple calls to
+            import several splits into one dataset.
+
         Steps:
         1. Parse categories.
         2. Stream and insert image batches.
         3. Stream and insert annotation batches.
-        4. Insert the dataset record and category records.
+        4. Insert or update the dataset record and category records.
         5. Generate thumbnails for the first 500 images.
         6. Fire plugin hooks.
         7. Yield final ``complete`` event.
         """
-        dataset_id = str(uuid.uuid4())
+        dataset_id = dataset_id or str(uuid.uuid4())
         name = dataset_name or Path(annotation_path).stem
         context = PluginContext(dataset_id=dataset_id)
 
@@ -110,13 +126,15 @@ class IngestionService:
 
         try:
             for batch_df in parser.build_image_batches(
-                Path(annotation_path), dataset_id
+                Path(annotation_path), dataset_id, split=split, image_dir=image_dir
             ):
                 cursor.execute(
                     "INSERT INTO samples "
                     "(id, dataset_id, file_name, width, height, "
-                    "thumbnail_path, split, metadata) "
-                    "SELECT * FROM batch_df"
+                    "thumbnail_path, split, metadata, image_dir) "
+                    "SELECT id, dataset_id, file_name, width, height, "
+                    "thumbnail_path, split, metadata, image_dir "
+                    "FROM batch_df"
                 )
                 image_count += len(batch_df)
                 yield IngestionProgress(
@@ -128,7 +146,7 @@ class IngestionService:
 
             # -- Step 3: Stream and insert annotations -----------------------
             for batch_df in parser.build_annotation_batches(
-                Path(annotation_path), dataset_id, categories
+                Path(annotation_path), dataset_id, categories, split=split
             ):
                 cursor.execute(
                     "INSERT INTO annotations SELECT * FROM batch_df"
@@ -141,23 +159,38 @@ class IngestionService:
                     message=f"Parsed {ann_count} annotations",
                 )
 
-            # -- Step 4: Insert dataset record -------------------------------
-            cursor.execute(
-                "INSERT INTO datasets VALUES "
-                "(?, ?, ?, ?, ?, ?, ?, ?, 0, current_timestamp, NULL)",
-                [
-                    dataset_id,
-                    name,
-                    format,
-                    annotation_path,
-                    image_dir,
-                    image_count,
-                    ann_count,
-                    len(categories),
-                ],
-            )
+            # -- Step 4: Insert or update dataset record ---------------------
+            existing = cursor.execute(
+                "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+            ).fetchone()
 
-            # -- Insert category records -------------------------------------
+            if existing is None:
+                cursor.execute(
+                    "INSERT INTO datasets VALUES "
+                    "(?, ?, ?, ?, ?, ?, ?, ?, 0, current_timestamp, NULL)",
+                    [
+                        dataset_id,
+                        name,
+                        format,
+                        annotation_path,
+                        image_dir,
+                        image_count,
+                        ann_count,
+                        len(categories),
+                    ],
+                )
+            else:
+                # Accumulate counts for subsequent splits.
+                cursor.execute(
+                    "UPDATE datasets SET "
+                    "image_count = image_count + ?, "
+                    "annotation_count = annotation_count + ?, "
+                    "category_count = GREATEST(category_count, ?) "
+                    "WHERE id = ?",
+                    [image_count, ann_count, len(categories), dataset_id],
+                )
+
+            # -- Insert category records (skip duplicates) -------------------
             if categories:
                 cat_records = [
                     {
@@ -169,9 +202,21 @@ class IngestionService:
                     for cid, cname in categories.items()
                 ]
                 cat_df = pd.DataFrame(cat_records)
-                cursor.execute(
-                    "INSERT INTO categories SELECT * FROM cat_df"
-                )
+                if existing is None:
+                    cursor.execute(
+                        "INSERT INTO categories SELECT * FROM cat_df"
+                    )
+                else:
+                    # For subsequent splits, only insert categories that
+                    # don't already exist for this dataset.
+                    cursor.execute(
+                        "INSERT INTO categories "
+                        "SELECT * FROM cat_df "
+                        "WHERE (dataset_id, category_id) NOT IN "
+                        "(SELECT dataset_id, category_id FROM categories "
+                        " WHERE dataset_id = ?)",
+                        [dataset_id],
+                    )
 
         finally:
             cursor.close()
@@ -183,7 +228,8 @@ class IngestionService:
             try:
                 rows = thumb_cursor.execute(
                     "SELECT id, file_name FROM samples "
-                    "WHERE dataset_id = ? LIMIT ?",
+                    "WHERE dataset_id = ? AND thumbnail_path IS NULL "
+                    "LIMIT ?",
                     [dataset_id, thumb_limit],
                 ).fetchall()
             finally:
@@ -241,3 +287,40 @@ class IngestionService:
                 f"{ann_count} annotations"
             ),
         )
+
+    # ------------------------------------------------------------------
+    # Multi-split ingestion
+    # ------------------------------------------------------------------
+
+    def ingest_splits_with_progress(
+        self,
+        splits: list,
+        dataset_name: str,
+    ) -> Iterator[IngestionProgress]:
+        """Ingest multiple splits as a single dataset, yielding per-split progress.
+
+        Parameters
+        ----------
+        splits:
+            List of objects with ``name``, ``annotation_path``, and
+            ``image_dir`` attributes (e.g. :class:`ImportSplit` instances).
+        dataset_name:
+            Name for the combined dataset.
+        """
+        dataset_id = str(uuid.uuid4())
+
+        for i, split_config in enumerate(splits):
+            yield IngestionProgress(
+                stage="split_start",
+                current=i + 1,
+                total=len(splits),
+                message=f"Starting split: {split_config.name} ({i + 1}/{len(splits)})",
+            )
+
+            yield from self.ingest_with_progress(
+                annotation_path=split_config.annotation_path,
+                image_dir=split_config.image_dir,
+                dataset_name=dataset_name,
+                split=split_config.name,
+                dataset_id=dataset_id,
+            )

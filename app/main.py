@@ -5,7 +5,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+# Load .env into process environment so third-party libs (google-genai, etc.)
+# can read their API keys (e.g. GEMINI_API_KEY).
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
@@ -58,7 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     embedding_service.load_model()
     app.state.embedding_service = embedding_service
 
-    # Reduction service (t-SNE dimensionality reduction for scatter plot)
+    # Reduction service (UMAP dimensionality reduction for scatter plot)
     reduction_service = ReductionService(db=db)
     app.state.reduction_service = reduction_service
 
@@ -85,6 +90,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Shutdown
     plugin_registry.shutdown()
     similarity_service.close()
+    db.connection.execute("CHECKPOINT")  # Flush WAL to disk before container stops
     db.close()
 
 
@@ -95,16 +101,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev -- will restrict later
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# In Docker with Caddy reverse proxy (same origin): no CORS needed.
+# In local dev: allow the Next.js dev server origin.
+settings = get_settings()
+if not settings.behind_proxy:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Router includes
-from app.routers import agent, datasets, embeddings, images, samples, similarity, statistics, views, vlm  # noqa: E402
+from app.routers import agent, annotation_triage, annotations, datasets, embeddings, images, ingestion, samples, similarity, statistics, triage, views, vlm  # noqa: E402
 
 app.include_router(datasets.router)
 app.include_router(samples.router)
@@ -115,6 +125,11 @@ app.include_router(embeddings.router)
 app.include_router(similarity.router)
 app.include_router(agent.router)
 app.include_router(vlm.router)
+app.include_router(ingestion.router)
+app.include_router(annotations.router)
+app.include_router(triage.samples_router)
+app.include_router(triage.datasets_router)
+app.include_router(annotation_triage.router)
 
 
 @app.get("/health")

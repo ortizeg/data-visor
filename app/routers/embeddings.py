@@ -4,7 +4,7 @@ Endpoints:
 - POST /datasets/{dataset_id}/embeddings/generate        -- trigger background embedding generation
 - GET  /datasets/{dataset_id}/embeddings/progress         -- SSE stream of generation progress
 - GET  /datasets/{dataset_id}/embeddings/status           -- current embedding availability
-- POST /datasets/{dataset_id}/embeddings/reduce           -- trigger background t-SNE reduction
+- POST /datasets/{dataset_id}/embeddings/reduce           -- trigger background UMAP reduction
 - GET  /datasets/{dataset_id}/embeddings/reduce/progress  -- SSE stream of reduction progress
 - GET  /datasets/{dataset_id}/embeddings/coordinates      -- 2D scatter-plot coordinates
 """
@@ -136,7 +136,7 @@ def embedding_status(
 
 
 # ---------------------------------------------------------------------------
-# Dimensionality reduction (t-SNE) endpoints
+# Dimensionality reduction (UMAP) endpoints
 # ---------------------------------------------------------------------------
 
 
@@ -147,7 +147,7 @@ def reduce_embeddings(
     db: DuckDBRepo = Depends(get_db),
     reduction_service: ReductionService = Depends(get_reduction_service),
 ) -> dict:
-    """Trigger background t-SNE dimensionality reduction for a dataset.
+    """Trigger background UMAP dimensionality reduction for a dataset.
 
     Returns 202 Accepted immediately.  Monitor progress via the
     ``/reduce/progress`` SSE endpoint.
