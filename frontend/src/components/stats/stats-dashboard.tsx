@@ -11,13 +11,14 @@
  * - Intelligence: AI-powered error pattern analysis and recommendations
  */
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import { useStatistics } from "@/hooks/use-statistics";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSplit, useFilterStore } from "@/stores/filter-store";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
+import { ClassFilter } from "@/components/stats/class-filter";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
 import { EvaluationPanel } from "@/components/stats/evaluation-panel";
 import { ErrorAnalysisPanel } from "@/components/stats/error-analysis-panel";
@@ -54,9 +55,59 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
   const { data: facets } = useFilterFacets(datasetId);
   const { data: stats, isLoading, error } = useStatistics(datasetId, split);
   const [activeTab, setActiveTab] = useState<SubTab>("overview");
+  const [excludedClasses, setExcludedClasses] = useState<Set<string>>(new Set());
 
   const availableSplits = facets?.splits.map((s) => s.name) ?? [];
-  const hasPredictions = stats && stats.summary.pred_annotations > 0;
+
+  // All category names from the unfiltered class distribution
+  const allCategories = useMemo(
+    () => stats?.class_distribution.map((c) => c.category_name) ?? [],
+    [stats],
+  );
+
+  // Derive filtered class distribution and recomputed summary
+  const filteredStats = useMemo(() => {
+    if (!stats) return null;
+    if (excludedClasses.size === 0) return stats;
+
+    const filteredDist = stats.class_distribution.filter(
+      (c) => !excludedClasses.has(c.category_name),
+    );
+    const gtAnnotations = filteredDist.reduce((sum, c) => sum + c.gt_count, 0);
+    const predAnnotations = filteredDist.reduce((sum, c) => sum + c.pred_count, 0);
+
+    return {
+      ...stats,
+      class_distribution: filteredDist,
+      summary: {
+        ...stats.summary,
+        gt_annotations: gtAnnotations,
+        pred_annotations: predAnnotations,
+        total_categories: filteredDist.length,
+      },
+    };
+  }, [stats, excludedClasses]);
+
+  const hasPredictions = filteredStats && filteredStats.summary.pred_annotations > 0;
+
+  const handleToggleClass = useCallback((category: string) => {
+    setExcludedClasses((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => setExcludedClasses(new Set()), []);
+
+  const handleDeselectAll = useCallback(
+    () => setExcludedClasses(new Set(allCategories)),
+    [allCategories],
+  );
 
   if (error) {
     return (
@@ -170,12 +221,23 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
       {activeTab === "overview" && (
         <>
+          {/* Class Filter */}
+          {allCategories.length > 1 && (
+            <ClassFilter
+              categories={allCategories}
+              excludedClasses={excludedClasses}
+              onToggle={handleToggleClass}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+            />
+          )}
+
           {/* Summary Stats */}
           <section>
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Summary
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <SkeletonCard />
                 <SkeletonCard />
@@ -183,7 +245,7 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
                 <SkeletonCard />
               </div>
             ) : (
-              <AnnotationSummary summary={stats.summary} />
+              <AnnotationSummary summary={filteredStats.summary} />
             )}
           </section>
 
@@ -192,11 +254,11 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Class Distribution
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <SkeletonChart height="h-[300px]" />
             ) : (
               <>
-                <ClassDistribution data={stats.class_distribution} />
+                <ClassDistribution data={filteredStats.class_distribution} />
                 <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                   Click any bar to filter the grid by category
                 </p>
@@ -209,10 +271,10 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Split Breakdown
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <SkeletonChart height="h-[250px]" />
             ) : (
-              <SplitBreakdown data={stats.split_breakdown} />
+              <SplitBreakdown data={filteredStats.split_breakdown} />
             )}
           </section>
         </>
