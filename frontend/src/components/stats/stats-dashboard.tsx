@@ -151,6 +151,17 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         </div>
       )}
 
+      {/* Class filter (shared across sub-tabs, like the split selector) */}
+      {allCategories.length > 1 && (
+        <ClassFilter
+          categories={allCategories}
+          excludedClasses={excludedClasses}
+          onToggle={handleToggleClass}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+        />
+      )}
+
       {/* Sub-tab navigation (always visible -- Near Duplicates works without predictions) */}
       <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
         <button
@@ -221,17 +232,6 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
 
       {activeTab === "overview" && (
         <>
-          {/* Class Filter */}
-          {allCategories.length > 1 && (
-            <ClassFilter
-              categories={allCategories}
-              excludedClasses={excludedClasses}
-              onToggle={handleToggleClass}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
-            />
-          )}
-
           {/* Summary Stats */}
           <section>
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
@@ -281,7 +281,7 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
       )}
 
       {activeTab === "evaluation" && hasPredictions && (
-        <EvaluationPanel datasetId={datasetId} split={split} />
+        <EvaluationPanel datasetId={datasetId} split={split} excludedClasses={excludedClasses} />
       )}
 
       {activeTab === "error_analysis" && hasPredictions && (

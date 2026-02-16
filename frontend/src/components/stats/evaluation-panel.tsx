@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useEvaluation } from "@/hooks/use-evaluation";
+import { useFilteredEvaluation } from "@/hooks/use-filtered-evaluation";
 import { fetchConfusionCellSamples } from "@/hooks/use-confusion-cell";
 import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
@@ -22,6 +23,7 @@ import { PerClassTable } from "@/components/stats/per-class-table";
 interface EvaluationPanelProps {
   datasetId: string;
   split: string | null;
+  excludedClasses: Set<string>;
 }
 
 function useDebouncedValue<T>(value: T, delay: number): T {
@@ -50,7 +52,7 @@ function SkeletonChart({ height }: { height: string }) {
   );
 }
 
-export function EvaluationPanel({ datasetId, split }: EvaluationPanelProps) {
+export function EvaluationPanel({ datasetId, split, excludedClasses }: EvaluationPanelProps) {
   const { data: facets } = useFilterFacets(datasetId);
 
   // Available prediction sources (exclude ground_truth)
@@ -76,13 +78,14 @@ export function EvaluationPanel({ datasetId, split }: EvaluationPanelProps) {
   const debouncedIou = useDebouncedValue(iouThreshold, 300);
   const debouncedConf = useDebouncedValue(confThreshold, 300);
 
-  const { data, isLoading } = useEvaluation(
+  const { data: rawData, isLoading } = useEvaluation(
     datasetId,
     source,
     debouncedIou,
     debouncedConf,
     split,
   );
+  const data = useFilteredEvaluation(rawData, excludedClasses);
 
   const handleCellClick = useCallback(
     async (actualClass: string, predictedClass: string) => {
