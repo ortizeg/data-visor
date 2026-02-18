@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-13)
+See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** v1.1 shipped. No active milestone.
+**Current focus:** v1.2 Classification Dataset Support
 
 ## Current Position
 
-Phase: --
-Plan: --
-Status: Between milestones (v1.1 shipped, v1.2 not started)
-Last activity: 2026-02-13 -- v1.1 milestone archived
-
-Progress: [████████████████████████████████████████████████████████████] v1.1: 41/41 plans complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-18 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -49,6 +47,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: v1.1 milestone archived
+Last session: 2026-02-18
+Stopped at: v1.2 milestone initialization
 Resume file: None

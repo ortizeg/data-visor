@@ -8,6 +8,19 @@ DataVisor is an open-source dataset introspection tool for computer vision — a
 
 A single tool that replaces scattered one-off scripts: load any CV dataset, visually browse with annotation overlays, compare ground truth against predictions, cluster via embeddings, and surface mistakes — all in one workflow.
 
+## Current Milestone: v1.2 Classification Dataset Support
+
+**Goal:** Add first-class support for single-label classification datasets with full feature parity to detection workflows.
+
+**Target features:**
+- Auto-detect dataset type (detection vs classification) from annotation format
+- JSONL classification ingestion (Roboflow format: image/prefix/suffix)
+- Grid browsing with class label overlays
+- Classification prediction import and GT vs predicted comparison
+- Classification-specific stats: accuracy, F1, per-class precision/recall, confusion matrix
+- Embedding visualization and clustering for classification datasets
+- Filter/search by class label
+
 ## Current State
 
 **Shipped:** v1.1 (2026-02-13)
@@ -33,6 +46,16 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 - Interactive discovery: confusion matrix, near-duplicates, histogram filtering, find-similar — v1.1
 - Keyboard shortcuts: 16 shortcuts across grid, modal, triage, editing — v1.1
 
+### Active
+
+- [ ] Auto-detect dataset type from annotation format (COCO JSON → detection, JSONL → classification)
+- [ ] JSONL classification ingestion with multi-split support
+- [ ] Grid browsing with class label overlays for classification datasets
+- [ ] Classification prediction import and GT vs predicted comparison
+- [ ] Classification stats: accuracy, F1, per-class precision/recall, confusion matrix
+- [ ] Embedding visualization for classification datasets
+- [ ] Filter/search by class label
+
 ### Out of Scope
 
 - Multi-user collaboration — personal tool, single-user auth only
@@ -40,6 +63,7 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 - Training pipeline integration — DataVisor inspects data, doesn't train
 - Mobile/tablet interface — desktop browser only
 - Full annotation editor (polygons, segmentation) — bounding box only
+- Multi-label classification — single-label per image only for v1.2
 
 ## Constraints
 
@@ -68,4 +92,4 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 | Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x | Fragile — monitor updates |
 
 ---
-*Last updated: 2026-02-13 after v1.1 milestone completion*
+*Last updated: 2026-02-18 after v1.2 milestone started*
