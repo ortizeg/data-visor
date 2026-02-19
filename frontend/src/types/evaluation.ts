@@ -32,6 +32,7 @@ export interface PerClassMetrics {
 }
 
 export interface EvaluationResponse {
+  evaluation_type?: "detection";
   pr_curves: PRCurve[];
   ap_metrics: APMetrics;
   per_class_metrics: PerClassMetrics[];
@@ -40,3 +41,24 @@ export interface EvaluationResponse {
   iou_threshold: number;
   conf_threshold: number;
 }
+
+export interface ClassificationPerClassMetrics {
+  class_name: string;
+  precision: number;
+  recall: number;
+  f1: number;
+  support: number;
+}
+
+export interface ClassificationEvaluationResponse {
+  evaluation_type: "classification";
+  accuracy: number;
+  macro_f1: number;
+  weighted_f1: number;
+  per_class_metrics: ClassificationPerClassMetrics[];
+  confusion_matrix: number[][];
+  confusion_matrix_labels: string[];
+  conf_threshold: number;
+}
+
+export type AnyEvaluationResponse = EvaluationResponse | ClassificationEvaluationResponse;

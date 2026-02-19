@@ -57,7 +57,7 @@ def scan_folder(
     if not result.splits:
         raise HTTPException(
             status_code=404,
-            detail="No COCO datasets detected in this directory",
+            detail="No importable datasets detected in this directory",
         )
 
     return result
@@ -80,6 +80,7 @@ def import_splits(
         for progress in ingestion_service.ingest_splits_with_progress(
             splits=request.splits,
             dataset_name=request.dataset_name,
+            format=request.format,
         ):
             if progress.stage == "split_start":
                 # Extract split name from message for the SSE event.
@@ -108,7 +109,7 @@ def import_splits(
 
 
 # Allowed file extensions shown in the browser (directories always shown).
-_BROWSE_EXTENSIONS = {".json"}
+_BROWSE_EXTENSIONS = {".json", ".jsonl"}
 
 
 @router.post("/browse", response_model=BrowseResponse)

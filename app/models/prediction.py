@@ -23,7 +23,7 @@ class PredictionImportRequest(BaseModel):
     """
 
     prediction_path: str
-    format: Literal["coco", "detection_annotation"] = "coco"
+    format: Literal["coco", "detection_annotation", "classification_jsonl"] = "coco"
     run_name: str | None = None
 
 

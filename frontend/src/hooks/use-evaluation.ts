@@ -8,7 +8,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
-import type { EvaluationResponse } from "@/types/evaluation";
+import type { AnyEvaluationResponse } from "@/types/evaluation";
 
 export function useEvaluation(
   datasetId: string,
@@ -28,7 +28,7 @@ export function useEvaluation(
       split,
     ],
     queryFn: () =>
-      apiFetch<EvaluationResponse>(
+      apiFetch<AnyEvaluationResponse>(
         `/datasets/${datasetId}/evaluation?source=${encodeURIComponent(source)}&iou_threshold=${iouThreshold}&conf_threshold=${confThreshold}${splitParam}`,
       ),
     staleTime: 10 * 60 * 1000, // 10 min -- each (source, iou, conf, split) combo cached

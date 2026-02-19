@@ -19,6 +19,7 @@ export function useImportPredictions(datasetId: string) {
       qc.invalidateQueries({ queryKey: ["dataset", datasetId] });
       qc.invalidateQueries({ queryKey: ["filter-facets", datasetId] });
       qc.invalidateQueries({ queryKey: ["annotations-batch"] });
+      qc.invalidateQueries({ queryKey: ["embedding-coordinates", datasetId] });
     },
   });
 }

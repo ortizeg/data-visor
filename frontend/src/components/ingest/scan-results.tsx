@@ -68,7 +68,9 @@ export default function ScanResults() {
             />
           </div>
           <span className="ml-4 mt-6 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {scanResult.format.toUpperCase()}
+            {scanResult.format === "classification_jsonl"
+              ? "Classification JSONL"
+              : scanResult.format.toUpperCase()}
           </span>
         </div>
         <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">

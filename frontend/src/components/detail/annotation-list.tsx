@@ -14,6 +14,8 @@ import type { Annotation } from "@/types/annotation";
 interface AnnotationListProps {
   /** Annotations to display in the table. */
   annotations: Annotation[];
+  /** Dataset type -- "classification" hides bbox/area columns. */
+  datasetType?: string;
   /** Optional callback to delete a ground_truth annotation. Shows delete buttons when provided. */
   onDelete?: (annotationId: string) => void;
 }
@@ -24,7 +26,9 @@ interface AnnotationListProps {
  * Each row shows: colored class dot, class name, bbox coordinates,
  * area, source, and confidence (if available).
  */
-export function AnnotationList({ annotations, onDelete }: AnnotationListProps) {
+export function AnnotationList({ annotations, datasetType, onDelete }: AnnotationListProps) {
+  const isClassification = datasetType === "classification";
+
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -38,12 +42,16 @@ export function AnnotationList({ annotations, onDelete }: AnnotationListProps) {
               <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400">
                 Class
               </th>
-              <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400">
-                Bounding Box
-              </th>
-              <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 text-right">
-                Area
-              </th>
+              {!isClassification && (
+                <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400">
+                  Bounding Box
+                </th>
+              )}
+              {!isClassification && (
+                <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 text-right">
+                  Area
+                </th>
+              )}
               <th className="px-2 py-1.5 font-medium text-zinc-600 dark:text-zinc-400">
                 Source
               </th>
@@ -80,15 +88,19 @@ export function AnnotationList({ annotations, onDelete }: AnnotationListProps) {
                       </span>
                     </span>
                   </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap font-mono text-zinc-600 dark:text-zinc-400">
-                    {ann.bbox_x.toFixed(1)}, {ann.bbox_y.toFixed(1)},{" "}
-                    {ann.bbox_w.toFixed(1)} x {ann.bbox_h.toFixed(1)}
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
-                    {ann.area.toLocaleString(undefined, {
-                      maximumFractionDigits: 0,
-                    })}
-                  </td>
+                  {!isClassification && (
+                    <td className="px-2 py-1.5 whitespace-nowrap font-mono text-zinc-600 dark:text-zinc-400">
+                      {ann.bbox_x.toFixed(1)}, {ann.bbox_y.toFixed(1)},{" "}
+                      {ann.bbox_w.toFixed(1)} x {ann.bbox_h.toFixed(1)}
+                    </td>
+                  )}
+                  {!isClassification && (
+                    <td className="px-2 py-1.5 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
+                      {ann.area.toLocaleString(undefined, {
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                  )}
                   <td className="px-2 py-1.5 text-zinc-600 dark:text-zinc-400">
                     {ann.source}
                   </td>

@@ -11,16 +11,25 @@ import type { SummaryStats } from "@/types/statistics";
 
 interface AnnotationSummaryProps {
   summary: SummaryStats;
+  datasetType?: string;
 }
 
-const CARDS: { key: keyof SummaryStats; label: string }[] = [
+const DETECTION_CARDS: { key: keyof SummaryStats; label: string }[] = [
   { key: "total_images", label: "Total Images" },
   { key: "gt_annotations", label: "GT Annotations" },
   { key: "pred_annotations", label: "Predictions" },
   { key: "total_categories", label: "Categories" },
 ];
 
-export function AnnotationSummary({ summary }: AnnotationSummaryProps) {
+const CLASSIFICATION_CARDS: { key: keyof SummaryStats; label: string }[] = [
+  { key: "total_images", label: "Total Images" },
+  { key: "gt_annotations", label: "Labeled Images" },
+  { key: "pred_annotations", label: "Predictions" },
+  { key: "total_categories", label: "Classes" },
+];
+
+export function AnnotationSummary({ summary, datasetType }: AnnotationSummaryProps) {
+  const CARDS = datasetType === "classification" ? CLASSIFICATION_CARDS : DETECTION_CARDS;
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {CARDS.map((card) => (

@@ -1,6 +1,6 @@
 export interface PredictionImportRequest {
   prediction_path: string;
-  format: "coco" | "detection_annotation";
+  format: "coco" | "detection_annotation" | "classification_jsonl";
   run_name?: string;
 }
 

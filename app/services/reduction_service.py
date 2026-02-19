@@ -143,10 +143,17 @@ class ReductionService:
         """
         result = cursor.execute(
             """
-            SELECT e.sample_id, e.x, e.y, s.file_name, s.thumbnail_path
+            SELECT e.sample_id, e.x, e.y, s.file_name, s.thumbnail_path,
+                   MIN(gt.category_name) as gt_label,
+                   MIN(pred.category_name) as pred_label
             FROM embeddings e
             JOIN samples s ON e.sample_id = s.id AND e.dataset_id = s.dataset_id
+            LEFT JOIN annotations gt ON gt.sample_id = s.id AND gt.dataset_id = s.dataset_id
+                AND gt.source = 'ground_truth'
+            LEFT JOIN annotations pred ON pred.sample_id = s.id AND pred.dataset_id = s.dataset_id
+                AND pred.source != 'ground_truth'
             WHERE e.dataset_id = ? AND e.x IS NOT NULL
+            GROUP BY e.sample_id, e.x, e.y, s.file_name, s.thumbnail_path
             ORDER BY e.sample_id
             """,
             [dataset_id],
@@ -158,6 +165,8 @@ class ReductionService:
                 "y": r[2],
                 "fileName": r[3],
                 "thumbnailPath": r[4],
+                "gtLabel": r[5],
+                "predLabel": r[6],
             }
             for r in result
         ]

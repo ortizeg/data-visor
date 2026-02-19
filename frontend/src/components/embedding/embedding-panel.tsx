@@ -11,7 +11,7 @@
  * via SSE progress streams.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { DeckGLRef } from "@deck.gl/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,7 +24,7 @@ import {
 } from "@/hooks/use-embeddings";
 import { useEmbeddingProgress } from "@/hooks/use-embedding-progress";
 import { thumbnailUrl } from "@/lib/api";
-import { EmbeddingScatter } from "@/components/embedding/embedding-scatter";
+import { EmbeddingScatter, type ColorMode } from "@/components/embedding/embedding-scatter";
 import { HoverThumbnail } from "@/components/embedding/hover-thumbnail";
 import { LassoOverlay } from "@/components/embedding/lasso-overlay";
 import { useEmbeddingStore, useLassoSelectedIds } from "@/stores/embedding-store";
@@ -32,9 +32,10 @@ import type { EmbeddingPoint } from "@/types/embedding";
 
 interface EmbeddingPanelProps {
   datasetId: string;
+  datasetType?: string;
 }
 
-export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
+export function EmbeddingPanel({ datasetId, datasetType }: EmbeddingPanelProps) {
   const queryClient = useQueryClient();
   const { data: status, isLoading: statusLoading } =
     useEmbeddingStatus(datasetId);
@@ -67,6 +68,13 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
   const setLassoSelectedIds = useEmbeddingStore((s) => s.setLassoSelectedIds);
   const clearLasso = useEmbeddingStore((s) => s.clearLasso);
   const deckRef = useRef<DeckGLRef | null>(null);
+
+  // Color mode state
+  const [colorMode, setColorMode] = useState<ColorMode>("default");
+  const hasPredictions = useMemo(
+    () => coordinates?.some((p) => p.predLabel != null) ?? false,
+    [coordinates],
+  );
 
   // Hover state for thumbnail tooltip
   const [hoveredPoint, setHoveredPoint] = useState<{
@@ -262,6 +270,18 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
           {coordinates.length.toLocaleString()} points
         </span>
 
+        {/* Color mode selector */}
+        <select
+          value={colorMode}
+          onChange={(e) => setColorMode(e.target.value as ColorMode)}
+          className="rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs px-2 py-1 text-zinc-900 dark:text-zinc-100"
+        >
+          <option value="default">Default</option>
+          <option value="gt_class">GT Class</option>
+          <option value="pred_class" disabled={!hasPredictions}>Predicted Class</option>
+          <option value="correctness" disabled={!hasPredictions}>Correct / Incorrect</option>
+        </select>
+
         {/* Lasso toggle */}
         <button
           onClick={() => setLassoActive((v) => !v)}
@@ -316,6 +336,7 @@ export function EmbeddingPanel({ datasetId }: EmbeddingPanelProps) {
           onHover={handleHover}
           selectedIds={lassoSelectedIds}
           deckRef={deckRef}
+          colorMode={colorMode}
         />
         <LassoOverlay
           points={coordinates}
