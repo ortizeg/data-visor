@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_db, get_image_service, get_ingestion_service, get_similarity_service
+from app.ingestion.classification_prediction_parser import ClassificationPredictionParser
 from app.ingestion.detection_annotation_parser import DetectionAnnotationParser
 from app.ingestion.prediction_parser import PredictionParser
 from app.models.dataset import (
@@ -187,7 +188,39 @@ def import_predictions(
         total_inserted = 0
         total_skipped = 0
 
-        if request.format == "detection_annotation":
+        if request.format == "classification_jsonl":
+            # --- Classification JSONL predictions (one label per image) ---
+            if not prediction_path.is_file():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Expected a JSONL file for classification_jsonl format: {request.prediction_path}",
+                )
+
+            # Build sample lookup: filename -> sample_id
+            sample_rows = cursor.execute(
+                "SELECT id, file_name FROM samples WHERE dataset_id = ?",
+                [dataset_id],
+            ).fetchall()
+            sample_lookup: dict[str, str] = {r[1]: r[0] for r in sample_rows}
+
+            parser_cls = ClassificationPredictionParser()
+            for batch_df in parser_cls.parse_streaming(
+                file_path=prediction_path,
+                sample_lookup=sample_lookup,
+                dataset_id=dataset_id,
+                source=run_name,
+            ):
+                cursor.execute(
+                    "INSERT INTO annotations SELECT * FROM batch_df"
+                )
+                total_inserted += len(batch_df)
+
+            # Count total lines to compute skipped
+            with open(prediction_path, encoding="utf-8") as f:
+                file_total = sum(1 for line in f if line.strip())
+            total_skipped = file_total - total_inserted
+
+        elif request.format == "detection_annotation":
             # --- DetectionAnnotation format (directory of per-image JSONs) ---
             if not prediction_path.is_dir():
                 raise HTTPException(
