@@ -114,7 +114,7 @@ export default function DatasetPage({
         <StatsDashboard datasetId={datasetId} datasetType={dataset?.dataset_type} />
       )}
       {activeTab === "embeddings" && (
-        <EmbeddingPanel datasetId={datasetId} />
+        <EmbeddingPanel datasetId={datasetId} datasetType={dataset?.dataset_type} />
       )}
       <SampleModal datasetId={datasetId} samples={allSamples} datasetType={dataset?.dataset_type} />
       <PredictionImportDialog
