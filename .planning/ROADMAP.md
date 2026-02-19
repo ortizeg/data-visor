@@ -4,6 +4,7 @@
 
 - v1.0 MVP - Phases 1-7 (shipped 2026-02-12) — [archive](.planning/milestones/v1.0-ROADMAP.md)
 - v1.1 Deployment, Workflow & Competitive Parity - Phases 8-14 (shipped 2026-02-13) — [archive](.planning/milestones/v1.1-ROADMAP.md)
+- v1.2 Classification Dataset Support - Phases 15-17 (in progress)
 
 ## Phases
 
@@ -73,6 +74,45 @@
 
 </details>
 
+### v1.2 Classification Dataset Support (In Progress)
+
+**Milestone Goal:** First-class single-label classification dataset support with full feature parity to detection workflows -- from ingestion through evaluation to polish.
+
+#### Phase 15: Classification Ingestion & Display
+**Goal**: Users can import, browse, and inspect classification datasets with the same ease as detection datasets
+**Depends on**: Phase 14 (existing codebase)
+**Requirements**: INGEST-01, INGEST-02, INGEST-03, INGEST-04, DISP-01, DISP-02, DISP-03, DISP-04
+**Success Criteria** (what must be TRUE):
+  1. User can point the ingestion wizard at a folder with JSONL annotations and images, and the system auto-detects it as a classification dataset
+  2. User can import multi-split classification datasets (train/valid/test) in a single operation, just like detection datasets
+  3. User sees class label badges on grid thumbnails instead of bounding box overlays when browsing a classification dataset
+  4. User sees GT class label prominently in the sample detail modal and can change it via a dropdown
+  5. Statistics dashboard shows classification-appropriate metrics (labeled images count, class distribution) with no detection-only elements visible (no bbox area histogram, no IoU slider)
+**Plans**: TBD
+
+#### Phase 16: Classification Evaluation
+**Goal**: Users can import predictions and analyze classification model performance with accuracy, F1, confusion matrix, and error categorization
+**Depends on**: Phase 15
+**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
+**Success Criteria** (what must be TRUE):
+  1. User can import classification predictions in JSONL format with confidence scores and see them alongside ground truth
+  2. User sees accuracy, macro F1, weighted F1, and per-class precision/recall/F1 metrics in the evaluation panel
+  3. User sees a confusion matrix and can click any cell to filter the grid to images with that GT/predicted class pair
+  4. User sees each image categorized as correct, misclassified, or missing prediction in the error analysis view
+  5. User sees GT vs predicted label comparison on grid thumbnails and in the detail modal
+**Plans**: TBD
+
+#### Phase 17: Classification Polish
+**Goal**: Classification workflows are production-ready for high-cardinality datasets (43+ classes) with visual aids that surface actionable insights
+**Depends on**: Phase 16
+**Requirements**: POLISH-01, POLISH-02, POLISH-03, POLISH-04
+**Success Criteria** (what must be TRUE):
+  1. Confusion matrix renders readably at 43+ classes with threshold filtering and overflow handling
+  2. User can color the embedding scatter plot by GT class, predicted class, or correct/incorrect status
+  3. User sees a ranked list of most-confused class pairs derived from the confusion matrix
+  4. User sees per-class performance sparklines with color-coded thresholds (green/yellow/red) in the metrics table
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -91,3 +131,6 @@
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
 | 14. Per-Annotation Triage | v1.1 | 3/3 | Complete | 2026-02-13 |
+| 15. Classification Ingestion & Display | v1.2 | 0/TBD | Not started | - |
+| 16. Classification Evaluation | v1.2 | 0/TBD | Not started | - |
+| 17. Classification Polish | v1.2 | 0/TBD | Not started | - |

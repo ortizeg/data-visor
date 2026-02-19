@@ -66,29 +66,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGEST-01 | — | Pending |
-| INGEST-02 | — | Pending |
-| INGEST-03 | — | Pending |
-| INGEST-04 | — | Pending |
-| DISP-01 | — | Pending |
-| DISP-02 | — | Pending |
-| DISP-03 | — | Pending |
-| DISP-04 | — | Pending |
-| EVAL-01 | — | Pending |
-| EVAL-02 | — | Pending |
-| EVAL-03 | — | Pending |
-| EVAL-04 | — | Pending |
-| EVAL-05 | — | Pending |
-| POLISH-01 | — | Pending |
-| POLISH-02 | — | Pending |
-| POLISH-03 | — | Pending |
-| POLISH-04 | — | Pending |
+| INGEST-01 | Phase 15 | Pending |
+| INGEST-02 | Phase 15 | Pending |
+| INGEST-03 | Phase 15 | Pending |
+| INGEST-04 | Phase 15 | Pending |
+| DISP-01 | Phase 15 | Pending |
+| DISP-02 | Phase 15 | Pending |
+| DISP-03 | Phase 15 | Pending |
+| DISP-04 | Phase 15 | Pending |
+| EVAL-01 | Phase 16 | Pending |
+| EVAL-02 | Phase 16 | Pending |
+| EVAL-03 | Phase 16 | Pending |
+| EVAL-04 | Phase 16 | Pending |
+| EVAL-05 | Phase 16 | Pending |
+| POLISH-01 | Phase 17 | Pending |
+| POLISH-02 | Phase 17 | Pending |
+| POLISH-03 | Phase 17 | Pending |
+| POLISH-04 | Phase 17 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*
