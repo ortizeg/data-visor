@@ -11,8 +11,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_db
+from app.models.classification_evaluation import ClassificationEvaluationResponse
 from app.models.error_analysis import ErrorAnalysisResponse
 from app.models.evaluation import ConfusionCellSamplesResponse, EvaluationResponse
+from app.services.classification_error_analysis import classify_errors as classify_classification_errors
+from app.services.classification_evaluation import (
+    compute_classification_evaluation,
+    get_classification_confusion_cell_samples,
+)
 from app.models.statistics import (
     ClassDistribution,
     DatasetStatistics,
@@ -136,7 +142,7 @@ def get_dataset_statistics(
     )
 
 
-@router.get("/{dataset_id}/evaluation", response_model=EvaluationResponse)
+@router.get("/{dataset_id}/evaluation")
 def get_evaluation(
     dataset_id: str,
     source: str = Query("prediction"),
@@ -144,19 +150,20 @@ def get_evaluation(
     conf_threshold: float = Query(0.25, ge=0.0, le=1.0),
     split: str | None = Query(None),
     db: DuckDBRepo = Depends(get_db),
-) -> EvaluationResponse:
+) -> EvaluationResponse | ClassificationEvaluationResponse:
     """Return evaluation metrics comparing predictions to ground truth.
 
-    Computes PR curves, mAP@50/75/50:95, confusion matrix, and per-class
-    precision/recall at the given IoU and confidence thresholds.
+    For detection datasets: PR curves, mAP@50/75/50:95, confusion matrix.
+    For classification datasets: accuracy, F1, confusion matrix, per-class P/R/F1.
     """
     cursor = db.connection.cursor()
     try:
         row = cursor.execute(
-            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+            "SELECT id, dataset_type FROM datasets WHERE id = ?", [dataset_id]
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        dataset_type = row[1] or "detection"
 
         # Verify that the requested source has annotations
         source_count = cursor.execute(
@@ -167,6 +174,11 @@ def get_evaluation(
             raise HTTPException(
                 status_code=404,
                 detail=f"No annotations found for source '{source}'",
+            )
+
+        if dataset_type == "classification":
+            return compute_classification_evaluation(
+                cursor, dataset_id, source, conf_threshold, split=split
             )
 
         return compute_evaluation(
@@ -198,21 +210,33 @@ def get_confusion_cell_samples_endpoint(
     cursor = db.connection.cursor()
     try:
         row = cursor.execute(
-            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+            "SELECT id, dataset_type FROM datasets WHERE id = ?", [dataset_id]
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        dataset_type = row[1] or "detection"
 
-        sample_ids = get_confusion_cell_samples(
-            cursor,
-            dataset_id,
-            source,
-            actual_class,
-            predicted_class,
-            iou_threshold,
-            conf_threshold,
-            split=split,
-        )
+        if dataset_type == "classification":
+            sample_ids = get_classification_confusion_cell_samples(
+                cursor,
+                dataset_id,
+                source,
+                actual_class,
+                predicted_class,
+                conf_threshold,
+                split=split,
+            )
+        else:
+            sample_ids = get_confusion_cell_samples(
+                cursor,
+                dataset_id,
+                source,
+                actual_class,
+                predicted_class,
+                iou_threshold,
+                conf_threshold,
+                split=split,
+            )
 
         return ConfusionCellSamplesResponse(
             actual_class=actual_class,
@@ -241,10 +265,11 @@ def get_error_analysis(
     cursor = db.connection.cursor()
     try:
         row = cursor.execute(
-            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+            "SELECT id, dataset_type FROM datasets WHERE id = ?", [dataset_id]
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        dataset_type = row[1] or "detection"
 
         # Verify that the requested source has annotations
         source_count = cursor.execute(
@@ -255,6 +280,11 @@ def get_error_analysis(
             raise HTTPException(
                 status_code=404,
                 detail=f"No annotations found for source '{source}'",
+            )
+
+        if dataset_type == "classification":
+            return classify_classification_errors(
+                cursor, dataset_id, source, conf_threshold, split=split
             )
 
         return categorize_errors(
