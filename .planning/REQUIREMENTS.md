@@ -23,11 +23,11 @@ Requirements for classification dataset support. Each maps to roadmap phases.
 
 ### Evaluation
 
-- [ ] **EVAL-01**: User can import classification predictions in JSONL format with confidence scores
-- [ ] **EVAL-02**: User sees accuracy, macro F1, weighted F1, and per-class precision/recall/F1 metrics
-- [ ] **EVAL-03**: User sees a confusion matrix for classification with click-to-filter support
-- [ ] **EVAL-04**: User sees error analysis categorizing each image as correct, misclassified, or missing prediction
-- [ ] **EVAL-05**: User sees GT vs predicted label comparison on grid thumbnails and in the modal
+- [x] **EVAL-01**: User can import classification predictions in JSONL format with confidence scores
+- [x] **EVAL-02**: User sees accuracy, macro F1, weighted F1, and per-class precision/recall/F1 metrics
+- [x] **EVAL-03**: User sees a confusion matrix for classification with click-to-filter support
+- [x] **EVAL-04**: User sees error analysis categorizing each image as correct, misclassified, or missing prediction
+- [x] **EVAL-05**: User sees GT vs predicted label comparison on grid thumbnails and in the modal
 
 ### Polish
 
@@ -74,11 +74,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISP-02 | Phase 15 | Done |
 | DISP-03 | Phase 15 | Done |
 | DISP-04 | Phase 15 | Done |
-| EVAL-01 | Phase 16 | Pending |
-| EVAL-02 | Phase 16 | Pending |
-| EVAL-03 | Phase 16 | Pending |
-| EVAL-04 | Phase 16 | Pending |
-| EVAL-05 | Phase 16 | Pending |
+| EVAL-01 | Phase 16 | Done |
+| EVAL-02 | Phase 16 | Done |
+| EVAL-03 | Phase 16 | Done |
+| EVAL-04 | Phase 16 | Done |
+| EVAL-05 | Phase 16 | Done |
 | POLISH-01 | Phase 17 | Pending |
 | POLISH-02 | Phase 17 | Pending |
 | POLISH-03 | Phase 17 | Pending |

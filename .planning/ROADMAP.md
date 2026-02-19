@@ -103,10 +103,10 @@ Plans:
   3. User sees a confusion matrix and can click any cell to filter the grid to images with that GT/predicted class pair
   4. User sees each image categorized as correct, misclassified, or missing prediction in the error analysis view
   5. User sees GT vs predicted label comparison on grid thumbnails and in the detail modal
-**Plans**: 2 plans
+**Plans**: 2 plans (complete)
 Plans:
-- [ ] 16-01-PLAN.md -- Backend: classification prediction parser, evaluation service, error analysis service, endpoint routing
-- [ ] 16-02-PLAN.md -- Frontend: types, hooks, prediction import dialog, evaluation panel, error analysis panel, grid badges
+- [x] 16-01-PLAN.md -- Backend: classification prediction parser, evaluation service, error analysis service, endpoint routing
+- [x] 16-02-PLAN.md -- Frontend: types, hooks, prediction import dialog, evaluation panel, error analysis panel, grid badges
 
 #### Phase 17: Classification Polish
 **Goal**: Classification workflows are production-ready for high-cardinality datasets (43+ classes) with visual aids that surface actionable insights
@@ -138,5 +138,5 @@ Plans:
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
 | 14. Per-Annotation Triage | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 15. Classification Ingestion & Display | v1.2 | 2/2 | Complete | 2026-02-18 |
-| 16. Classification Evaluation | v1.2 | 0/TBD | Not started | - |
+| 16. Classification Evaluation | v1.2 | 2/2 | Complete | 2026-02-18 |
 | 17. Classification Polish | v1.2 | 0/TBD | Not started | - |
