@@ -64,6 +64,8 @@ interface SampleModalProps {
   datasetId: string;
   /** All loaded samples (from the grid's query cache). */
   samples: Sample[];
+  /** Dataset type -- "classification" shows class labels instead of bbox overlays. */
+  datasetType?: string;
 }
 
 /**
@@ -74,7 +76,7 @@ interface SampleModalProps {
  * Finds the sample from the provided samples array (already in memory
  * from the grid's infinite query cache).
  */
-export function SampleModal({ datasetId, samples }: SampleModalProps) {
+export function SampleModal({ datasetId, samples, datasetType }: SampleModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const selectedSampleId = useUIStore((s) => s.selectedSampleId);

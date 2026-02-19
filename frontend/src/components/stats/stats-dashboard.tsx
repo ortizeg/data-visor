@@ -28,6 +28,7 @@ import { IntelligencePanel } from "@/components/stats/intelligence-panel";
 
 interface StatsDashboardProps {
   datasetId: string;
+  datasetType?: string;
 }
 
 type SubTab = "overview" | "evaluation" | "error_analysis" | "worst_images" | "near_duplicates" | "intelligence";
