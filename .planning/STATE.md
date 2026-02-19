@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 16 of 17 (Classification Evaluation)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-02-18 -- Completed 16-01 (Classification Evaluation Backend)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 16 Complete
+Last activity: 2026-02-18 -- Completed 16-02 (Classification Evaluation Frontend)
 
-Progress: [#############################] 95% (v1.0 + v1.1 complete, v1.2 phase 16 plan 1 done)
+Progress: [##############################] 97% (v1.0 + v1.1 complete, v1.2 phase 16 complete)
 
 ## Performance Metrics
 
@@ -46,6 +46,8 @@ Recent decisions affecting current work:
 - [Phase 16]: Reuse ErrorAnalysisResponse model from detection for classification error analysis
 - [Phase 16]: Route by dataset_type at endpoint level, keeping classification/detection services separate
 - [Phase 16]: Remove response_model on evaluation endpoint for union return type support
+- [Phase 16]: Classification metric cards inline rather than reusing MetricsCards (different data shape)
+- [Phase 16]: Map backend error fields to classification labels: true_positives=correct, label_errors=misclassified
 
 ### Pending Todos
 
@@ -65,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 16-01-PLAN.md (Classification Evaluation Backend)
+Stopped at: Completed 16-02-PLAN.md (Classification Evaluation Frontend)
 Resume file: None
