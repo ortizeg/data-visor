@@ -35,7 +35,7 @@ class BaseParser(ABC):
 
     @abstractmethod
     def build_image_batches(
-        self, file_path: Path, dataset_id: str, split: str | None = None
+        self, file_path: Path, dataset_id: str, split: str | None = None, image_dir: str = ""
     ) -> Iterator[pd.DataFrame]:
         """Yield DataFrames of image/sample records in batches.
 

@@ -126,6 +126,11 @@ class DuckDBRepo:
             )
         """)
 
+        # Phase 15: Add dataset_type column to datasets (classification vs detection)
+        self.connection.execute(
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS dataset_type VARCHAR DEFAULT 'detection'"
+        )
+
         # Phase 14: Per-annotation triage overrides
         self.connection.execute("""
             CREATE TABLE IF NOT EXISTS annotation_triage (
