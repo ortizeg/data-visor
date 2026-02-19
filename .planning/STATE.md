@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** A single tool that replaces scattered scripts: load any CV dataset, visually browse with annotation overlays, compare GT vs predictions, cluster via embeddings, and surface mistakes -- all in one workflow.
-**Current focus:** Phase 17 - Classification Polish
+**Current focus:** Milestone v1.2 Complete
 
 ## Current Position
 
 Phase: 17 of 17 (Classification Polish)
-Plan: 1 of 2 in current phase (COMPLETE)
-Status: Executing Phase 17
-Last activity: 2026-02-18 -- Completed 17-01 (Confusion Matrix Polish & Most-Confused Pairs)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 17 Complete -- Milestone v1.2 Complete
+Last activity: 2026-02-18 -- Completed 17-02 (Embedding Color Modes)
 
-Progress: [##############################] 98% (v1.0 + v1.1 complete, v1.2 phase 17 in progress)
+Progress: [################################] 100% (v1.0 + v1.1 + v1.2 complete)
 
 ## Performance Metrics
 
@@ -67,10 +67,10 @@ None.
 
 - v1.0: 7 phases (1-7), 21 plans -- shipped 2026-02-12
 - v1.1: 7 phases (8-14), 20 plans -- shipped 2026-02-13
-- v1.2: 3 phases (15-17), TBD plans -- in progress
+- v1.2: 3 phases (15-17), 6 plans -- shipped 2026-02-18
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 17-01-PLAN.md (Confusion Matrix Polish & Most-Confused Pairs)
+Stopped at: Completed 17-02-PLAN.md (Embedding Color Modes)
 Resume file: None
