@@ -98,7 +98,22 @@ export function GridCell({ sample, datasetId, annotations, isFocused, datasetTyp
           decoding="async"
         />
         {datasetType === "classification" ? (
-          <ClassBadge label={annotations.find((a) => a.source === "ground_truth")?.category_name} />
+          <>
+            <ClassBadge label={annotations.find((a) => a.source === "ground_truth")?.category_name} />
+            {(() => {
+              const gt = annotations.find((a) => a.source === "ground_truth");
+              const pred = annotations.find((a) => a.source !== "ground_truth");
+              if (!pred) return null;
+              const isCorrect = gt?.category_name === pred.category_name;
+              return (
+                <div className={`absolute bottom-1 right-1 z-10 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                  isCorrect ? "bg-green-500/80 text-white" : "bg-red-500/80 text-white"
+                }`}>
+                  {pred.category_name}
+                </div>
+              );
+            })()}
+          </>
         ) : (
           annotations.length > 0 && (
             <AnnotationOverlay

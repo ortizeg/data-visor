@@ -13,6 +13,7 @@ import { useRef, useMemo } from "react";
 
 import type {
   EvaluationResponse,
+  AnyEvaluationResponse,
   APMetrics,
   PRCurve,
 } from "@/types/evaluation";
@@ -144,16 +145,18 @@ function filterEvaluation(
  * lifetime of the raw `data` reference (cache resets when server data changes).
  */
 export function useFilteredEvaluation(
-  data: EvaluationResponse | undefined,
+  data: AnyEvaluationResponse | undefined,
   excludedClasses: Set<string>,
-): EvaluationResponse | undefined {
+): AnyEvaluationResponse | undefined {
   const cacheRef = useRef<{
-    sourceData: EvaluationResponse | undefined;
+    sourceData: AnyEvaluationResponse | undefined;
     results: Map<string, EvaluationResponse>;
   }>({ sourceData: undefined, results: new Map() });
 
   return useMemo(() => {
     if (!data) return undefined;
+    // Classification responses don't need class filtering (no PR curves / AP)
+    if (data.evaluation_type === "classification") return data;
     if (excludedClasses.size === 0) return data;
 
     // Reset cache when upstream data changes
@@ -165,7 +168,7 @@ export function useFilteredEvaluation(
     const cached = cacheRef.current.results.get(key);
     if (cached) return cached;
 
-    const result = filterEvaluation(data, excludedClasses);
+    const result = filterEvaluation(data as EvaluationResponse, excludedClasses);
     cacheRef.current.results.set(key, result);
     return result;
   }, [data, excludedClasses]);
