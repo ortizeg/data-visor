@@ -117,10 +117,10 @@ Plans:
   2. User can color the embedding scatter plot by GT class, predicted class, or correct/incorrect status
   3. User sees a ranked list of most-confused class pairs derived from the confusion matrix
   4. User sees per-class performance sparklines with color-coded thresholds (green/yellow/red) in the metrics table
-**Plans**: 2 plans
+**Plans**: 2 plans (complete)
 Plans:
-- [ ] 17-01-PLAN.md -- Confusion matrix threshold/overflow, most-confused pairs, F1 bars in per-class table
-- [ ] 17-02-PLAN.md -- Embedding scatter color modes (GT class, predicted class, correct/incorrect)
+- [x] 17-01-PLAN.md -- Confusion matrix threshold/overflow, most-confused pairs, F1 bars in per-class table
+- [x] 17-02-PLAN.md -- Embedding scatter color modes (GT class, predicted class, correct/incorrect)
 
 ## Progress
 
@@ -142,4 +142,4 @@ Plans:
 | 14. Per-Annotation Triage | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 15. Classification Ingestion & Display | v1.2 | 2/2 | Complete | 2026-02-18 |
 | 16. Classification Evaluation | v1.2 | 2/2 | Complete | 2026-02-18 |
-| 17. Classification Polish | v1.2 | 0/2 | Not started | - |
+| 17. Classification Polish | v1.2 | 2/2 | Complete | 2026-02-18 |

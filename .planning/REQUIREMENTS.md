@@ -31,10 +31,10 @@ Requirements for classification dataset support. Each maps to roadmap phases.
 
 ### Polish
 
-- [ ] **POLISH-01**: Confusion matrix scales to 43+ classes with readable rendering
-- [ ] **POLISH-02**: User can color embedding scatter by GT class, predicted class, or correct/incorrect status
-- [ ] **POLISH-03**: User sees most-confused class pairs summary from the confusion matrix
-- [ ] **POLISH-04**: User sees per-class performance sparklines with color-coded thresholds
+- [x] **POLISH-01**: Confusion matrix scales to 43+ classes with readable rendering
+- [x] **POLISH-02**: User can color embedding scatter by GT class, predicted class, or correct/incorrect status
+- [x] **POLISH-03**: User sees most-confused class pairs summary from the confusion matrix
+- [x] **POLISH-04**: User sees per-class performance sparklines with color-coded thresholds
 
 ## Future Requirements
 
@@ -79,10 +79,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-03 | Phase 16 | Done |
 | EVAL-04 | Phase 16 | Done |
 | EVAL-05 | Phase 16 | Done |
-| POLISH-01 | Phase 17 | Pending |
-| POLISH-02 | Phase 17 | Pending |
-| POLISH-03 | Phase 17 | Pending |
-| POLISH-04 | Phase 17 | Pending |
+| POLISH-01 | Phase 17 | Done |
+| POLISH-02 | Phase 17 | Done |
+| POLISH-03 | Phase 17 | Done |
+| POLISH-04 | Phase 17 | Done |
 
 **Coverage:**
 - v1.2 requirements: 17 total
