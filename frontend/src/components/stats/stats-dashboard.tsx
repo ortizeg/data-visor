@@ -50,7 +50,8 @@ function SkeletonChart({ height }: { height: string }) {
   );
 }
 
-export function StatsDashboard({ datasetId }: StatsDashboardProps) {
+export function StatsDashboard({ datasetId, datasetType }: StatsDashboardProps) {
+  const isClassification = datasetType === "classification";
   const split = useSplit();
   const setSplit = useFilterStore((s) => s.setSplit);
   const { data: facets } = useFilterFacets(datasetId);
@@ -175,39 +176,45 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         >
           Overview
         </button>
-        <button
-          onClick={() => setActiveTab("evaluation")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "evaluation"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Evaluation
-        </button>
-        <button
-          onClick={() => setActiveTab("error_analysis")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "error_analysis"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Error Analysis
-        </button>
-        <button
-          onClick={() => setActiveTab("worst_images")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "worst_images"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Worst Images
-        </button>
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("evaluation")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "evaluation"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Evaluation
+          </button>
+        )}
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("error_analysis")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "error_analysis"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Error Analysis
+          </button>
+        )}
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("worst_images")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "worst_images"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Worst Images
+          </button>
+        )}
         <button
           onClick={() => setActiveTab("near_duplicates")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -218,17 +225,19 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         >
           Near Duplicates
         </button>
-        <button
-          onClick={() => setActiveTab("intelligence")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "intelligence"
-              ? "border-purple-500 text-purple-600 dark:text-purple-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Intelligence
-        </button>
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("intelligence")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "intelligence"
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Intelligence
+          </button>
+        )}
       </div>
 
       {activeTab === "overview" && (
@@ -246,7 +255,7 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
                 <SkeletonCard />
               </div>
             ) : (
-              <AnnotationSummary summary={filteredStats.summary} />
+              <AnnotationSummary summary={filteredStats.summary} datasetType={datasetType} />
             )}
           </section>
 

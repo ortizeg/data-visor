@@ -17,7 +17,8 @@ import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react
 import dynamic from "next/dynamic";
 import { useHotkeys } from "react-hotkeys-hook";
 
-import { fullImageUrl } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiPatch, fullImageUrl } from "@/lib/api";
 import {
   useAnnotations,
   useUpdateAnnotation,
@@ -101,10 +102,24 @@ export function SampleModal({ datasetId, samples, datasetType }: SampleModalProp
   // Fetch annotations for the selected sample via per-sample endpoint
   const { data: annotations } = useAnnotations(datasetId, selectedSampleId);
 
+  const isClassification = datasetType === "classification";
+
   // Mutation hooks for annotation CRUD
   const updateMutation = useUpdateAnnotation(datasetId, selectedSampleId ?? "");
   const createMutation = useCreateAnnotation(datasetId, selectedSampleId ?? "");
   const deleteMutation = useDeleteAnnotation(datasetId, selectedSampleId ?? "");
+
+  // Category patch mutation for classification label editing
+  const qc = useQueryClient();
+  const patchCategory = useMutation({
+    mutationFn: ({ annotationId, category_name }: { annotationId: string; category_name: string }) =>
+      apiPatch<{ updated: string }>(`/annotations/${annotationId}/category`, { category_name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["annotations", selectedSampleId] });
+      qc.invalidateQueries({ queryKey: ["annotations-batch"] });
+      qc.invalidateQueries({ queryKey: ["filter-facets", datasetId] });
+    },
+  });
 
   // Get categories from filter facets for the class picker
   const { data: facets } = useFilterFacets(datasetId);
@@ -339,7 +354,15 @@ export function SampleModal({ datasetId, samples, datasetType }: SampleModalProp
 
           {/* Full-resolution image with annotation overlays or Konva editor */}
           <div className="relative bg-zinc-100 dark:bg-zinc-800">
-            {isEditMode ? (
+            {isClassification ? (
+              /* Classification: plain image, no overlays or editor */
+              <img
+                src={fullImageUrl(datasetId, sample.id)}
+                alt={sample.file_name}
+                className="h-auto w-full"
+                decoding="async"
+              />
+            ) : isEditMode ? (
               <AnnotationEditor
                 imageUrl={fullImageUrl(datasetId, sample.id)}
                 annotations={gtAnnotations}
@@ -397,45 +420,89 @@ export function SampleModal({ datasetId, samples, datasetType }: SampleModalProp
             )}
           </div>
 
-          {/* Edit toolbar */}
-          <div className="flex items-center gap-2 border-b border-zinc-200 px-5 py-2 dark:border-zinc-700">
-            <button
-              onClick={toggleEditMode}
-              className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                isEditMode
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              }`}
-            >
-              {isEditMode ? "Done" : "Edit Annotations"}
-            </button>
-            {isEditMode && (
+          {/* Classification class label section */}
+          {isClassification && (
+            <div className="flex items-center gap-4 border-b border-zinc-200 px-5 py-3 dark:border-zinc-700">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Class:</span>
+                {gtAnnotations.length > 0 ? (
+                  <select
+                    value={gtAnnotations[0].category_name}
+                    onChange={(e) =>
+                      patchCategory.mutate({
+                        annotationId: gtAnnotations[0].id,
+                        category_name: e.target.value,
+                      })
+                    }
+                    className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-sm text-zinc-400">No label</span>
+                )}
+              </div>
+              {predAnnotations.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Predicted:</span>
+                  <span className="text-sm text-zinc-900 dark:text-zinc-100">
+                    {predAnnotations[0].category_name}
+                  </span>
+                  {predAnnotations[0].confidence !== null && (
+                    <span className="text-xs text-zinc-400">
+                      ({(predAnnotations[0].confidence * 100).toFixed(1)}%)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Edit toolbar (detection only) */}
+          {!isClassification && (
+            <div className="flex items-center gap-2 border-b border-zinc-200 px-5 py-2 dark:border-zinc-700">
               <button
-                onClick={toggleDrawMode}
+                onClick={toggleEditMode}
                 className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isDrawMode
-                    ? "bg-green-600 text-white hover:bg-green-700"
+                  isEditMode
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
-                {isDrawMode ? "Cancel Draw" : "Draw New Box"}
+                {isEditMode ? "Done" : "Edit Annotations"}
               </button>
-            )}
-            {/* Triage filter buttons (always visible, not gated by edit mode) */}
-            <TriageFilterButtons
-              activeFilter={triageFilter}
-              onFilterChange={setTriageFilter}
-            />
+              {isEditMode && (
+                <button
+                  onClick={toggleDrawMode}
+                  className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isDrawMode
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  }`}
+                >
+                  {isDrawMode ? "Cancel Draw" : "Draw New Box"}
+                </button>
+              )}
+              {/* Triage filter buttons (always visible, not gated by edit mode) */}
+              <TriageFilterButtons
+                activeFilter={triageFilter}
+                onFilterChange={setTriageFilter}
+              />
 
-            {/* Spacer + edit hint pushed right */}
-            {isEditMode && (
-              <span className="ml-auto text-xs text-zinc-400">
-                {isDrawMode
-                  ? "Click and drag to draw a new box"
-                  : "Click a box to select, drag to move, handles to resize"}
-              </span>
-            )}
-          </div>
+              {/* Spacer + edit hint pushed right */}
+              {isEditMode && (
+                <span className="ml-auto text-xs text-zinc-400">
+                  {isDrawMode
+                    ? "Click and drag to draw a new box"
+                    : "Click a box to select, drag to move, handles to resize"}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Metadata and annotations section */}
           <div className="grid gap-6 p-5 md:grid-cols-[1fr_2fr]">
@@ -513,6 +580,7 @@ export function SampleModal({ datasetId, samples, datasetType }: SampleModalProp
                 annotations.length > 0 ? (
                   <AnnotationList
                     annotations={annotations}
+                    datasetType={datasetType}
                     onDelete={
                       isEditMode
                         ? (id) => deleteMutation.mutate(id)
