@@ -70,6 +70,9 @@ class ImportRequest(BaseModel):
     splits: list[ImportSplit]
     """Splits to import (user may have deselected some from scan results)."""
 
+    format: str = "coco"
+    """Annotation format: ``"coco"`` or ``"classification_jsonl"``."""
+
 
 class BrowseRequest(BaseModel):
     """Request body for the ``POST /ingestion/browse`` endpoint."""

@@ -85,7 +85,7 @@ def list_datasets(db: DuckDBRepo = Depends(get_db)) -> DatasetListResponse:
         rows = cursor.execute(
             "SELECT id, name, format, source_path, image_dir, "
             "image_count, annotation_count, category_count, "
-            "prediction_count, created_at "
+            "prediction_count, dataset_type, created_at "
             "FROM datasets ORDER BY created_at DESC"
         ).fetchall()
     finally:
@@ -102,7 +102,8 @@ def list_datasets(db: DuckDBRepo = Depends(get_db)) -> DatasetListResponse:
             annotation_count=row[6],
             category_count=row[7],
             prediction_count=row[8],
-            created_at=row[9],
+            dataset_type=row[9] or "detection",
+            created_at=row[10],
         )
         for row in rows
     ]
@@ -119,7 +120,7 @@ def get_dataset(
         row = cursor.execute(
             "SELECT id, name, format, source_path, image_dir, "
             "image_count, annotation_count, category_count, "
-            "prediction_count, created_at "
+            "prediction_count, dataset_type, created_at "
             "FROM datasets WHERE id = ?",
             [dataset_id],
         ).fetchone()
@@ -139,7 +140,8 @@ def get_dataset(
         annotation_count=row[6],
         category_count=row[7],
         prediction_count=row[8],
-        created_at=row[9],
+        dataset_type=row[9] or "detection",
+        created_at=row[10],
     )
 
 

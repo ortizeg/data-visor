@@ -41,12 +41,13 @@ def get_dataset_statistics(
     """
     cursor = db.connection.cursor()
     try:
-        # Verify dataset exists
+        # Verify dataset exists and get dataset_type
         row = cursor.execute(
-            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+            "SELECT id, dataset_type FROM datasets WHERE id = ?", [dataset_id]
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        dataset_type = row[1] or "detection"
 
         # Class distribution: GT and prediction counts per category
         if split is not None:
@@ -90,25 +91,31 @@ def get_dataset_statistics(
         ]
 
         # Summary counts
+        # For classification datasets, gt_annotations = distinct labeled images
+        if dataset_type == "classification":
+            gt_agg = "COUNT(DISTINCT a.sample_id)"
+        else:
+            gt_agg = "COUNT(*)"
+
         if split is not None:
             summary_row = cursor.execute(
-                "SELECT "
-                "(SELECT COUNT(*) FROM samples WHERE dataset_id = ? AND split = ?) as total_images, "
-                "(SELECT COUNT(*) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
-                "WHERE a.dataset_id = ? AND a.source = 'ground_truth' AND s.split = ?) as gt_annotations, "
-                "(SELECT COUNT(*) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
-                "WHERE a.dataset_id = ? AND a.source != 'ground_truth' AND s.split = ?) as pred_annotations, "
-                "(SELECT COUNT(DISTINCT a.category_name) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
-                "WHERE a.dataset_id = ? AND s.split = ?) as total_categories",
+                f"SELECT "
+                f"(SELECT COUNT(*) FROM samples WHERE dataset_id = ? AND split = ?) as total_images, "
+                f"(SELECT {gt_agg} FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                f"WHERE a.dataset_id = ? AND a.source = 'ground_truth' AND s.split = ?) as gt_annotations, "
+                f"(SELECT COUNT(*) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                f"WHERE a.dataset_id = ? AND a.source != 'ground_truth' AND s.split = ?) as pred_annotations, "
+                f"(SELECT COUNT(DISTINCT a.category_name) FROM annotations a JOIN samples s ON a.sample_id = s.id AND a.dataset_id = s.dataset_id "
+                f"WHERE a.dataset_id = ? AND s.split = ?) as total_categories",
                 [dataset_id, split, dataset_id, split, dataset_id, split, dataset_id, split],
             ).fetchone()
         else:
             summary_row = cursor.execute(
-                "SELECT "
-                "(SELECT COUNT(*) FROM samples WHERE dataset_id = ?) as total_images, "
-                "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = 'ground_truth') as gt_annotations, "
-                "(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth') as pred_annotations, "
-                "(SELECT COUNT(DISTINCT category_name) FROM annotations WHERE dataset_id = ?) as total_categories",
+                f"SELECT "
+                f"(SELECT COUNT(*) FROM samples WHERE dataset_id = ?) as total_images, "
+                f"(SELECT {gt_agg} FROM annotations a WHERE a.dataset_id = ? AND a.source = 'ground_truth') as gt_annotations, "
+                f"(SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth') as pred_annotations, "
+                f"(SELECT COUNT(DISTINCT category_name) FROM annotations WHERE dataset_id = ?) as total_categories",
                 [dataset_id, dataset_id, dataset_id, dataset_id],
             ).fetchone()
 

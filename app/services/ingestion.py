@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from app.ingestion.classification_jsonl_parser import ClassificationJSONLParser
 from app.ingestion.coco_parser import COCOParser
 from app.plugins.base_plugin import PluginContext
 from app.plugins.hooks import HOOK_INGEST_COMPLETE, HOOK_INGEST_START
@@ -109,7 +110,12 @@ class IngestionService:
         self.plugins.trigger_hook(HOOK_INGEST_START, context=context)
 
         # -- Step 1: Parse categories ----------------------------------------
-        parser = COCOParser(batch_size=1000)
+        if format == "classification_jsonl":
+            parser = ClassificationJSONLParser(batch_size=1000)
+        elif format == "coco":
+            parser = COCOParser(batch_size=1000)
+        else:
+            raise ValueError(f"Unsupported format: {format}")
         categories = parser.parse_categories(Path(annotation_path))
 
         yield IngestionProgress(
@@ -165,9 +171,13 @@ class IngestionService:
             ).fetchone()
 
             if existing is None:
+                dataset_type = "classification" if format == "classification_jsonl" else "detection"
                 cursor.execute(
-                    "INSERT INTO datasets VALUES "
-                    "(?, ?, ?, ?, ?, ?, ?, ?, 0, current_timestamp, NULL)",
+                    "INSERT INTO datasets "
+                    "(id, name, format, source_path, image_dir, image_count, "
+                    "annotation_count, category_count, prediction_count, "
+                    "created_at, metadata, dataset_type) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, current_timestamp, NULL, ?)",
                     [
                         dataset_id,
                         name,
@@ -177,6 +187,7 @@ class IngestionService:
                         image_count,
                         ann_count,
                         len(categories),
+                        dataset_type,
                     ],
                 )
             else:
@@ -296,6 +307,7 @@ class IngestionService:
         self,
         splits: list,
         dataset_name: str,
+        format: str = "coco",
     ) -> Iterator[IngestionProgress]:
         """Ingest multiple splits as a single dataset, yielding per-split progress.
 
@@ -306,6 +318,8 @@ class IngestionService:
             ``image_dir`` attributes (e.g. :class:`ImportSplit` instances).
         dataset_name:
             Name for the combined dataset.
+        format:
+            Annotation format (``"coco"`` or ``"classification_jsonl"``).
         """
         dataset_id = str(uuid.uuid4())
 
@@ -321,6 +335,7 @@ class IngestionService:
                 annotation_path=split_config.annotation_path,
                 image_dir=split_config.image_dir,
                 dataset_name=dataset_name,
+                format=format,
                 split=split_config.name,
                 dataset_id=dataset_id,
             )

@@ -54,3 +54,9 @@ class AnnotationCreate(BaseModel):
     bbox_y: float
     bbox_w: float
     bbox_h: float
+
+
+class CategoryUpdateRequest(BaseModel):
+    """Request body for PATCH /annotations/{id}/category -- update classification label."""
+
+    category_name: str
