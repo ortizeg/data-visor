@@ -82,7 +82,115 @@ function ClassificationMetricsCards({ data }: { data: ClassificationEvaluationRe
   );
 }
 
-/** Per-class table for classification: Class, Precision, Recall, F1, Support */
+/** Color-coded F1 bar: green >= 0.8, yellow >= 0.5, red < 0.5 */
+function F1Bar({ f1 }: { f1: number }) {
+  const color = f1 >= 0.8 ? "bg-green-500" : f1 >= 0.5 ? "bg-yellow-500" : "bg-red-500";
+  return (
+    <div className="w-16 h-2.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${f1 * 100}%` }} />
+    </div>
+  );
+}
+
+/** Top 10 most-confused (actual, predicted) pairs from confusion matrix */
+function MostConfusedPairs({
+  matrix,
+  labels,
+  onPairClick,
+}: {
+  matrix: number[][];
+  labels: string[];
+  onPairClick?: (actual: string, predicted: string) => void;
+}) {
+  const pairs = useMemo(() => {
+    const result: { actual: string; predicted: string; count: number; pct: number }[] = [];
+    for (let i = 0; i < matrix.length; i++) {
+      const rowSum = matrix[i].reduce((a, b) => a + b, 0);
+      for (let j = 0; j < matrix[i].length; j++) {
+        if (i !== j && matrix[i][j] > 0) {
+          result.push({
+            actual: labels[i],
+            predicted: labels[j],
+            count: matrix[i][j],
+            pct: rowSum > 0 ? matrix[i][j] / rowSum : 0,
+          });
+        }
+      }
+    }
+    result.sort((a, b) => b.count - a.count);
+    return result.slice(0, 10);
+  }, [matrix, labels]);
+
+  return (
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
+      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+        Most Confused Pairs
+      </h3>
+      {pairs.length === 0 ? (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+          No misclassifications found
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <th className="text-left py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400 w-8">
+                  #
+                </th>
+                <th className="text-left py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
+                  Actual
+                </th>
+                <th className="text-center py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400 w-8" />
+                <th className="text-left py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
+                  Predicted
+                </th>
+                <th className="text-right py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
+                  Count
+                </th>
+                <th className="text-right py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
+                  Pct
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {pairs.map((p, idx) => (
+                <tr
+                  key={`${p.actual}-${p.predicted}`}
+                  className={`border-b border-zinc-100 dark:border-zinc-800${
+                    onPairClick ? " cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" : ""
+                  }`}
+                  onClick={onPairClick ? () => onPairClick(p.actual, p.predicted) : undefined}
+                >
+                  <td className="py-2 px-3 text-zinc-400 dark:text-zinc-500">
+                    {idx + 1}
+                  </td>
+                  <td className="py-2 px-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                    {p.actual}
+                  </td>
+                  <td className="py-2 px-3 text-center text-zinc-400 dark:text-zinc-500">
+                    {"\u2192"}
+                  </td>
+                  <td className="py-2 px-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                    {p.predicted}
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                    {p.count.toLocaleString()}
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                    {(p.pct * 100).toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Per-class table for classification: Class, Precision, Recall, F1, Support, Performance */
 function ClassificationPerClassTable({ metrics }: { metrics: ClassificationEvaluationResponse["per_class_metrics"] }) {
   const sorted = useMemo(
     () => [...metrics].sort((a, b) => b.f1 - a.f1),
@@ -123,6 +231,9 @@ function ClassificationPerClassTable({ metrics }: { metrics: ClassificationEvalu
               <th className="text-right py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
                 Support
               </th>
+              <th className="text-right py-2 px-3 font-medium text-zinc-600 dark:text-zinc-400">
+                Performance
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -145,6 +256,11 @@ function ClassificationPerClassTable({ metrics }: { metrics: ClassificationEvalu
                 </td>
                 <td className="py-2 px-3 text-right font-mono text-zinc-700 dark:text-zinc-300">
                   {m.support.toLocaleString()}
+                </td>
+                <td className="py-2 px-3 text-right">
+                  <div className="flex justify-end">
+                    <F1Bar f1={m.f1} />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -276,6 +392,17 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
             matrix={classData.confusion_matrix}
             labels={classData.confusion_matrix_labels}
             onCellClick={handleCellClick}
+          />
+        )}
+
+        {/* Most Confused Pairs */}
+        {isLoading || !classData ? (
+          <SkeletonChart height="h-[200px]" />
+        ) : (
+          <MostConfusedPairs
+            matrix={classData.confusion_matrix}
+            labels={classData.confusion_matrix_labels}
+            onPairClick={handleCellClick}
           />
         )}
 
