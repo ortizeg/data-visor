@@ -283,7 +283,7 @@ export function ErrorAnalysisPanel({ datasetId, split, datasetType }: ErrorAnaly
             <ErrorSamplesGrid
               title="Misclassified"
               errorType="label_error"
-              samples={data.samples_by_type.label_error ?? []}
+              samples={data.samples_by_type.misclassified ?? data.samples_by_type.label_error ?? []}
               datasetId={datasetId}
               color={CLASSIFICATION_COLORS.misclassified}
             />
