@@ -9,17 +9,17 @@ Requirements for classification dataset support. Each maps to roadmap phases.
 
 ### Ingestion
 
-- [ ] **INGEST-01**: User can import a classification dataset from a directory containing JSONL annotations and images
-- [ ] **INGEST-02**: System auto-detects dataset type (detection vs classification) from annotation format during import
-- [ ] **INGEST-03**: User can import multi-split classification datasets (train/valid/test) in a single operation
-- [ ] **INGEST-04**: Schema stores dataset_type on the datasets table and handles classification annotations without bbox values
+- [x] **INGEST-01**: User can import a classification dataset from a directory containing JSONL annotations and images
+- [x] **INGEST-02**: System auto-detects dataset type (detection vs classification) from annotation format during import
+- [x] **INGEST-03**: User can import multi-split classification datasets (train/valid/test) in a single operation
+- [x] **INGEST-04**: Schema stores dataset_type on the datasets table and handles classification annotations without bbox values
 
 ### Display
 
-- [ ] **DISP-01**: User sees class label badges on grid thumbnails for classification datasets
-- [ ] **DISP-02**: User sees class label (GT and prediction) prominently in the sample detail modal
-- [ ] **DISP-03**: User can edit the GT class label via dropdown in the detail modal
-- [ ] **DISP-04**: Statistics dashboard shows classification-appropriate metrics (labeled images, class distribution) and hides detection-only elements (bbox area, IoU slider)
+- [x] **DISP-01**: User sees class label badges on grid thumbnails for classification datasets
+- [x] **DISP-02**: User sees class label (GT and prediction) prominently in the sample detail modal
+- [x] **DISP-03**: User can edit the GT class label via dropdown in the detail modal
+- [x] **DISP-04**: Statistics dashboard shows classification-appropriate metrics (labeled images, class distribution) and hides detection-only elements (bbox area, IoU slider)
 
 ### Evaluation
 
@@ -66,14 +66,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGEST-01 | Phase 15 | Pending |
-| INGEST-02 | Phase 15 | Pending |
-| INGEST-03 | Phase 15 | Pending |
-| INGEST-04 | Phase 15 | Pending |
-| DISP-01 | Phase 15 | Pending |
-| DISP-02 | Phase 15 | Pending |
-| DISP-03 | Phase 15 | Pending |
-| DISP-04 | Phase 15 | Pending |
+| INGEST-01 | Phase 15 | Done |
+| INGEST-02 | Phase 15 | Done |
+| INGEST-03 | Phase 15 | Done |
+| INGEST-04 | Phase 15 | Done |
+| DISP-01 | Phase 15 | Done |
+| DISP-02 | Phase 15 | Done |
+| DISP-03 | Phase 15 | Done |
+| DISP-04 | Phase 15 | Done |
 | EVAL-01 | Phase 16 | Pending |
 | EVAL-02 | Phase 16 | Pending |
 | EVAL-03 | Phase 16 | Pending |
