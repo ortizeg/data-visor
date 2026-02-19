@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 15 of 17 (Classification Ingestion & Display)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 -- Roadmap created for v1.2 milestone
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-18 -- Completed 15-01 (Classification Ingestion Backend)
 
-Progress: [##########################..] 88% (v1.0 + v1.1 complete, v1.2 starting)
+Progress: [##########################..] 90% (v1.0 + v1.1 complete, v1.2 phase 15 plan 1 done)
 
 ## Performance Metrics
 
@@ -39,6 +39,8 @@ Recent decisions affecting current work:
 - Separate classification evaluation function (~50 lines) vs modifying 560-line detection eval
 - Thread `datasetType` prop from page level, branch at component boundaries
 - Parser registry in IngestionService for format dispatch
+- Classification JSONL layouts checked before COCO (more specific first)
+- Classification gt_annotations = COUNT(DISTINCT sample_id) for labeled images
 
 ### Pending Todos
 
@@ -58,5 +60,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Roadmap created for v1.2 milestone
+Stopped at: Completed 15-01-PLAN.md (Classification Ingestion Backend)
 Resume file: None
