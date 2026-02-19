@@ -6,7 +6,14 @@
  * Diagonal cells use blue intensity (correct predictions).
  * Off-diagonal cells use red intensity (misclassifications).
  * Column headers are rotated for compactness.
+ *
+ * Features:
+ * - Threshold slider to hide low-value off-diagonal cells
+ * - Overflow scroll container for large matrices
+ * - Compact mode for high-cardinality (>20 classes)
  */
+
+import { useState, useMemo } from "react";
 
 interface ConfusionMatrixProps {
   matrix: number[][];
@@ -24,6 +31,8 @@ function cellColor(value: number, maxVal: number, isDiagonal: boolean): string {
 }
 
 export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrixProps) {
+  const [threshold, setThreshold] = useState(0.01);
+
   if (matrix.length === 0) {
     return (
       <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
@@ -40,15 +49,57 @@ export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrix
     return sum > 0 ? row.map((v) => v / sum) : row.map(() => 0);
   });
 
+  // Count off-diagonal cells hidden by threshold (only those with actual values)
+  const hiddenCount = useMemo(() => {
+    let count = 0;
+    for (let ri = 0; ri < normalized.length; ri++) {
+      for (let ci = 0; ci < normalized[ri].length; ci++) {
+        if (ri !== ci && normalized[ri][ci] > 0 && normalized[ri][ci] < threshold) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }, [normalized, threshold]);
+
+  const isCompact = labels.length > 20;
+
   return (
     <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
-      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
-        Confusion Matrix
-        <span className="font-normal text-zinc-400 dark:text-zinc-500 ml-1">
-          (row-normalized)
-        </span>
-      </h3>
-      <div className="overflow-x-auto">
+      {/* Header with title and threshold slider */}
+      <div className="flex flex-wrap items-center gap-4 mb-3">
+        <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Confusion Matrix
+          <span className="font-normal text-zinc-400 dark:text-zinc-500 ml-1">
+            (row-normalized)
+          </span>
+        </h3>
+        <div className="flex items-center gap-2 ml-auto">
+          <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Min:
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={0.5}
+            step={0.01}
+            value={threshold}
+            onChange={(e) => setThreshold(parseFloat(e.target.value))}
+            className="w-24 accent-blue-500"
+          />
+          <span className="text-xs font-mono text-zinc-600 dark:text-zinc-400 w-8">
+            {(threshold * 100).toFixed(0)}%
+          </span>
+          {hiddenCount > 0 && (
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              {hiddenCount} cells hidden
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Overflow scroll container */}
+      <div className="overflow-auto max-h-[500px]">
         {/* "Predicted" axis title above the grid columns */}
         <div className="flex">
           <div style={{ flexShrink: 0, width: 24 }} />
@@ -68,7 +119,7 @@ export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrix
             </span>
           </div>
 
-          {/* The matrix table — no axis labels inside */}
+          {/* The matrix table */}
           <table className="text-xs border-separate border-spacing-0">
             <thead>
               <tr>
@@ -80,7 +131,7 @@ export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrix
                     className="p-1 font-medium text-zinc-600 dark:text-zinc-400"
                   >
                     <div
-                      className="whitespace-nowrap"
+                      className={`whitespace-nowrap${isCompact ? " max-w-[80px] truncate" : ""}`}
                       style={{
                         writingMode: "vertical-rl",
                         transform: "rotate(180deg)",
@@ -97,23 +148,27 @@ export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrix
               {normalized.map((row, ri) => (
                 <tr key={ri}>
                   {/* Row class label */}
-                  <td className="p-1 font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap pr-2 text-right">
+                  <td className={`p-1 font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap pr-2 text-right${isCompact ? " max-w-[80px] truncate" : ""}`}>
                     {labels[ri] ?? ""}
                   </td>
                   {/* Data cells */}
                   {row.map((norm, ci) => {
                     const rawValue = matrix[ri][ci];
-                    const isClickable = rawValue > 0 && !!onCellClick;
+                    const isDiagonal = ri === ci;
+                    const isBelowThreshold = !isDiagonal && norm > 0 && norm < threshold;
+                    const isClickable = rawValue > 0 && !!onCellClick && !isBelowThreshold;
                     return (
                       <td
                         key={ci}
-                        className={`p-1 text-center min-w-[32px] border border-zinc-200 dark:border-zinc-700${
+                        className={`p-1 text-center ${isCompact ? "min-w-[24px]" : "min-w-[32px]"} border border-zinc-200 dark:border-zinc-700${
                           isClickable
                             ? " cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-inset"
                             : ""
                         }`}
                         style={{
-                          backgroundColor: cellColor(norm, 1, ri === ci),
+                          backgroundColor: isBelowThreshold
+                            ? "transparent"
+                            : cellColor(norm, 1, isDiagonal),
                         }}
                         onClick={
                           isClickable
@@ -121,9 +176,11 @@ export function ConfusionMatrix({ matrix, labels, onCellClick }: ConfusionMatrix
                             : undefined
                         }
                       >
-                        <span className="text-zinc-800 dark:text-zinc-200">
-                          {norm > 0 ? norm.toFixed(2) : ""}
-                        </span>
+                        {!isBelowThreshold && (
+                          <span className={`text-zinc-800 dark:text-zinc-200${isCompact ? " text-[10px]" : ""}`}>
+                            {norm > 0 ? norm.toFixed(2) : ""}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
