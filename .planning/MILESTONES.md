@@ -56,3 +56,32 @@
 **What's next:** Interactive model evaluation dashboard (PR curves, confusion matrix, per-class AP metrics)
 
 ---
+
+## v1.2 Classification Dataset Support (Shipped: 2026-02-19)
+
+**Delivered:** First-class single-label classification dataset support with full feature parity to detection workflows — from JSONL ingestion through evaluation metrics to production-ready polish for high-cardinality datasets.
+
+**Phases completed:** 15-17 (6 plans total)
+
+**Key accomplishments:**
+
+- Classification JSONL parser with auto-detection of dataset type, multi-split ingestion, and sentinel bbox pattern for unified schema
+- Grid browsing with class label badges and detail modal with dropdown class editor (PATCH mutation)
+- Classification evaluation: accuracy, macro/weighted F1, per-class precision/recall/F1, and clickable confusion matrix
+- Error analysis categorizing each image as correct, misclassified, or missing prediction
+- Confusion matrix polish with threshold filtering and overflow scroll for 43+ classes, most-confused pairs summary
+- Embedding scatter color modes: GT class, predicted class, and correct/incorrect with Tableau 20 categorical palette
+
+**Stats:**
+
+- 61 files created/modified
+- ~6,052 lines of code added
+- 3 phases, 6 plans, 27 commits
+- 1 day (Feb 18, 2026)
+
+**Git range:** `5264e51` → `67a7a9c`
+
+**What's next:** TBD — next milestone planning
+
+---
+

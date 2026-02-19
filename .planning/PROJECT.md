@@ -2,29 +2,16 @@
 
 ## What This Is
 
-DataVisor is an open-source dataset introspection tool for computer vision — an alternative to Voxel51. It combines a high-performance visual browser with VLM-powered agentic workflows to automatically discover dataset blind spots (poor lighting, rare occlusions, label errors). Built as a personal tool for exploring 100K+ image datasets with COCO format annotations.
+DataVisor is an open-source dataset introspection tool for computer vision — an alternative to Voxel51. It combines a high-performance visual browser with VLM-powered agentic workflows to automatically discover dataset blind spots (poor lighting, rare occlusions, label errors). Built as a personal tool for exploring 100K+ image datasets with COCO detection or JSONL classification annotations.
 
 ## Core Value
 
 A single tool that replaces scattered one-off scripts: load any CV dataset, visually browse with annotation overlays, compare ground truth against predictions, cluster via embeddings, and surface mistakes — all in one workflow.
 
-## Current Milestone: v1.2 Classification Dataset Support
-
-**Goal:** Add first-class support for single-label classification datasets with full feature parity to detection workflows.
-
-**Target features:**
-- Auto-detect dataset type (detection vs classification) from annotation format
-- JSONL classification ingestion (Roboflow format: image/prefix/suffix)
-- Grid browsing with class label overlays
-- Classification prediction import and GT vs predicted comparison
-- Classification-specific stats: accuracy, F1, per-class precision/recall, confusion matrix
-- Embedding visualization and clustering for classification datasets
-- Filter/search by class label
-
 ## Current State
 
-**Shipped:** v1.1 (2026-02-13)
-**Codebase:** ~32K LOC (16,256 Python + 15,924 TypeScript) across 14 phases
+**Shipped:** v1.2 (2026-02-19)
+**Codebase:** ~38K LOC (16,256+ Python + 15,924+ TypeScript) across 17 phases
 **Architecture:** FastAPI + DuckDB + Qdrant (backend), Next.js + Tailwind + deck.gl + Recharts (frontend), Pydantic AI (agents), Moondream2 (VLM)
 
 ## Requirements
@@ -45,16 +32,17 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 - Error triage: sample tagging, per-annotation TP/FP/FN via IoU, worst-images ranking, highlight mode — v1.1
 - Interactive discovery: confusion matrix, near-duplicates, histogram filtering, find-similar — v1.1
 - Keyboard shortcuts: 16 shortcuts across grid, modal, triage, editing — v1.1
+- Auto-detect dataset type (detection vs classification) from annotation format — v1.2
+- JSONL classification ingestion with multi-split support — v1.2
+- Grid browsing with class label badges for classification datasets — v1.2
+- Classification prediction import and GT vs predicted comparison — v1.2
+- Classification stats: accuracy, F1, per-class precision/recall, confusion matrix — v1.2
+- Embedding color modes (GT class, predicted class, correct/incorrect) — v1.2
+- Confusion matrix scaling to 43+ classes with threshold filtering — v1.2
 
 ### Active
 
-- [ ] Auto-detect dataset type from annotation format (COCO JSON → detection, JSONL → classification)
-- [ ] JSONL classification ingestion with multi-split support
-- [ ] Grid browsing with class label overlays for classification datasets
-- [ ] Classification prediction import and GT vs predicted comparison
-- [ ] Classification stats: accuracy, F1, per-class precision/recall, confusion matrix
-- [ ] Embedding visualization for classification datasets
-- [ ] Filter/search by class label
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -63,7 +51,7 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 - Training pipeline integration — DataVisor inspects data, doesn't train
 - Mobile/tablet interface — desktop browser only
 - Full annotation editor (polygons, segmentation) — bounding box only
-- Multi-label classification — single-label per image only for v1.2
+- Multi-label classification — single-label per image only for now
 
 ## Constraints
 
@@ -90,6 +78,13 @@ A single tool that replaces scattered one-off scripts: load any CV dataset, visu
 | Pre-computed agent prompt | All data in prompt, no tool calls; avoids Pydantic AI request_limit issues | Good |
 | t-SNE over UMAP | umap-learn blocked by Python 3.14 numba incompatibility | Revisit when numba supports 3.14 |
 | Moondream2 via transformers | trust_remote_code with all_tied_weights_keys patch for transformers 5.x | Fragile — monitor updates |
+| Sentinel bbox values (0.0) for classification | Avoids 30+ null guards; unified schema for detection and classification | Good |
+| Separate classification evaluation service | ~50-line function vs modifying 560-line detection eval; clean separation | Good |
+| Dataset-type routing at endpoint level | Keep classification/detection services separate; route in router layer | Good |
+| Parser registry in IngestionService | Format-based dispatch to COCOParser or ClassificationJSONLParser | Good |
+| Threshold slider for confusion matrix | Hide noisy off-diagonal cells at high cardinality (0-50%, default 1%) | Good |
+| Client-side most-confused pairs | Derived from confusion matrix data; no new API endpoint needed | Good |
+| Tableau 20 palette for embeddings | Stable categorical coloring for class-based scatter modes | Good |
 
 ---
-*Last updated: 2026-02-18 after v1.2 milestone started*
+*Last updated: 2026-02-19 after v1.2 milestone*
