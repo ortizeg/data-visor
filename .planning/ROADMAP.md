@@ -88,7 +88,10 @@
   3. User sees class label badges on grid thumbnails instead of bounding box overlays when browsing a classification dataset
   4. User sees GT class label prominently in the sample detail modal and can change it via a dropdown
   5. Statistics dashboard shows classification-appropriate metrics (labeled images count, class distribution) with no detection-only elements visible (no bbox area histogram, no IoU slider)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md -- Backend: schema migration, ClassificationJSONLParser, FolderScanner detection, IngestionService dispatch, API endpoints
+- [ ] 15-02-PLAN.md -- Frontend: type updates, grid class badges, detail modal class label/dropdown, classification-aware statistics
 
 #### Phase 16: Classification Evaluation
 **Goal**: Users can import predictions and analyze classification model performance with accuracy, F1, confusion matrix, and error categorization
@@ -131,6 +134,6 @@
 | 12. Interactive Viz & Discovery | v1.1 | 3/3 | Complete | 2026-02-13 |
 | 13. Keyboard Shortcuts | v1.1 | 2/2 | Complete | 2026-02-13 |
 | 14. Per-Annotation Triage | v1.1 | 3/3 | Complete | 2026-02-13 |
-| 15. Classification Ingestion & Display | v1.2 | 0/TBD | Not started | - |
+| 15. Classification Ingestion & Display | v1.2 | 0/2 | Planned | - |
 | 16. Classification Evaluation | v1.2 | 0/TBD | Not started | - |
 | 17. Classification Polish | v1.2 | 0/TBD | Not started | - |
