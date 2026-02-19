@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 15 of 17 (Classification Ingestion & Display)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-18 -- Completed 15-01 (Classification Ingestion Backend)
+Phase: 15 of 17 (Classification Ingestion & Display) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase Complete
+Last activity: 2026-02-18 -- Completed 15-02 (Classification Frontend Display)
 
-Progress: [##########################..] 90% (v1.0 + v1.1 complete, v1.2 phase 15 plan 1 done)
+Progress: [############################] 93% (v1.0 + v1.1 complete, v1.2 phase 15 done)
 
 ## Performance Metrics
 
@@ -41,6 +41,8 @@ Recent decisions affecting current work:
 - Parser registry in IngestionService for format dispatch
 - Classification JSONL layouts checked before COCO (more specific first)
 - Classification gt_annotations = COUNT(DISTINCT sample_id) for labeled images
+- [Phase 15]: Thread datasetType from page level, branch at component boundaries with isClassification flag
+- [Phase 15]: Hide detection-only stats tabs for classification (Evaluation, Error Analysis, Worst Images, Intelligence)
 
 ### Pending Todos
 
@@ -60,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 15-01-PLAN.md (Classification Ingestion Backend)
+Stopped at: Completed 15-02-PLAN.md (Classification Frontend Display) -- Phase 15 complete
 Resume file: None
