@@ -176,32 +176,28 @@ export function StatsDashboard({ datasetId, datasetType }: StatsDashboardProps) 
         >
           Overview
         </button>
-        {!isClassification && (
-          <button
-            onClick={() => setActiveTab("evaluation")}
-            disabled={!hasPredictions}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "evaluation"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            Evaluation
-          </button>
-        )}
-        {!isClassification && (
-          <button
-            onClick={() => setActiveTab("error_analysis")}
-            disabled={!hasPredictions}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "error_analysis"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            Error Analysis
-          </button>
-        )}
+        <button
+          onClick={() => setActiveTab("evaluation")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "evaluation"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Evaluation
+        </button>
+        <button
+          onClick={() => setActiveTab("error_analysis")}
+          disabled={!hasPredictions}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "error_analysis"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          Error Analysis
+        </button>
         {!isClassification && (
           <button
             onClick={() => setActiveTab("worst_images")}
@@ -291,11 +287,11 @@ export function StatsDashboard({ datasetId, datasetType }: StatsDashboardProps) 
       )}
 
       {activeTab === "evaluation" && hasPredictions && (
-        <EvaluationPanel datasetId={datasetId} split={split} excludedClasses={excludedClasses} />
+        <EvaluationPanel datasetId={datasetId} split={split} excludedClasses={excludedClasses} datasetType={datasetType} />
       )}
 
       {activeTab === "error_analysis" && hasPredictions && (
-        <ErrorAnalysisPanel datasetId={datasetId} split={split} />
+        <ErrorAnalysisPanel datasetId={datasetId} split={split} datasetType={datasetType} />
       )}
 
       {activeTab === "worst_images" && hasPredictions && (
