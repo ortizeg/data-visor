@@ -16,6 +16,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useStatistics } from "@/hooks/use-statistics";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSplit, useFilterStore } from "@/stores/filter-store";
+import { useUIStore } from "@/stores/ui-store";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
 import { ClassFilter } from "@/components/stats/class-filter";
@@ -30,8 +31,6 @@ interface StatsDashboardProps {
   datasetId: string;
   datasetType?: string;
 }
-
-type SubTab = "overview" | "evaluation" | "error_analysis" | "worst_images" | "near_duplicates" | "intelligence";
 
 function SkeletonCard() {
   return (
@@ -56,7 +55,8 @@ export function StatsDashboard({ datasetId, datasetType }: StatsDashboardProps) 
   const setSplit = useFilterStore((s) => s.setSplit);
   const { data: facets } = useFilterFacets(datasetId);
   const { data: stats, isLoading, error } = useStatistics(datasetId, split);
-  const [activeTab, setActiveTab] = useState<SubTab>("overview");
+  const activeTab = useUIStore((s) => s.statsSubTab);
+  const setActiveTab = useUIStore((s) => s.setStatsSubTab);
   const [excludedClasses, setExcludedClasses] = useState<Set<string>>(new Set());
 
   const availableSplits = facets?.splits.map((s) => s.name) ?? [];

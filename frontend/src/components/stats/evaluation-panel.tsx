@@ -17,6 +17,7 @@ import { useFilteredEvaluation } from "@/hooks/use-filtered-evaluation";
 import { fetchConfusionCellSamples } from "@/hooks/use-confusion-cell";
 import { useFilterStore } from "@/stores/filter-store";
 import { useUIStore } from "@/stores/ui-store";
+import { useDeletePredictions } from "@/hooks/use-delete-predictions";
 import { MetricsCards } from "@/components/stats/metrics-cards";
 import { PRCurveChart } from "@/components/stats/pr-curve-chart";
 import { ConfusionMatrix } from "@/components/stats/confusion-matrix";
@@ -284,23 +285,38 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
     [facets],
   );
 
-  const [source, setSource] = useState("prediction");
+  const source = useUIStore((s) => s.statsSource);
+  const setSource = useUIStore((s) => s.setStatsSource);
+  const deleteMutation = useDeletePredictions(datasetId);
   const [iouThreshold, setIouThreshold] = useState(0.5);
   const [confThreshold, setConfThreshold] = useState(0.25);
 
   // Auto-select first available source
   useEffect(() => {
-    if (predSources.length > 0 && !predSources.includes(source)) {
+    if (predSources.length > 0 && (!source || !predSources.includes(source))) {
       setSource(predSources[0]);
     }
-  }, [predSources, source]);
+  }, [predSources, source, setSource]);
+
+  const handleDeleteSource = useCallback(() => {
+    if (!source || source === "ground_truth") return;
+    if (!window.confirm(`Delete all predictions for "${source}"?`)) return;
+    deleteMutation.mutate(source, {
+      onSuccess: () => {
+        const remaining = predSources.filter((s) => s !== source);
+        setSource(remaining.length > 0 ? remaining[0] : null);
+      },
+    });
+  }, [source, predSources, deleteMutation, setSource]);
 
   const debouncedIou = useDebouncedValue(iouThreshold, 300);
   const debouncedConf = useDebouncedValue(confThreshold, 300);
 
+  const effectiveSource = source ?? "prediction";
+
   const { data: rawData, isLoading } = useEvaluation(
     datasetId,
-    source,
+    effectiveSource,
     debouncedIou,
     debouncedConf,
     split,
@@ -314,7 +330,7 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
           datasetId,
           actualClass,
           predictedClass,
-          source,
+          effectiveSource,
           debouncedIou,
           debouncedConf,
           split,
@@ -325,7 +341,7 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
         console.error("Failed to fetch confusion cell samples:", err);
       }
     },
-    [datasetId, source, debouncedIou, debouncedConf, split],
+    [datasetId, effectiveSource, debouncedIou, debouncedConf, split],
   );
 
   // Classification evaluation layout
@@ -335,13 +351,13 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
       <div className="space-y-6">
         {/* Controls Bar -- no IoU slider for classification */}
         <div className="flex flex-wrap items-center gap-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
-          {/* Source dropdown */}
+          {/* Source dropdown + delete */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Source:
             </label>
             <select
-              value={source}
+              value={effectiveSource}
               onChange={(e) => setSource(e.target.value)}
               className="rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm px-2 py-1 text-zinc-900 dark:text-zinc-100"
             >
@@ -351,6 +367,16 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
                 </option>
               ))}
             </select>
+            <button
+              onClick={handleDeleteSource}
+              disabled={deleteMutation.isPending || !source}
+              title="Delete this prediction run"
+              className="p-1 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+              </svg>
+            </button>
           </div>
 
           {/* Confidence slider */}
@@ -423,13 +449,13 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
     <div className="space-y-6">
       {/* Controls Bar */}
       <div className="flex flex-wrap items-center gap-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
-        {/* Source dropdown */}
+        {/* Source dropdown + delete */}
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Source:
           </label>
           <select
-            value={source}
+            value={effectiveSource}
             onChange={(e) => setSource(e.target.value)}
             className="rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm px-2 py-1 text-zinc-900 dark:text-zinc-100"
           >
@@ -439,6 +465,16 @@ export function EvaluationPanel({ datasetId, split, excludedClasses, datasetType
               </option>
             ))}
           </select>
+          <button
+            onClick={handleDeleteSource}
+            disabled={deleteMutation.isPending || !source}
+            title="Delete this prediction run"
+            className="p-1 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+            </svg>
+          </button>
         </div>
 
         {/* IoU slider */}

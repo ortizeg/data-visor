@@ -42,23 +42,26 @@ export function WorstImagesPanel({ datasetId, split }: WorstImagesPanelProps) {
     [facets],
   );
 
-  const [source, setSource] = useState("prediction");
+  const source = useUIStore((s) => s.statsSource);
+  const setSource = useUIStore((s) => s.setStatsSource);
   const [iouThreshold, setIouThreshold] = useState(0.5);
   const [confThreshold, setConfThreshold] = useState(0.25);
 
   // Auto-select first available source
   useEffect(() => {
-    if (predSources.length > 0 && !predSources.includes(source)) {
+    if (predSources.length > 0 && (!source || !predSources.includes(source))) {
       setSource(predSources[0]);
     }
-  }, [predSources, source]);
+  }, [predSources, source, setSource]);
+
+  const effectiveSource = source ?? "prediction";
 
   const debouncedIou = useDebouncedValue(iouThreshold, 300);
   const debouncedConf = useDebouncedValue(confThreshold, 300);
 
   const { data, isLoading } = useWorstImages(
     datasetId,
-    source,
+    effectiveSource,
     debouncedIou,
     debouncedConf,
     split,
@@ -77,7 +80,7 @@ export function WorstImagesPanel({ datasetId, split }: WorstImagesPanelProps) {
             Source:
           </label>
           <select
-            value={source}
+            value={effectiveSource}
             onChange={(e) => setSource(e.target.value)}
             className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
           >

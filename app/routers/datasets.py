@@ -323,6 +323,54 @@ def import_predictions(
     )
 
 
+@router.delete("/{dataset_id}/predictions/{run_name}", status_code=204)
+def delete_predictions(
+    dataset_id: str,
+    run_name: str,
+    db: DuckDBRepo = Depends(get_db),
+) -> None:
+    """Delete all prediction annotations for a specific run."""
+    if run_name == "ground_truth":
+        raise HTTPException(status_code=400, detail="Cannot delete ground_truth annotations")
+
+    cursor = db.connection.cursor()
+    try:
+        # Verify dataset exists
+        row = cursor.execute(
+            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+
+        # Check annotations exist for this run
+        count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, run_name],
+        ).fetchone()[0]
+        if count == 0:
+            raise HTTPException(status_code=404, detail=f"No predictions found for run '{run_name}'")
+
+        # Delete annotations for this run
+        cursor.execute(
+            "DELETE FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, run_name],
+        )
+
+        # Recalculate prediction_count
+        pred_count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth'",
+            [dataset_id],
+        ).fetchone()[0]
+        cursor.execute(
+            "UPDATE datasets SET prediction_count = ? WHERE id = ?",
+            [pred_count, dataset_id],
+        )
+    finally:
+        cursor.close()
+
+    logger.info("Dataset %s: deleted %d predictions for run '%s'", dataset_id, count, run_name)
+
+
 @router.delete("/{dataset_id}", status_code=204)
 def delete_dataset(
     dataset_id: str,
