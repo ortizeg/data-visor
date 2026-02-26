@@ -11,13 +11,15 @@
  * - Intelligence: AI-powered error pattern analysis and recommendations
  */
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import { useStatistics } from "@/hooks/use-statistics";
 import { useFilterFacets } from "@/hooks/use-filter-facets";
 import { useSplit, useFilterStore } from "@/stores/filter-store";
+import { useUIStore } from "@/stores/ui-store";
 import { AnnotationSummary } from "@/components/stats/annotation-summary";
 import { ClassDistribution } from "@/components/stats/class-distribution";
+import { ClassFilter } from "@/components/stats/class-filter";
 import { SplitBreakdown } from "@/components/stats/split-breakdown";
 import { EvaluationPanel } from "@/components/stats/evaluation-panel";
 import { ErrorAnalysisPanel } from "@/components/stats/error-analysis-panel";
@@ -27,9 +29,8 @@ import { IntelligencePanel } from "@/components/stats/intelligence-panel";
 
 interface StatsDashboardProps {
   datasetId: string;
+  datasetType?: string;
 }
-
-type SubTab = "overview" | "evaluation" | "error_analysis" | "worst_images" | "near_duplicates" | "intelligence";
 
 function SkeletonCard() {
   return (
@@ -48,15 +49,67 @@ function SkeletonChart({ height }: { height: string }) {
   );
 }
 
-export function StatsDashboard({ datasetId }: StatsDashboardProps) {
+export function StatsDashboard({ datasetId, datasetType }: StatsDashboardProps) {
+  const isClassification = datasetType === "classification";
   const split = useSplit();
   const setSplit = useFilterStore((s) => s.setSplit);
   const { data: facets } = useFilterFacets(datasetId);
   const { data: stats, isLoading, error } = useStatistics(datasetId, split);
-  const [activeTab, setActiveTab] = useState<SubTab>("overview");
+  const activeTab = useUIStore((s) => s.statsSubTab);
+  const setActiveTab = useUIStore((s) => s.setStatsSubTab);
+  const [excludedClasses, setExcludedClasses] = useState<Set<string>>(new Set());
 
   const availableSplits = facets?.splits.map((s) => s.name) ?? [];
-  const hasPredictions = stats && stats.summary.pred_annotations > 0;
+
+  // All category names from the unfiltered class distribution
+  const allCategories = useMemo(
+    () => stats?.class_distribution.map((c) => c.category_name) ?? [],
+    [stats],
+  );
+
+  // Derive filtered class distribution and recomputed summary
+  const filteredStats = useMemo(() => {
+    if (!stats) return null;
+    if (excludedClasses.size === 0) return stats;
+
+    const filteredDist = stats.class_distribution.filter(
+      (c) => !excludedClasses.has(c.category_name),
+    );
+    const gtAnnotations = filteredDist.reduce((sum, c) => sum + c.gt_count, 0);
+    const predAnnotations = filteredDist.reduce((sum, c) => sum + c.pred_count, 0);
+
+    return {
+      ...stats,
+      class_distribution: filteredDist,
+      summary: {
+        ...stats.summary,
+        gt_annotations: gtAnnotations,
+        pred_annotations: predAnnotations,
+        total_categories: filteredDist.length,
+      },
+    };
+  }, [stats, excludedClasses]);
+
+  const hasPredictions = filteredStats && filteredStats.summary.pred_annotations > 0;
+
+  const handleToggleClass = useCallback((category: string) => {
+    setExcludedClasses((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => setExcludedClasses(new Set()), []);
+
+  const handleDeselectAll = useCallback(
+    () => setExcludedClasses(new Set(allCategories)),
+    [allCategories],
+  );
 
   if (error) {
     return (
@@ -100,6 +153,17 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         </div>
       )}
 
+      {/* Class filter (shared across sub-tabs, like the split selector) */}
+      {allCategories.length > 1 && (
+        <ClassFilter
+          categories={allCategories}
+          excludedClasses={excludedClasses}
+          onToggle={handleToggleClass}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+        />
+      )}
+
       {/* Sub-tab navigation (always visible -- Near Duplicates works without predictions) */}
       <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
         <button
@@ -134,17 +198,19 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         >
           Error Analysis
         </button>
-        <button
-          onClick={() => setActiveTab("worst_images")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "worst_images"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Worst Images
-        </button>
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("worst_images")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "worst_images"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Worst Images
+          </button>
+        )}
         <button
           onClick={() => setActiveTab("near_duplicates")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -155,17 +221,19 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
         >
           Near Duplicates
         </button>
-        <button
-          onClick={() => setActiveTab("intelligence")}
-          disabled={!hasPredictions}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "intelligence"
-              ? "border-purple-500 text-purple-600 dark:text-purple-400"
-              : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          Intelligence
-        </button>
+        {!isClassification && (
+          <button
+            onClick={() => setActiveTab("intelligence")}
+            disabled={!hasPredictions}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "intelligence"
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Intelligence
+          </button>
+        )}
       </div>
 
       {activeTab === "overview" && (
@@ -175,7 +243,7 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Summary
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <SkeletonCard />
                 <SkeletonCard />
@@ -183,7 +251,7 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
                 <SkeletonCard />
               </div>
             ) : (
-              <AnnotationSummary summary={stats.summary} />
+              <AnnotationSummary summary={filteredStats.summary} datasetType={datasetType} />
             )}
           </section>
 
@@ -192,11 +260,11 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Class Distribution
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <SkeletonChart height="h-[300px]" />
             ) : (
               <>
-                <ClassDistribution data={stats.class_distribution} />
+                <ClassDistribution data={filteredStats.class_distribution} />
                 <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                   Click any bar to filter the grid by category
                 </p>
@@ -209,21 +277,21 @@ export function StatsDashboard({ datasetId }: StatsDashboardProps) {
             <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
               Split Breakdown
             </h2>
-            {isLoading || !stats ? (
+            {isLoading || !filteredStats ? (
               <SkeletonChart height="h-[250px]" />
             ) : (
-              <SplitBreakdown data={stats.split_breakdown} />
+              <SplitBreakdown data={filteredStats.split_breakdown} />
             )}
           </section>
         </>
       )}
 
       {activeTab === "evaluation" && hasPredictions && (
-        <EvaluationPanel datasetId={datasetId} split={split} />
+        <EvaluationPanel datasetId={datasetId} split={split} excludedClasses={excludedClasses} datasetType={datasetType} />
       )}
 
       {activeTab === "error_analysis" && hasPredictions && (
-        <ErrorAnalysisPanel datasetId={datasetId} split={split} />
+        <ErrorAnalysisPanel datasetId={datasetId} split={split} datasetType={datasetType} />
       )}
 
       {activeTab === "worst_images" && hasPredictions && (

@@ -25,9 +25,10 @@ import { GridCell } from "./grid-cell";
 
 interface ImageGridProps {
   datasetId: string;
+  datasetType?: string;
 }
 
-export function ImageGrid({ datasetId }: ImageGridProps) {
+export function ImageGrid({ datasetId, datasetType }: ImageGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -215,6 +216,7 @@ export function ImageGrid({ datasetId }: ImageGridProps) {
                     datasetId={datasetId}
                     annotations={annotationMap?.[sample.id] ?? []}
                     isFocused={focusedGridIndex === sampleIdx}
+                    datasetType={datasetType}
                   />
                 );
               })}

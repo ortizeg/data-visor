@@ -106,17 +106,17 @@ export default function DatasetPage({
         <div className="flex flex-1 overflow-hidden">
           <FilterSidebar datasetId={datasetId} />
           <div className="flex-1 overflow-hidden">
-            <ImageGrid datasetId={datasetId} />
+            <ImageGrid datasetId={datasetId} datasetType={dataset?.dataset_type} />
           </div>
         </div>
       )}
       {activeTab === "statistics" && (
-        <StatsDashboard datasetId={datasetId} />
+        <StatsDashboard datasetId={datasetId} datasetType={dataset?.dataset_type} />
       )}
       {activeTab === "embeddings" && (
-        <EmbeddingPanel datasetId={datasetId} />
+        <EmbeddingPanel datasetId={datasetId} datasetType={dataset?.dataset_type} />
       )}
-      <SampleModal datasetId={datasetId} samples={allSamples} />
+      <SampleModal datasetId={datasetId} samples={allSamples} datasetType={dataset?.dataset_type} />
       <PredictionImportDialog
         datasetId={datasetId}
         open={showPredImport}

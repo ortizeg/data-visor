@@ -1,17 +1,22 @@
-"""Heuristic-based COCO dataset folder scanner.
+"""Heuristic-based dataset folder scanner.
 
-Detects three common COCO layouts:
+Detects COCO and classification JSONL layouts:
 
+- **Layout D (Classification split dirs):** Split directories with JSONL + images.
+- **Layout E (Classification flat):** Flat JSONL at root with images.
 - **Layout B (Roboflow):** Split directories containing both annotation
   JSON and images co-located.
 - **Layout A (Standard COCO):** An ``annotations/`` directory with per-split
   JSON files paired with image directories.
 - **Layout C (Flat):** A single annotation file at root with an ``images/``
   directory or co-located images.
+
+Classification layouts are checked first since JSONL files are never COCO.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from pathlib import Path
@@ -67,8 +72,9 @@ def _stem(path: str) -> str:
 
 
 class FolderScanner:
-    """Walk a directory tree and detect importable COCO datasets.
+    """Walk a directory tree and detect importable datasets.
 
+    Supports COCO and classification JSONL formats.
     Supports both local and GCS paths via :class:`StorageBackend`.
 
     Usage::
@@ -109,19 +115,33 @@ class FolderScanner:
         warnings: list[str] = []
 
         if is_gcs:
-            splits = self._scan_gcs(resolved, warnings)
+            splits, fmt = self._scan_gcs(resolved, warnings)
         else:
-            # Use optimised local-only path (os.scandir is faster).
+            # Try classification JSONL layouts first (more specific).
+            splits = self._try_layout_d(Path(resolved), warnings)
+            if not splits:
+                splits = self._try_layout_e(Path(resolved), warnings)
+            if splits:
+                return ScanResult(
+                    root_path=resolved,
+                    dataset_name=_basename(resolved),
+                    format="classification_jsonl",
+                    splits=splits,
+                    warnings=warnings,
+                )
+
+            # Fall back to COCO layouts.
             splits = self._try_layout_b(Path(resolved), warnings)
             if not splits:
                 splits = self._try_layout_a(Path(resolved), warnings)
             if not splits:
                 splits = self._try_layout_c(Path(resolved), warnings)
+            fmt = "coco"
 
         return ScanResult(
             root_path=resolved,
             dataset_name=_basename(resolved),
-            format="coco",
+            format=fmt,
             splits=splits,
             warnings=warnings,
         )
@@ -132,11 +152,20 @@ class FolderScanner:
 
     def _scan_gcs(
         self, root: str, warnings: list[str]
-    ) -> list[DetectedSplit]:
-        """Detect COCO datasets in a GCS prefix using StorageBackend."""
+    ) -> tuple[list[DetectedSplit], str]:
+        """Detect datasets in a GCS prefix using StorageBackend.
+
+        Returns a tuple of (splits, format_string).
+        """
         entries = self.storage.list_dir_detail(root)
         dirs = [e for e in entries if e["type"] == "directory"]
         jsons = [e for e in entries if e["type"] == "file" and e["name"].lower().endswith(".json")]
+        jsonls = [e for e in entries if e["type"] == "file" and e["name"].lower().endswith(".jsonl")]
+
+        # Try classification JSONL layouts first (more specific).
+        cls_splits = self._scan_gcs_classification(root, entries, dirs, jsonls, warnings)
+        if cls_splits:
+            return cls_splits, "classification_jsonl"
 
         # Try Layout B: split directories
         split_dirs: dict[str, str] = {}
@@ -175,7 +204,7 @@ class FolderScanner:
                     else:
                         warnings.append(f"Found JSON but not valid COCO: {jpath}")
             if splits:
-                return splits
+                return splits, "coco"
 
         # Try Layout A: annotations/ dir
         ann_dir = _join(root, "annotations")
@@ -234,7 +263,7 @@ class FolderScanner:
                             annotation_file_size=coco_size,
                         ))
                 if splits:
-                    return splits
+                    return splits, "coco"
 
         # Try Layout C: flat JSON at root
         for jentry in sorted(jsons, key=lambda e: e["name"]):
@@ -254,16 +283,16 @@ class FolderScanner:
                         image_dir=img_dir_path,
                         image_count=img_count,
                         annotation_file_size=jentry.get("size") or 0,
-                    )]
+                    )], "coco"
                 else:
                     warnings.append(
                         f"COCO annotation found ({jentry['name']}) but no images in {img_dir_path}"
                     )
-                    return []
+                    return [], "coco"
             else:
                 warnings.append(f"Found JSON but not valid COCO: {jpath}")
 
-        return []
+        return [], "coco"
 
     def _is_coco_annotation_remote(self, path: str) -> bool:
         """Check if a remote file looks like COCO annotation JSON."""
@@ -294,7 +323,195 @@ class FolderScanner:
             return 0
 
     # ------------------------------------------------------------------
-    # Layout detectors (local-only, preserved for performance)
+    # GCS classification detection
+    # ------------------------------------------------------------------
+
+    def _scan_gcs_classification(
+        self,
+        root: str,
+        entries: list[dict],
+        dirs: list[dict],
+        jsonls: list[dict],
+        warnings: list[str],
+    ) -> list[DetectedSplit]:
+        """Detect classification JSONL datasets in a GCS prefix."""
+        # Try split directories with JSONL
+        split_dirs: dict[str, str] = {}
+        for d in dirs:
+            norm = d["name"].lower()
+            if norm in SPLIT_DIR_NAMES:
+                canonical = SPLIT_DIR_NAMES[norm]
+                if canonical not in split_dirs:
+                    split_dirs[canonical] = _join(root, d["name"])
+
+        if split_dirs:
+            splits: list[DetectedSplit] = []
+            for canonical_name, dir_path in sorted(split_dirs.items()):
+                sub_entries = self.storage.list_dir_detail(dir_path)
+                sub_jsonls = sorted(
+                    [e for e in sub_entries if e["type"] == "file" and e["name"].lower().endswith(".jsonl")],
+                    key=lambda e: e["name"],
+                )
+                for jentry in sub_jsonls:
+                    jpath = _join(dir_path, jentry["name"])
+                    if self._is_classification_jsonl_remote(jpath):
+                        img_count = sum(
+                            1 for e in sub_entries
+                            if e["type"] == "file"
+                            and os.path.splitext(e["name"])[1].lower() in IMAGE_EXTENSIONS
+                        )
+                        if img_count > 0:
+                            splits.append(DetectedSplit(
+                                name=canonical_name,
+                                annotation_path=jpath,
+                                image_dir=dir_path,
+                                image_count=img_count,
+                                annotation_file_size=jentry.get("size") or 0,
+                            ))
+                        break
+            if splits:
+                return splits
+
+        # Try flat JSONL at root
+        for jentry in sorted(jsonls, key=lambda e: e["name"]):
+            jpath = _join(root, jentry["name"])
+            if self._is_classification_jsonl_remote(jpath):
+                images_dir = _join(root, "images")
+                if self.storage.isdir(images_dir):
+                    img_count = self._count_images_remote(images_dir)
+                    img_dir_path = images_dir
+                else:
+                    img_count = self._count_images_remote(root)
+                    img_dir_path = root
+                if img_count > 0:
+                    return [DetectedSplit(
+                        name=_basename(root),
+                        annotation_path=jpath,
+                        image_dir=img_dir_path,
+                        image_count=img_count,
+                        annotation_file_size=jentry.get("size") or 0,
+                    )]
+
+        return []
+
+    def _is_classification_jsonl_remote(self, path: str) -> bool:
+        """Check if a remote JSONL file looks like classification data."""
+        try:
+            with self.storage.open(path, "r") as f:
+                lines_checked = 0
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    record = json.loads(line)
+                    has_filename = any(k in record for k in ("filename", "file_name", "image", "path"))
+                    has_label = any(k in record for k in ("label", "class", "category", "class_name"))
+                    has_bbox = "bbox" in record or "annotations" in record
+                    if not (has_filename and has_label and not has_bbox):
+                        return False
+                    lines_checked += 1
+                    if lines_checked >= 5:
+                        break
+                return lines_checked > 0
+        except Exception:
+            return False
+
+    # ------------------------------------------------------------------
+    # Classification layout detectors (local-only)
+    # ------------------------------------------------------------------
+
+    def _try_layout_d(
+        self, root: Path, warnings: list[str]
+    ) -> list[DetectedSplit]:
+        """Layout D: Split directories with co-located JSONL + images."""
+        split_dirs = self._detect_split_dirs(root)
+        if not split_dirs:
+            return []
+
+        splits: list[DetectedSplit] = []
+        for canonical_name, dir_path in sorted(split_dirs.items()):
+            jsonl_files = [
+                f for f in dir_path.iterdir()
+                if f.is_file() and f.suffix.lower() == ".jsonl"
+            ]
+            for jf in sorted(jsonl_files, key=lambda p: p.name):
+                if self._is_classification_jsonl(jf):
+                    img_count = self._count_images(dir_path)
+                    if img_count > 0:
+                        splits.append(
+                            DetectedSplit(
+                                name=canonical_name,
+                                annotation_path=str(jf),
+                                image_dir=str(dir_path),
+                                image_count=img_count,
+                                annotation_file_size=jf.stat().st_size,
+                            )
+                        )
+                    break
+
+        return splits
+
+    def _try_layout_e(
+        self, root: Path, warnings: list[str]
+    ) -> list[DetectedSplit]:
+        """Layout E: Flat JSONL at root with images/ subdir or co-located."""
+        jsonl_files = [
+            f for f in root.iterdir()
+            if f.is_file() and f.suffix.lower() == ".jsonl"
+        ]
+
+        for jf in sorted(jsonl_files, key=lambda p: p.name):
+            if self._is_classification_jsonl(jf):
+                images_dir = root / "images"
+                if images_dir.is_dir():
+                    img_count = self._count_images(images_dir)
+                    img_dir_path = images_dir
+                else:
+                    img_count = self._count_images(root)
+                    img_dir_path = root
+
+                if img_count > 0:
+                    return [
+                        DetectedSplit(
+                            name=root.name,
+                            annotation_path=str(jf),
+                            image_dir=str(img_dir_path),
+                            image_count=img_count,
+                            annotation_file_size=jf.stat().st_size,
+                        )
+                    ]
+
+        return []
+
+    @staticmethod
+    def _is_classification_jsonl(file_path: Path) -> bool:
+        """Return ``True`` if *file_path* looks like a classification JSONL file.
+
+        Reads the first 5 non-empty lines, parses each as JSON, and checks
+        for filename + label keys without bbox/annotations keys.
+        """
+        try:
+            lines_checked = 0
+            with open(file_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    record = json.loads(line)
+                    has_filename = any(k in record for k in ("filename", "file_name", "image", "path"))
+                    has_label = any(k in record for k in ("label", "class", "category", "class_name"))
+                    has_bbox = "bbox" in record or "annotations" in record
+                    if not (has_filename and has_label and not has_bbox):
+                        return False
+                    lines_checked += 1
+                    if lines_checked >= 5:
+                        break
+            return lines_checked > 0
+        except Exception:
+            return False
+
+    # ------------------------------------------------------------------
+    # COCO layout detectors (local-only, preserved for performance)
     # ------------------------------------------------------------------
 
     def _try_layout_b(

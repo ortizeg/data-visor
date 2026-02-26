@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_db, get_image_service, get_ingestion_service, get_similarity_service
+from app.ingestion.classification_prediction_parser import ClassificationPredictionParser
 from app.ingestion.detection_annotation_parser import DetectionAnnotationParser
 from app.ingestion.prediction_parser import PredictionParser
 from app.models.dataset import (
@@ -85,7 +86,7 @@ def list_datasets(db: DuckDBRepo = Depends(get_db)) -> DatasetListResponse:
         rows = cursor.execute(
             "SELECT id, name, format, source_path, image_dir, "
             "image_count, annotation_count, category_count, "
-            "prediction_count, created_at "
+            "prediction_count, dataset_type, created_at "
             "FROM datasets ORDER BY created_at DESC"
         ).fetchall()
     finally:
@@ -102,7 +103,8 @@ def list_datasets(db: DuckDBRepo = Depends(get_db)) -> DatasetListResponse:
             annotation_count=row[6],
             category_count=row[7],
             prediction_count=row[8],
-            created_at=row[9],
+            dataset_type=row[9] or "detection",
+            created_at=row[10],
         )
         for row in rows
     ]
@@ -119,7 +121,7 @@ def get_dataset(
         row = cursor.execute(
             "SELECT id, name, format, source_path, image_dir, "
             "image_count, annotation_count, category_count, "
-            "prediction_count, created_at "
+            "prediction_count, dataset_type, created_at "
             "FROM datasets WHERE id = ?",
             [dataset_id],
         ).fetchone()
@@ -139,7 +141,8 @@ def get_dataset(
         annotation_count=row[6],
         category_count=row[7],
         prediction_count=row[8],
-        created_at=row[9],
+        dataset_type=row[9] or "detection",
+        created_at=row[10],
     )
 
 
@@ -185,7 +188,39 @@ def import_predictions(
         total_inserted = 0
         total_skipped = 0
 
-        if request.format == "detection_annotation":
+        if request.format == "classification_jsonl":
+            # --- Classification JSONL predictions (one label per image) ---
+            if not prediction_path.is_file():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Expected a JSONL file for classification_jsonl format: {request.prediction_path}",
+                )
+
+            # Build sample lookup: filename -> sample_id
+            sample_rows = cursor.execute(
+                "SELECT id, file_name FROM samples WHERE dataset_id = ?",
+                [dataset_id],
+            ).fetchall()
+            sample_lookup: dict[str, str] = {r[1]: r[0] for r in sample_rows}
+
+            parser_cls = ClassificationPredictionParser()
+            for batch_df in parser_cls.parse_streaming(
+                file_path=prediction_path,
+                sample_lookup=sample_lookup,
+                dataset_id=dataset_id,
+                source=run_name,
+            ):
+                cursor.execute(
+                    "INSERT INTO annotations SELECT * FROM batch_df"
+                )
+                total_inserted += len(batch_df)
+
+            # Count total lines to compute skipped
+            with open(prediction_path, encoding="utf-8") as f:
+                file_total = sum(1 for line in f if line.strip())
+            total_skipped = file_total - total_inserted
+
+        elif request.format == "detection_annotation":
             # --- DetectionAnnotation format (directory of per-image JSONs) ---
             if not prediction_path.is_dir():
                 raise HTTPException(
@@ -286,6 +321,54 @@ def import_predictions(
         skipped_count=total_skipped,
         message=message,
     )
+
+
+@router.delete("/{dataset_id}/predictions/{run_name}", status_code=204)
+def delete_predictions(
+    dataset_id: str,
+    run_name: str,
+    db: DuckDBRepo = Depends(get_db),
+) -> None:
+    """Delete all prediction annotations for a specific run."""
+    if run_name == "ground_truth":
+        raise HTTPException(status_code=400, detail="Cannot delete ground_truth annotations")
+
+    cursor = db.connection.cursor()
+    try:
+        # Verify dataset exists
+        row = cursor.execute(
+            "SELECT id FROM datasets WHERE id = ?", [dataset_id]
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+
+        # Check annotations exist for this run
+        count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, run_name],
+        ).fetchone()[0]
+        if count == 0:
+            raise HTTPException(status_code=404, detail=f"No predictions found for run '{run_name}'")
+
+        # Delete annotations for this run
+        cursor.execute(
+            "DELETE FROM annotations WHERE dataset_id = ? AND source = ?",
+            [dataset_id, run_name],
+        )
+
+        # Recalculate prediction_count
+        pred_count = cursor.execute(
+            "SELECT COUNT(*) FROM annotations WHERE dataset_id = ? AND source != 'ground_truth'",
+            [dataset_id],
+        ).fetchone()[0]
+        cursor.execute(
+            "UPDATE datasets SET prediction_count = ? WHERE id = ?",
+            [pred_count, dataset_id],
+        )
+    finally:
+        cursor.close()
+
+    logger.info("Dataset %s: deleted %d predictions for run '%s'", dataset_id, count, run_name)
 
 
 @router.delete("/{dataset_id}", status_code=204)

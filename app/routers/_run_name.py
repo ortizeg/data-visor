@@ -22,6 +22,8 @@ def derive_run_name(prediction_path: Path, fmt: str) -> str:
 
     Falls back to ``"prediction"`` when metadata cannot be extracted.
     """
+    if fmt == "classification_jsonl":
+        return _from_coco(prediction_path)
     if fmt == "detection_annotation":
         return _from_detection_annotation(prediction_path)
     return _from_coco(prediction_path)

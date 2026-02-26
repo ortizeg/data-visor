@@ -13,6 +13,9 @@ import { DEFAULT_COLUMNS } from "@/lib/constants";
 /** Which tab is active on the dataset page. */
 export type DatasetTab = "grid" | "statistics" | "embeddings";
 
+/** Which sub-tab is active within the Statistics dashboard. */
+export type StatsSubTab = "overview" | "evaluation" | "error_analysis" | "worst_images" | "near_duplicates" | "intelligence";
+
 interface UIState {
   /** Currently selected sample ID for the detail modal. */
   selectedSampleId: string | null;
@@ -36,6 +39,10 @@ interface UIState {
   focusedGridIndex: number | null;
   /** Whether the keyboard shortcuts help overlay is open. */
   isHelpOverlayOpen: boolean;
+  /** Which statistics sub-tab is active. */
+  statsSubTab: StatsSubTab;
+  /** Selected prediction source across statistics sub-tabs. null = not yet selected. */
+  statsSource: string | null;
 
   /** Open the detail modal for a given sample. */
   openDetailModal: (sampleId: string) => void;
@@ -61,6 +68,10 @@ interface UIState {
   setFocusedGridIndex: (index: number | null) => void;
   /** Toggle the keyboard shortcuts help overlay. */
   toggleHelpOverlay: () => void;
+  /** Set the active statistics sub-tab. */
+  setStatsSubTab: (tab: StatsSubTab) => void;
+  /** Set the selected prediction source for statistics panels. */
+  setStatsSource: (source: string | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -75,6 +86,8 @@ export const useUIStore = create<UIState>((set) => ({
   isHighlightMode: false,
   focusedGridIndex: null,
   isHelpOverlayOpen: false,
+  statsSubTab: "overview",
+  statsSource: null,
 
   openDetailModal: (sampleId) =>
     set({ selectedSampleId: sampleId, isDetailModalOpen: true }),
@@ -126,4 +139,6 @@ export const useUIStore = create<UIState>((set) => ({
   setFocusedGridIndex: (index) => set({ focusedGridIndex: index }),
   toggleHelpOverlay: () =>
     set((state) => ({ isHelpOverlayOpen: !state.isHelpOverlayOpen })),
+  setStatsSubTab: (tab) => set({ statsSubTab: tab }),
+  setStatsSource: (source) => set({ statsSource: source }),
 }));

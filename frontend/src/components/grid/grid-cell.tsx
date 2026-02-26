@@ -32,6 +32,18 @@ function tagStyle(tag: string): string {
   }
 }
 
+/** Small label badge for classification datasets (replaces bbox overlay). */
+function ClassBadge({ label }: { label?: string }) {
+  if (!label) return null;
+  return (
+    <div className="absolute bottom-1 left-1 z-10">
+      <span className="rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 interface GridCellProps {
   sample: Sample;
   datasetId: string;
@@ -39,9 +51,11 @@ interface GridCellProps {
   annotations: Annotation[];
   /** Whether this cell has keyboard focus (blue ring indicator). */
   isFocused?: boolean;
+  /** Dataset type -- "classification" shows class badges instead of bbox overlays. */
+  datasetType?: string;
 }
 
-export function GridCell({ sample, datasetId, annotations, isFocused }: GridCellProps) {
+export function GridCell({ sample, datasetId, annotations, isFocused, datasetType }: GridCellProps) {
   const openDetailModal = useUIStore((s) => s.openDetailModal);
   const isSelecting = useFilterStore((s) => s.isSelecting);
   const selectedSampleIds = useFilterStore((s) => s.selectedSampleIds);
@@ -83,13 +97,32 @@ export function GridCell({ sample, datasetId, annotations, isFocused }: GridCell
           loading="lazy"
           decoding="async"
         />
-        {annotations.length > 0 && (
-          <AnnotationOverlay
-            annotations={annotations}
-            imageWidth={sample.width}
-            imageHeight={sample.height}
-            aspectMode="slice"
-          />
+        {datasetType === "classification" ? (
+          <>
+            <ClassBadge label={annotations.find((a) => a.source === "ground_truth")?.category_name} />
+            {(() => {
+              const gt = annotations.find((a) => a.source === "ground_truth");
+              const pred = annotations.find((a) => a.source !== "ground_truth");
+              if (!pred) return null;
+              const isCorrect = gt?.category_name === pred.category_name;
+              return (
+                <div className={`absolute bottom-1 right-1 z-10 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                  isCorrect ? "bg-green-500/80 text-white" : "bg-red-500/80 text-white"
+                }`}>
+                  {pred.category_name}
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          annotations.length > 0 && (
+            <AnnotationOverlay
+              annotations={annotations}
+              imageWidth={sample.width}
+              imageHeight={sample.height}
+              aspectMode="slice"
+            />
+          )
         )}
         {/* Selection checkbox overlay */}
         {isSelecting && (

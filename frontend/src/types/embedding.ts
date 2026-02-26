@@ -13,6 +13,8 @@ export interface EmbeddingPoint {
   y: number;
   fileName: string;
   thumbnailPath: string | null;
+  gtLabel?: string | null;
+  predLabel?: string | null;
 }
 
 /** Current embedding status for a dataset (GET /status). */

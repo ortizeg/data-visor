@@ -14,7 +14,7 @@ import duckdb
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.dependencies import get_cursor
-from app.models.annotation import AnnotationCreate, AnnotationUpdate
+from app.models.annotation import AnnotationCreate, AnnotationUpdate, CategoryUpdateRequest
 
 router = APIRouter(prefix="/annotations", tags=["annotations"])
 
@@ -30,6 +30,32 @@ def _update_dataset_counts(
         "WHERE id = ?",
         [dataset_id, dataset_id, dataset_id],
     )
+
+
+@router.patch("/{annotation_id}/category")
+def update_annotation_category(
+    annotation_id: str,
+    body: CategoryUpdateRequest,
+    cursor: duckdb.DuckDBPyConnection = Depends(get_cursor),
+) -> dict:
+    """Update category_name for a ground_truth annotation (classification label editing)."""
+    row = cursor.execute(
+        "UPDATE annotations "
+        "SET category_name = ? "
+        "WHERE id = ? AND source = 'ground_truth' "
+        "RETURNING id, dataset_id",
+        [body.category_name, annotation_id],
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Annotation not found or not editable",
+        )
+
+    _update_dataset_counts(cursor, row[1])
+
+    return {"updated": annotation_id, "category_name": body.category_name}
 
 
 @router.put("/{annotation_id}")

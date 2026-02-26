@@ -17,6 +17,7 @@ interface PredictionImportDialogProps {
 const FORMAT_OPTIONS: { value: Format; label: string }[] = [
   { value: "detection_annotation", label: "Detection Annotation" },
   { value: "coco", label: "COCO Results" },
+  { value: "classification_jsonl", label: "Classification JSONL" },
 ];
 
 export function PredictionImportDialog({
@@ -74,7 +75,7 @@ export function PredictionImportDialog({
           {/* Path input */}
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-              Prediction Directory
+              {format === "classification_jsonl" ? "Prediction File" : "Prediction Path"}
             </label>
             <div className="flex gap-2">
               <input

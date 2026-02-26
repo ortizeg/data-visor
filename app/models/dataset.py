@@ -27,6 +27,7 @@ class DatasetResponse(BaseModel):
     annotation_count: int
     category_count: int
     prediction_count: int = 0
+    dataset_type: str = "detection"
     created_at: datetime
 
 
